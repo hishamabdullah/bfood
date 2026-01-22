@@ -43,21 +43,16 @@ const Footer = () => {
 
           {/* Support */}
           <div>
-            <h4 className="font-semibold mb-4">الدعم</h4>
+            <h4 className="font-semibold mb-4">الدعم والقوانين</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-                  تواصل معنا
-                </Link>
-              </li>
-              <li>
-                <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
-                  الأسئلة الشائعة
+                <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
+                  سياسة الخصوصية
                 </Link>
               </li>
               <li>
                 <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
-                  الشروط والأحكام
+                  شروط الاستخدام
                 </Link>
               </li>
             </ul>
