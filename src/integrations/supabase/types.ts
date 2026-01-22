@@ -124,6 +124,7 @@ export type Database = {
           category_id: string | null
           country_of_origin: string | null
           created_at: string
+          delivery_fee: number | null
           description: string | null
           id: string
           image_url: string | null
@@ -139,6 +140,7 @@ export type Database = {
           category_id?: string | null
           country_of_origin?: string | null
           created_at?: string
+          delivery_fee?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -154,6 +156,7 @@ export type Database = {
           category_id?: string | null
           country_of_origin?: string | null
           created_at?: string
+          delivery_fee?: number | null
           description?: string | null
           id?: string
           image_url?: string | null

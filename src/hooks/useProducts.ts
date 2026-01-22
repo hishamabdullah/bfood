@@ -7,6 +7,7 @@ export type Product = Tables<"products"> & {
   supplier_profile?: Tables<"profiles"> | null;
   country_of_origin?: string | null;
   stock_quantity?: number | null;
+  delivery_fee?: number | null;
 };
 
 export const useProducts = (categoryId?: string) => {
