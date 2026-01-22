@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 type UserType = "restaurant" | "supplier";
 
@@ -13,23 +15,61 @@ const Register = () => {
   
   const [userType, setUserType] = useState<UserType>(initialType);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     businessName: "",
     password: "",
-    confirmPassword: "",
   });
+
+  const { signUp } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // سيتم ربطه بـ Supabase لاحقاً
-    console.log("Register:", { userType, ...formData });
+    
+    if (formData.password.length < 6) {
+      toast({
+        title: "كلمة المرور قصيرة",
+        description: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    const { error } = await signUp(formData.email, formData.password, {
+      fullName: formData.name,
+      businessName: formData.businessName,
+      phone: formData.phone,
+      role: userType,
+    });
+
+    if (error) {
+      toast({
+        title: "خطأ في التسجيل",
+        description: error.message === "User already registered"
+          ? "هذا البريد الإلكتروني مسجل مسبقاً"
+          : error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "تم إنشاء الحساب بنجاح",
+        description: "مرحباً بك في BFOOD!",
+      });
+      navigate("/dashboard");
+    }
+
+    setIsLoading(false);
   };
 
   return (
@@ -60,6 +100,7 @@ const Register = () => {
                   ? "bg-card shadow-sm text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
+              disabled={isLoading}
             >
               <Store className="h-5 w-5" />
               مطعم
@@ -72,6 +113,7 @@ const Register = () => {
                   ? "bg-card shadow-sm text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
+              disabled={isLoading}
             >
               <Truck className="h-5 w-5" />
               مورد
@@ -92,6 +134,7 @@ const Register = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -115,6 +158,7 @@ const Register = () => {
                   value={formData.businessName}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -133,6 +177,7 @@ const Register = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -151,6 +196,7 @@ const Register = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -169,6 +215,8 @@ const Register = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
+                  minLength={6}
                 />
                 <button
                   type="button"
@@ -181,8 +229,15 @@ const Register = () => {
             </div>
 
             {/* Submit */}
-            <Button type="submit" variant="hero" className="w-full" size="lg">
-              إنشاء الحساب
+            <Button type="submit" variant="hero" className="w-full" size="lg" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  جاري إنشاء الحساب...
+                </>
+              ) : (
+                "إنشاء الحساب"
+              )}
             </Button>
           </form>
 
