@@ -101,6 +101,12 @@ const Orders = () => {
           stock_quantity: null,
           unlimited_stock: null,
           supplier_profile: item.supplier_profile || null,
+          name_en: null,
+          name_ur: null,
+          name_hi: null,
+          description_en: null,
+          description_ur: null,
+          description_hi: null,
         }, item.quantity);
       }
     });
