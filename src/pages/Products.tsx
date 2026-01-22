@@ -3,84 +3,24 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Search, Filter, ShoppingCart, Plus } from "lucide-react";
-
-// بيانات تجريبية للمنتجات
-const mockProducts = [
-  {
-    id: 1,
-    name: "طماطم طازجة",
-    category: "خضروات",
-    price: 12,
-    unit: "كيلو",
-    supplier: "مزارع الخير",
-    image: "🍅",
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: "دجاج طازج",
-    category: "لحوم",
-    price: 28,
-    unit: "كيلو",
-    supplier: "مزارع الدواجن",
-    image: "🍗",
-    inStock: true,
-  },
-  {
-    id: 3,
-    name: "زيت زيتون بكر",
-    category: "زيوت",
-    price: 45,
-    unit: "لتر",
-    supplier: "معاصر الجبل",
-    image: "🫒",
-    inStock: true,
-  },
-  {
-    id: 4,
-    name: "أرز بسمتي",
-    category: "حبوب",
-    price: 18,
-    unit: "كيلو",
-    supplier: "متجر الحبوب",
-    image: "🍚",
-    inStock: true,
-  },
-  {
-    id: 5,
-    name: "جبنة موزاريلا",
-    category: "ألبان",
-    price: 35,
-    unit: "كيلو",
-    supplier: "مصنع الألبان",
-    image: "🧀",
-    inStock: false,
-  },
-  {
-    id: 6,
-    name: "بصل أحمر",
-    category: "خضروات",
-    price: 8,
-    unit: "كيلو",
-    supplier: "مزارع الخير",
-    image: "🧅",
-    inStock: true,
-  },
-];
-
-const categories = ["الكل", "خضروات", "لحوم", "زيوت", "حبوب", "ألبان"];
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search } from "lucide-react";
+import { useProducts, useCategories } from "@/hooks/useProducts";
+import ProductCard from "@/components/products/ProductCard";
 
 const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("الكل");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const filteredProducts = mockProducts.filter((product) => {
-    const matchesSearch = product.name.includes(searchQuery) || product.supplier.includes(searchQuery);
-    const matchesCategory = selectedCategory === "الكل" || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const { data: products, isLoading: productsLoading } = useProducts(selectedCategory);
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
+
+  const filteredProducts = products?.filter((product) => {
+    const matchesSearch = 
+      product.name.includes(searchQuery) || 
+      product.supplier_profile?.business_name?.includes(searchQuery);
+    return matchesSearch;
+  }) || [];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -108,62 +48,62 @@ const Products = () => {
 
             {/* Categories */}
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="whitespace-nowrap"
-                >
-                  {category}
-                </Button>
-              ))}
+              <Button
+                variant={selectedCategory === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory("all")}
+                className="whitespace-nowrap"
+              >
+                الكل
+              </Button>
+              {categoriesLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-20" />
+                ))
+              ) : (
+                categories?.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.id)}
+                    className="whitespace-nowrap"
+                  >
+                    {category.icon && <span className="ml-1">{category.icon}</span>}
+                    {category.name}
+                  </Button>
+                ))
+              )}
             </div>
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product, index) => (
-              <div
-                key={product.id}
-                className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card transition-all duration-300 animate-fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                {/* Product Image */}
-                <div className="h-40 bg-muted flex items-center justify-center text-6xl">
-                  {product.image}
-                </div>
-
-                {/* Product Info */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="font-semibold text-lg">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground">{product.supplier}</p>
+          {productsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden">
+                  <Skeleton className="h-40 w-full" />
+                  <div className="p-4 space-y-3">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <div className="flex justify-between items-center">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-9 w-24" />
                     </div>
-                    <Badge variant={product.inStock ? "default" : "secondary"}>
-                      {product.inStock ? "متوفر" : "نفذ"}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4">
-                    <div>
-                      <span className="text-xl font-bold text-primary">{product.price}</span>
-                      <span className="text-sm text-muted-foreground mr-1">ر.س/{product.unit}</span>
-                    </div>
-                    <Button size="sm" disabled={!product.inStock}>
-                      <Plus className="h-4 w-4" />
-                      أضف للسلة
-                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((product, index) => (
+                <ProductCard key={product.id} product={product} index={index} />
+              ))}
+            </div>
+          )}
 
           {/* Empty State */}
-          {filteredProducts.length === 0 && (
+          {!productsLoading && filteredProducts.length === 0 && (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-semibold mb-2">لا توجد نتائج</h3>

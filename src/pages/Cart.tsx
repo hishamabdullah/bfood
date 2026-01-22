@@ -3,71 +3,62 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
-
-// بيانات تجريبية للسلة
-const initialCartItems = [
-  {
-    id: 1,
-    name: "طماطم طازجة",
-    price: 12,
-    unit: "كيلو",
-    quantity: 5,
-    supplier: "مزارع الخير",
-    image: "🍅",
-  },
-  {
-    id: 2,
-    name: "دجاج طازج",
-    price: 28,
-    unit: "كيلو",
-    quantity: 3,
-    supplier: "مزارع الدواجن",
-    image: "🍗",
-  },
-  {
-    id: 3,
-    name: "زيت زيتون بكر",
-    price: 45,
-    unit: "لتر",
-    quantity: 2,
-    supplier: "معاصر الجبل",
-    image: "🫒",
-  },
-];
+import { Textarea } from "@/components/ui/textarea";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Package } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
+import { useCreateOrder } from "@/hooks/useOrders";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  const { items, updateQuantity, removeItem, clearCart, getSubtotal, getItemsBySupplier } = useCart();
+  const { user, userRole } = useAuth();
+  const createOrder = useCreateOrder();
+  const navigate = useNavigate();
+  
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [notes, setNotes] = useState("");
 
-  const updateQuantity = (id: number, change: number) => {
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
-    );
-  };
-
-  const removeItem = (id: number) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
-  };
-
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = getSubtotal();
   const deliveryFee = 15;
   const total = subtotal + deliveryFee;
+  const groupedBySupplier = getItemsBySupplier();
 
-  // تجميع المنتجات حسب المورد
-  const groupedBySupplier = cartItems.reduce((acc, item) => {
-    if (!acc[item.supplier]) {
-      acc[item.supplier] = [];
+  const handleCheckout = async () => {
+    if (!user) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      navigate("/login");
+      return;
     }
-    acc[item.supplier].push(item);
-    return acc;
-  }, {} as Record<string, typeof cartItems>);
 
-  if (cartItems.length === 0) {
+    if (userRole !== "restaurant") {
+      toast.error("فقط المطاعم يمكنها إنشاء طلبات");
+      return;
+    }
+
+    if (items.length === 0) {
+      toast.error("السلة فارغة");
+      return;
+    }
+
+    try {
+      await createOrder.mutateAsync({
+        items,
+        deliveryAddress: deliveryAddress || undefined,
+        notes: notes || undefined,
+      });
+      
+      clearCart();
+      toast.success("تم إنشاء الطلب بنجاح!");
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error creating order:", error);
+      toast.error("حدث خطأ أثناء إنشاء الطلب");
+    }
+  };
+
+  if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
@@ -101,7 +92,7 @@ const Cart = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {Object.entries(groupedBySupplier).map(([supplier, items]) => (
+              {Object.entries(groupedBySupplier).map(([supplier, supplierItems]) => (
                 <div key={supplier} className="bg-card rounded-2xl border border-border overflow-hidden">
                   {/* Supplier Header */}
                   <div className="bg-muted/50 px-6 py-3 border-b border-border">
@@ -110,18 +101,30 @@ const Cart = () => {
 
                   {/* Items */}
                   <div className="divide-y divide-border">
-                    {items.map((item) => (
+                    {supplierItems.map((item) => (
                       <div key={item.id} className="p-4 flex gap-4">
                         {/* Image */}
-                        <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center text-3xl shrink-0">
-                          {item.image}
+                        <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                          {item.product.image_url ? (
+                            <img 
+                              src={item.product.image_url} 
+                              alt={item.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Package className="h-8 w-8 text-muted-foreground" />
+                          )}
                         </div>
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold mb-1">{item.name}</h4>
+                          <Link to={`/products/${item.product.id}`}>
+                            <h4 className="font-semibold mb-1 hover:text-primary transition-colors">
+                              {item.product.name}
+                            </h4>
+                          </Link>
                           <p className="text-sm text-muted-foreground mb-2">
-                            {item.price} ر.س / {item.unit}
+                            {item.product.price} ر.س / {item.product.unit}
                           </p>
 
                           {/* Quantity Controls */}
@@ -130,7 +133,7 @@ const Cart = () => {
                               variant="outline"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, -1)}
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
@@ -139,7 +142,7 @@ const Cart = () => {
                               variant="outline"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, 1)}
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
@@ -149,7 +152,7 @@ const Cart = () => {
                         {/* Price & Remove */}
                         <div className="text-left">
                           <p className="font-bold text-lg text-primary">
-                            {item.price * item.quantity} ر.س
+                            {(item.product.price * item.quantity).toFixed(2)} ر.س
                           </p>
                           <Button
                             variant="ghost"
@@ -169,13 +172,34 @@ const Cart = () => {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-card rounded-2xl border border-border p-6 sticky top-24">
-                <h3 className="font-bold text-xl mb-6">ملخص الطلب</h3>
+              <div className="bg-card rounded-2xl border border-border p-6 sticky top-24 space-y-6">
+                <h3 className="font-bold text-xl">ملخص الطلب</h3>
 
-                <div className="space-y-4 mb-6">
+                {/* Delivery Address */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">عنوان التوصيل</label>
+                  <Input
+                    placeholder="أدخل عنوان التوصيل..."
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">ملاحظات</label>
+                  <Textarea
+                    placeholder="أي ملاحظات إضافية..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-4">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">المجموع الفرعي</span>
-                    <span>{subtotal} ر.س</span>
+                    <span>{subtotal.toFixed(2)} ر.س</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">رسوم التوصيل</span>
@@ -183,16 +207,22 @@ const Cart = () => {
                   </div>
                   <div className="border-t border-border pt-4 flex justify-between">
                     <span className="font-bold">الإجمالي</span>
-                    <span className="font-bold text-xl text-primary">{total} ر.س</span>
+                    <span className="font-bold text-xl text-primary">{total.toFixed(2)} ر.س</span>
                   </div>
                 </div>
 
-                <Button variant="hero" className="w-full" size="lg">
-                  إتمام الطلب
+                <Button 
+                  variant="hero" 
+                  className="w-full" 
+                  size="lg"
+                  onClick={handleCheckout}
+                  disabled={createOrder.isPending}
+                >
+                  {createOrder.isPending ? "جاري إنشاء الطلب..." : "إتمام الطلب"}
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
 
-                <p className="text-xs text-center text-muted-foreground mt-4">
+                <p className="text-xs text-center text-muted-foreground">
                   سيتم تقسيم الطلب تلقائياً حسب الموردين
                 </p>
               </div>

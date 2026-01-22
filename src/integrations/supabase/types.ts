@@ -122,6 +122,7 @@ export type Database = {
       products: {
         Row: {
           category_id: string | null
+          country_of_origin: string | null
           created_at: string
           description: string | null
           id: string
@@ -129,12 +130,14 @@ export type Database = {
           in_stock: boolean
           name: string
           price: number
+          stock_quantity: number | null
           supplier_id: string
           unit: string
           updated_at: string
         }
         Insert: {
           category_id?: string | null
+          country_of_origin?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -142,12 +145,14 @@ export type Database = {
           in_stock?: boolean
           name: string
           price: number
+          stock_quantity?: number | null
           supplier_id: string
           unit?: string
           updated_at?: string
         }
         Update: {
           category_id?: string | null
+          country_of_origin?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -155,6 +160,7 @@ export type Database = {
           in_stock?: boolean
           name?: string
           price?: number
+          stock_quantity?: number | null
           supplier_id?: string
           unit?: string
           updated_at?: string
