@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, ShoppingCart, User, LogOut, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import NotificationBell from "./NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +63,9 @@ const Header = () => {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
+          {/* جرس الإشعارات للموردين */}
+          {isSupplier && <NotificationBell />}
+          
           {isRestaurant && (
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">

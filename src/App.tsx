@@ -17,6 +17,8 @@ import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
 import SupplierProducts from "./pages/supplier/SupplierProducts";
 import SupplierOrders from "./pages/supplier/SupplierOrders";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +45,8 @@ const App = () => (
               <Route path="/profile/:id" element={<Profile />} />
               <Route path="/supplier/products" element={<SupplierProducts />} />
               <Route path="/supplier/orders" element={<SupplierOrders />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </CartProvider>

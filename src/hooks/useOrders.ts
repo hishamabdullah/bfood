@@ -11,7 +11,7 @@ interface CreateOrderParams {
 
 export const useCreateOrder = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   return useMutation({
     mutationFn: async ({ items, deliveryAddress, notes }: CreateOrderParams) => {
@@ -60,6 +60,21 @@ export const useCreateOrder = () => {
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
+
+      // إرسال إشعارات للموردين
+      const supplierIds = [...new Set(items.map((item) => item.product.supplier_id))];
+      const restaurantName = profile?.business_name || "مطعم";
+
+      const notifications = supplierIds.map((supplierId) => ({
+        user_id: supplierId,
+        title: "طلب جديد",
+        message: `لديك طلب جديد من ${restaurantName}`,
+        type: "order",
+        order_id: order.id,
+      }));
+
+      // إنشاء الإشعارات (لا نوقف العملية إذا فشل)
+      await supabase.from("notifications").insert(notifications).throwOnError();
 
       return order;
     },
