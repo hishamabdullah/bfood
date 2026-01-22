@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShoppingCart, User, LogOut } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import {
@@ -14,10 +14,12 @@ import {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, profile, signOut } = useAuth();
+  const { user, userRole, profile, signOut } = useAuth();
   const { getItemCount } = useCart();
   const navigate = useNavigate();
   const itemCount = getItemCount();
+  
+  const isSupplier = userRole === "supplier";
 
   const handleSignOut = async () => {
     await signOut();
@@ -37,29 +39,42 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-            الرئيسية
-          </Link>
-          <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">
-            المنتجات
-          </Link>
-          <Link to="/suppliers" className="text-muted-foreground hover:text-foreground transition-colors">
-            الموردين
-          </Link>
+          {!isSupplier && (
+            <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+              الرئيسية
+            </Link>
+          )}
+          {!isSupplier && (
+            <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">
+              المنتجات
+            </Link>
+          )}
+          {!isSupplier && (
+            <Link to="/suppliers" className="text-muted-foreground hover:text-foreground transition-colors">
+              الموردين
+            </Link>
+          )}
+          {isSupplier && (
+            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+              لوحة التحكم
+            </Link>
+          )}
         </nav>
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/cart">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {itemCount > 0 && (
-                <span className="absolute -top-1 -left-1 h-5 w-5 rounded-full bg-secondary text-xs text-secondary-foreground flex items-center justify-center">
-                  {itemCount > 99 ? "99+" : itemCount}
-                </span>
-              )}
-            </Button>
-          </Link>
+          {!isSupplier && (
+            <Link to="/cart">
+              <Button variant="ghost" size="icon" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -left-1 h-5 w-5 rounded-full bg-secondary text-xs text-secondary-foreground flex items-center justify-center">
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+          )}
 
           {user ? (
             <DropdownMenu>
@@ -75,6 +90,14 @@ const Header = () => {
                     لوحة التحكم
                   </Link>
                 </DropdownMenuItem>
+                {!isSupplier && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders" className="cursor-pointer">
+                      <Package className="h-4 w-4 ml-2" />
+                      طلباتي
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="cursor-pointer">
                     الملف الشخصي
@@ -112,33 +135,56 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden border-t border-border bg-background animate-fade-in">
           <nav className="container py-4 flex flex-col gap-4">
-            <Link 
-              to="/" 
-              className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              الرئيسية
-            </Link>
-            <Link 
-              to="/products" 
-              className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              المنتجات
-            </Link>
-            <Link 
-              to="/suppliers" 
-              className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              الموردين
-            </Link>
+            {!isSupplier && (
+              <Link 
+                to="/" 
+                className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                الرئيسية
+              </Link>
+            )}
+            {!isSupplier && (
+              <Link 
+                to="/products" 
+                className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                المنتجات
+              </Link>
+            )}
+            {!isSupplier && (
+              <Link 
+                to="/suppliers" 
+                className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                الموردين
+              </Link>
+            )}
+            {isSupplier && (
+              <Link 
+                to="/dashboard" 
+                className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                لوحة التحكم
+              </Link>
+            )}
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
               {user ? (
                 <>
                   <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="outline" className="w-full">لوحة التحكم</Button>
                   </Link>
+                  {!isSupplier && (
+                    <Link to="/orders" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full gap-2">
+                        <Package className="h-4 w-4" />
+                        طلباتي
+                      </Button>
+                    </Link>
+                  )}
                   <Button 
                     variant="ghost" 
                     className="w-full text-destructive"
