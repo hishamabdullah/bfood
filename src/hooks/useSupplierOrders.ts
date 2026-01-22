@@ -84,3 +84,34 @@ export const useUpdateOrderItemStatus = () => {
     },
   });
 };
+
+// Update all items in an order for a specific supplier
+export const useUpdateOrderStatus = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      if (!user) throw new Error("يجب تسجيل الدخول");
+
+      const { data, error } = await supabase
+        .from("order_items")
+        .update({ status })
+        .eq("order_id", orderId)
+        .eq("supplier_id", user.id)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["supplier-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["restaurant-orders"] });
+      toast.success("تم تحديث حالة الطلب");
+    },
+    onError: (error) => {
+      console.error("Error updating order status:", error);
+      toast.error("حدث خطأ أثناء تحديث الحالة");
+    },
+  });
+};

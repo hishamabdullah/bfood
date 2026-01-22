@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
@@ -28,7 +28,7 @@ import {
   XCircle,
   Truck,
 } from "lucide-react";
-import { useSupplierOrders, useUpdateOrderItemStatus } from "@/hooks/useSupplierOrders";
+import { useSupplierOrders, useUpdateOrderStatus } from "@/hooks/useSupplierOrders";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -76,13 +76,14 @@ interface GroupedOrder {
   createdAt: string;
   deliveryAddress?: string;
   notes?: string;
+  status: string; // Overall status based on items
 }
 
 export default function SupplierOrders() {
   const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const { data: orderItems, isLoading } = useSupplierOrders();
-  const updateStatus = useUpdateOrderItemStatus();
+  const updateStatus = useUpdateOrderStatus();
 
   // Group items by order
   const groupedOrders = useMemo(() => {
@@ -101,9 +102,18 @@ export default function SupplierOrders() {
           createdAt: item.created_at,
           deliveryAddress: item.order?.delivery_address || undefined,
           notes: item.order?.notes || undefined,
+          status: item.status, // Initialize with first item status
         };
       }
       grouped[orderId].items.push(item);
+    });
+
+    // Determine overall status (use most common or first item's status)
+    Object.values(grouped).forEach((order) => {
+      // Use the first item's status as the order status
+      if (order.items.length > 0) {
+        order.status = order.items[0].status;
+      }
     });
     
     // Sort by created_at descending
@@ -130,8 +140,8 @@ export default function SupplierOrders() {
     return null;
   }
 
-  const handleStatusChange = (itemId: string, status: string) => {
-    updateStatus.mutate({ itemId, status });
+  const handleOrderStatusChange = (orderId: string, status: string) => {
+    updateStatus.mutate({ orderId, status });
   };
 
   // Calculate order total for supplier's items only
@@ -181,6 +191,30 @@ export default function SupplierOrders() {
                         <CardTitle className="text-lg">
                           طلب #{order.orderId.slice(0, 8)}
                         </CardTitle>
+                        {/* Order Status Selector */}
+                        <Select
+                          value={order.status}
+                          onValueChange={(value) => handleOrderStatusChange(order.orderId, value)}
+                        >
+                          <SelectTrigger className="w-[160px]">
+                            <SelectValue>
+                              <Badge
+                                variant="secondary"
+                                className={`${statusColors[order.status]} gap-1`}
+                              >
+                                {React.createElement(getStatusIcon(order.status), { className: "h-3 w-3" })}
+                                {statusLabels[order.status] || order.status}
+                              </Badge>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(statusLabels).map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CalendarDays className="h-4 w-4" />
@@ -275,7 +309,6 @@ export default function SupplierOrders() {
                         </div>
                         <div className="divide-y">
                           {order.items.map((item) => {
-                            const StatusIcon = getStatusIcon(item.status);
                             return (
                               <div key={item.id} className="flex items-center justify-between p-4">
                                 <div className="flex items-center gap-3">
@@ -297,34 +330,9 @@ export default function SupplierOrders() {
                                     </p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-4">
-                                  <p className="font-medium">
-                                    {(item.quantity * item.unit_price).toFixed(2)} ر.س
-                                  </p>
-                                  <Select
-                                    value={item.status}
-                                    onValueChange={(value) => handleStatusChange(item.id, value)}
-                                  >
-                                    <SelectTrigger className="w-[140px]">
-                                      <SelectValue>
-                                        <Badge
-                                          variant="secondary"
-                                          className={`${statusColors[item.status]} gap-1`}
-                                        >
-                                          <StatusIcon className="h-3 w-3" />
-                                          {statusLabels[item.status] || item.status}
-                                        </Badge>
-                                      </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {Object.entries(statusLabels).map(([value, label]) => (
-                                        <SelectItem key={value} value={value}>
-                                          {label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                                <p className="font-medium">
+                                  {(item.quantity * item.unit_price).toFixed(2)} ر.س
+                                </p>
                               </div>
                             );
                           })}
