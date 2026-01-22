@@ -41,6 +41,7 @@ const productSchema = z.object({
   country_of_origin: z.string().default("السعودية"),
   in_stock: z.boolean().default(true),
   image_url: z.string().url().optional().or(z.literal("")),
+  delivery_fee: z.coerce.number().min(0).default(0),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -75,6 +76,7 @@ export default function ProductFormDialog({
       country_of_origin: "السعودية",
       in_stock: true,
       image_url: "",
+      delivery_fee: 0,
     },
   });
 
@@ -90,6 +92,7 @@ export default function ProductFormDialog({
         country_of_origin: product.country_of_origin || "السعودية",
         in_stock: product.in_stock,
         image_url: product.image_url || "",
+        delivery_fee: product.delivery_fee || 0,
       });
     } else {
       form.reset({
@@ -102,6 +105,7 @@ export default function ProductFormDialog({
         country_of_origin: "السعودية",
         in_stock: true,
         image_url: "",
+        delivery_fee: 0,
       });
     }
   }, [product, form]);
@@ -120,6 +124,7 @@ export default function ProductFormDialog({
           country_of_origin: values.country_of_origin,
           in_stock: values.in_stock,
           image_url: values.image_url || null,
+          delivery_fee: values.delivery_fee,
         });
       } else {
         await createProduct.mutateAsync({
@@ -132,6 +137,7 @@ export default function ProductFormDialog({
           country_of_origin: values.country_of_origin,
           in_stock: values.in_stock,
           image_url: values.image_url || null,
+          delivery_fee: values.delivery_fee,
         });
       }
       onOpenChange(false);
@@ -274,6 +280,20 @@ export default function ProductFormDialog({
                   <FormLabel>بلد المنشأ</FormLabel>
                   <FormControl>
                     <Input placeholder="السعودية" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="delivery_fee"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>رسوم التوصيل (ر.س) - اختياري</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" min="0" placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

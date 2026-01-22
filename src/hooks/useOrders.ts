@@ -22,7 +22,11 @@ export const useCreateOrder = () => {
         (total, item) => total + item.product.price * item.quantity,
         0
       );
-      const deliveryFee = 15;
+      // حساب رسوم التوصيل من المنتجات
+      const deliveryFee = items.reduce(
+        (total, item) => total + (item.product.delivery_fee || 0),
+        0
+      );
       const totalAmount = subtotal + deliveryFee;
 
       // Create order

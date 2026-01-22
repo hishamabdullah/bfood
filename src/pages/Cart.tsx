@@ -21,9 +21,14 @@ const Cart = () => {
   const [notes, setNotes] = useState("");
 
   const subtotal = getSubtotal();
-  const deliveryFee = 15;
-  const total = subtotal + deliveryFee;
   const groupedBySupplier = getItemsBySupplier();
+  
+  // حساب إجمالي رسوم التوصيل من المنتجات
+  const deliveryFee = items.reduce((total, item) => {
+    const productDeliveryFee = item.product.delivery_fee || 0;
+    return total + productDeliveryFee;
+  }, 0);
+  const total = subtotal + deliveryFee;
 
   const handleCheckout = async () => {
     if (!user) {
@@ -201,10 +206,12 @@ const Cart = () => {
                     <span className="text-muted-foreground">المجموع الفرعي</span>
                     <span>{subtotal.toFixed(2)} ر.س</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">رسوم التوصيل</span>
-                    <span>{deliveryFee} ر.س</span>
-                  </div>
+                  {deliveryFee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">رسوم التوصيل</span>
+                      <span>{deliveryFee.toFixed(2)} ر.س</span>
+                    </div>
+                  )}
                   <div className="border-t border-border pt-4 flex justify-between">
                     <span className="font-bold">الإجمالي</span>
                     <span className="font-bold text-xl text-primary">{total.toFixed(2)} ر.س</span>
