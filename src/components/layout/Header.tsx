@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ShoppingCart, User, LogOut, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import NotificationBell from "./NotificationBell";
+import LanguageSwitcher from "./LanguageSwitcher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +19,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, userRole, profile, signOut } = useAuth();
   const { getItemCount } = useCart();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const itemCount = getItemCount();
   
@@ -45,17 +48,17 @@ const Header = () => {
           {isRestaurant && (
             <>
               <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">
-                المنتجات
+                {t("nav.products")}
               </Link>
               <Link to="/suppliers" className="text-muted-foreground hover:text-foreground transition-colors">
-                الموردين
+                {t("nav.suppliers")}
               </Link>
             </>
           )}
           {/* المورد يرى فقط لوحة التحكم */}
           {isSupplier && (
             <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-              لوحة التحكم
+              {t("nav.dashboard")}
             </Link>
           )}
           {/* غير المسجلين لا يرون أي روابط */}
@@ -63,6 +66,9 @@ const Header = () => {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+          
           {/* جرس الإشعارات للموردين */}
           {isSupplier && <NotificationBell />}
           
@@ -84,42 +90,42 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-2">
                   <User className="h-4 w-4" />
-                  {profile?.full_name || "حسابي"}
+                  {profile?.full_name || t("common.profile")}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard" className="cursor-pointer">
-                    لوحة التحكم
+                    {t("nav.dashboard")}
                   </Link>
                 </DropdownMenuItem>
                 {isRestaurant && (
                   <DropdownMenuItem asChild>
                     <Link to="/orders" className="cursor-pointer">
-                      <Package className="h-4 w-4 ml-2" />
-                      طلباتي
+                      <Package className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                      {t("nav.myOrders")}
                     </Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="cursor-pointer">
-                    الملف الشخصي
+                    {t("common.profile")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
-                  <LogOut className="h-4 w-4 ml-2" />
-                  تسجيل الخروج
+                  <LogOut className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                  {t("common.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <>
               <Link to="/login">
-                <Button variant="outline">تسجيل الدخول</Button>
+                <Button variant="outline">{t("common.login")}</Button>
               </Link>
               <Link to="/register">
-                <Button variant="hero">إنشاء حساب</Button>
+                <Button variant="hero">{t("common.register")}</Button>
               </Link>
             </>
           )}
@@ -146,14 +152,14 @@ const Header = () => {
                   className="py-2 text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  المنتجات
+                  {t("nav.products")}
                 </Link>
                 <Link 
                   to="/suppliers" 
                   className="py-2 text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  الموردين
+                  {t("nav.suppliers")}
                 </Link>
               </>
             )}
@@ -164,25 +170,31 @@ const Header = () => {
                 className="py-2 text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                لوحة التحكم
+                {t("nav.dashboard")}
               </Link>
             )}
+            
+            {/* Language Switcher for Mobile */}
+            <div className="py-2">
+              <LanguageSwitcher />
+            </div>
+            
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
               {user ? (
                 <>
                   <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">لوحة التحكم</Button>
+                    <Button variant="outline" className="w-full">{t("nav.dashboard")}</Button>
                   </Link>
                   {isRestaurant && (
                     <Link to="/orders" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="outline" className="w-full gap-2">
                         <Package className="h-4 w-4" />
-                        طلباتي
+                        {t("nav.myOrders")}
                       </Button>
                     </Link>
                   )}
                   <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">الملف الشخصي</Button>
+                    <Button variant="outline" className="w-full">{t("common.profile")}</Button>
                   </Link>
                   <Button 
                     variant="ghost" 
@@ -192,17 +204,17 @@ const Header = () => {
                       setIsMenuOpen(false);
                     }}
                   >
-                    <LogOut className="h-4 w-4 ml-2" />
-                    تسجيل الخروج
+                    <LogOut className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                    {t("common.logout")}
                   </Button>
                 </>
               ) : (
                 <>
                   <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">تسجيل الدخول</Button>
+                    <Button variant="outline" className="w-full">{t("common.login")}</Button>
                   </Link>
                   <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="hero" className="w-full">إنشاء حساب</Button>
+                    <Button variant="hero" className="w-full">{t("common.register")}</Button>
                   </Link>
                 </>
               )}

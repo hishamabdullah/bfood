@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="border-t border-border bg-muted/30">
       <div className="container py-12">
@@ -14,28 +17,22 @@ const Footer = () => {
               <span className="text-xl font-bold text-foreground">BFOOD</span>
             </Link>
             <p className="text-muted-foreground max-w-md">
-              منصة BFOOD تربط المطاعم بأفضل الموردين للمنتجات الغذائية. 
-              نسهّل عملية الطلب ونضمن جودة المنتجات وسرعة التوصيل.
+              {t("footer.description")}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold mb-4">روابط سريعة</h4>
+            <h4 className="font-semibold mb-4">{t("footer.quickLinks")}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">
-                  المنتجات
+                  {t("nav.products")}
                 </Link>
               </li>
               <li>
                 <Link to="/suppliers" className="text-muted-foreground hover:text-foreground transition-colors">
-                  الموردين
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
-                  من نحن
+                  {t("nav.suppliers")}
                 </Link>
               </li>
             </ul>
@@ -43,16 +40,16 @@ const Footer = () => {
 
           {/* Support */}
           <div>
-            <h4 className="font-semibold mb-4">الدعم والقوانين</h4>
+            <h4 className="font-semibold mb-4">{t("footer.support")}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
-                  سياسة الخصوصية
+                  {t("footer.privacyPolicy")}
                 </Link>
               </li>
               <li>
                 <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
-                  شروط الاستخدام
+                  {t("footer.termsOfService")}
                 </Link>
               </li>
             </ul>
@@ -60,7 +57,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
-          <p>© 2024 BFOOD. جميع الحقوق محفوظة.</p>
+          <p>{t("footer.copyright")}</p>
         </div>
       </div>
     </footer>
