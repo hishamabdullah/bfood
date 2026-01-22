@@ -13,6 +13,8 @@ import ProductDetails from "./pages/ProductDetails";
 import Suppliers from "./pages/Suppliers";
 import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
+import SupplierProducts from "./pages/supplier/SupplierProducts";
+import SupplierOrders from "./pages/supplier/SupplierOrders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
               <Route path="/suppliers" element={<Suppliers />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/supplier/products" element={<SupplierProducts />} />
+              <Route path="/supplier/orders" element={<SupplierOrders />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </CartProvider>
