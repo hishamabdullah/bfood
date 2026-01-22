@@ -1,26 +1,42 @@
 import { useState } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search } from "lucide-react";
+import { Search, X, Store } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
+import { useSupplierProfile } from "@/hooks/useSuppliers";
 import ProductCard from "@/components/products/ProductCard";
 
 const Products = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const supplierId = searchParams.get("supplier");
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   const { data: products, isLoading: productsLoading } = useProducts(selectedCategory);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { data: supplierProfile } = useSupplierProfile(supplierId || "");
 
   const filteredProducts = products?.filter((product) => {
+    // فلتر حسب المورد إذا تم تحديده
+    if (supplierId && product.supplier_id !== supplierId) {
+      return false;
+    }
+    
     const matchesSearch = 
       product.name.includes(searchQuery) || 
       product.supplier_profile?.business_name?.includes(searchQuery);
     return matchesSearch;
   }) || [];
+
+  const clearSupplierFilter = () => {
+    searchParams.delete("supplier");
+    setSearchParams(searchParams);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -29,8 +45,33 @@ const Products = () => {
         <div className="container py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">المنتجات</h1>
-            <p className="text-muted-foreground">تصفح المنتجات من جميع الموردين</p>
+            <h1 className="text-3xl font-bold mb-2">
+              {supplierId && supplierProfile ? `منتجات ${supplierProfile.business_name}` : "المنتجات"}
+            </h1>
+            <p className="text-muted-foreground">
+              {supplierId ? "تصفح منتجات هذا المورد" : "تصفح المنتجات من جميع الموردين"}
+            </p>
+            
+            {/* Supplier Filter Badge */}
+            {supplierId && supplierProfile && (
+              <div className="mt-4 flex items-center gap-2">
+                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full">
+                  <Store className="h-4 w-4" />
+                  <span className="font-medium">{supplierProfile.business_name}</span>
+                  <button 
+                    onClick={clearSupplierFilter}
+                    className="hover:bg-primary/20 rounded-full p-1 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <Link to="/suppliers">
+                  <Button variant="outline" size="sm">
+                    عودة للموردين
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Filters */}
