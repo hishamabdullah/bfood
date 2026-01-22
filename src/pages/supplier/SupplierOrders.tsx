@@ -1,16 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -20,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ShoppingBag,
   Loader2,
@@ -29,17 +22,15 @@ import {
   MapPin,
   ExternalLink,
   User,
+  CalendarDays,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Truck,
 } from "lucide-react";
 import { useSupplierOrders, useUpdateOrderItemStatus } from "@/hooks/useSupplierOrders";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -59,11 +50,67 @@ const statusLabels: Record<string, string> = {
   cancelled: "ملغي",
 };
 
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case "pending":
+      return Clock;
+    case "confirmed":
+    case "delivered":
+      return CheckCircle;
+    case "preparing":
+      return Package;
+    case "shipped":
+      return Truck;
+    case "cancelled":
+      return XCircle;
+    default:
+      return Clock;
+  }
+};
+
+// Group order items by order_id
+interface GroupedOrder {
+  orderId: string;
+  restaurant: any;
+  items: any[];
+  createdAt: string;
+  deliveryAddress?: string;
+  notes?: string;
+}
+
 export default function SupplierOrders() {
   const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const { data: orderItems, isLoading } = useSupplierOrders();
   const updateStatus = useUpdateOrderItemStatus();
+
+  // Group items by order
+  const groupedOrders = useMemo(() => {
+    if (!orderItems) return [];
+    
+    const grouped: Record<string, GroupedOrder> = {};
+    
+    orderItems.forEach((item) => {
+      const orderId = item.order_id;
+      
+      if (!grouped[orderId]) {
+        grouped[orderId] = {
+          orderId,
+          restaurant: item.order?.restaurant_profile,
+          items: [],
+          createdAt: item.created_at,
+          deliveryAddress: item.order?.delivery_address || undefined,
+          notes: item.order?.notes || undefined,
+        };
+      }
+      grouped[orderId].items.push(item);
+    });
+    
+    // Sort by created_at descending
+    return Object.values(grouped).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [orderItems]);
 
   useEffect(() => {
     if (!loading && (!user || userRole !== "supplier")) {
@@ -87,8 +134,13 @@ export default function SupplierOrders() {
     updateStatus.mutate({ itemId, status });
   };
 
+  // Calculate order total for supplier's items only
+  const calculateOrderTotal = (items: any[]) => {
+    return items.reduce((total, item) => total + item.unit_price * item.quantity, 0);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background" dir="rtl">
       <Header />
       <main className="flex-1">
         <div className="container py-8">
@@ -106,12 +158,12 @@ export default function SupplierOrders() {
               الطلبات الواردة
             </h1>
             <p className="text-muted-foreground">
-              {orderItems?.length || 0} طلب
+              {groupedOrders.length} طلب
             </p>
           </div>
 
-          {/* Orders Table */}
-          {!orderItems?.length ? (
+          {/* Orders */}
+          {groupedOrders.length === 0 ? (
             <div className="text-center py-16 bg-card rounded-2xl border">
               <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">لا توجد طلبات</h3>
@@ -120,161 +172,176 @@ export default function SupplierOrders() {
               </p>
             </div>
           ) : (
-            <div className="bg-card rounded-2xl border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">رقم الطلب</TableHead>
-                    <TableHead className="text-right">المطعم</TableHead>
-                    <TableHead className="text-right">المنتج</TableHead>
-                    <TableHead className="text-right">الكمية</TableHead>
-                    <TableHead className="text-right">السعر</TableHead>
-                    <TableHead className="text-right">التاريخ</TableHead>
-                    <TableHead className="text-right w-[150px]">الحالة</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orderItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-mono text-sm">
-                        {item.order_id.slice(0, 8)}...
-                      </TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="link" className="p-0 h-auto font-normal">
-                              {item.order?.restaurant_profile?.business_name || "مطعم"}
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>معلومات المطعم</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                                  <User className="h-6 w-6 text-muted-foreground" />
+            <div className="space-y-6">
+              {groupedOrders.map((order) => (
+                <Card key={order.orderId} className="overflow-hidden">
+                  <CardHeader className="bg-muted/50">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <CardTitle className="text-lg">
+                          طلب #{order.orderId.slice(0, 8)}
+                        </CardTitle>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CalendarDays className="h-4 w-4" />
+                        {format(new Date(order.createdAt), "PPP", { locale: ar })}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="space-y-6">
+                      {/* Restaurant Info */}
+                      <div className="bg-muted/30 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <User className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">
+                                {order.restaurant?.business_name || "مطعم غير معروف"}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {order.restaurant?.full_name}
+                              </p>
+                            </div>
+                          </div>
+                          {order.restaurant?.user_id && (
+                            <Link to={`/profile/${order.restaurant.user_id}`}>
+                              <Button variant="outline" size="sm" className="gap-1">
+                                <User className="h-4 w-4" />
+                                الملف الشخصي
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {order.restaurant?.phone && (
+                            <a 
+                              href={`tel:${order.restaurant.phone}`}
+                              className="flex items-center gap-2 p-3 bg-background rounded-lg hover:bg-muted transition-colors"
+                            >
+                              <Phone className="h-4 w-4 text-primary" />
+                              <span className="text-primary">{order.restaurant.phone}</span>
+                            </a>
+                          )}
+                          
+                          {order.restaurant?.google_maps_url && (
+                            <a 
+                              href={order.restaurant.google_maps_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-3 bg-background rounded-lg hover:bg-muted transition-colors"
+                            >
+                              <MapPin className="h-4 w-4 text-primary" />
+                              <span className="text-primary">فتح في قوقل ماب</span>
+                              <ExternalLink className="h-3 w-3 mr-auto" />
+                            </a>
+                          )}
+                        </div>
+
+                        {order.deliveryAddress && (
+                          <div className="mt-3 p-3 bg-background rounded-lg">
+                            <p className="text-sm font-medium mb-1">عنوان التوصيل:</p>
+                            {order.deliveryAddress.startsWith("http") ? (
+                              <a 
+                                href={order.deliveryAddress}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-primary hover:underline flex items-center gap-1"
+                              >
+                                فتح رابط الموقع
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">{order.deliveryAddress}</p>
+                            )}
+                          </div>
+                        )}
+
+                        {order.notes && (
+                          <div className="mt-3 p-3 bg-background rounded-lg">
+                            <p className="text-sm font-medium mb-1">ملاحظات:</p>
+                            <p className="text-sm text-muted-foreground">{order.notes}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Order Items */}
+                      <div className="border rounded-xl overflow-hidden">
+                        <div className="bg-muted/30 px-4 py-2 border-b">
+                          <h4 className="font-medium text-sm">المنتجات المطلوبة</h4>
+                        </div>
+                        <div className="divide-y">
+                          {order.items.map((item) => {
+                            const StatusIcon = getStatusIcon(item.status);
+                            return (
+                              <div key={item.id} className="flex items-center justify-between p-4">
+                                <div className="flex items-center gap-3">
+                                  {item.product?.image_url ? (
+                                    <img
+                                      src={item.product.image_url}
+                                      alt={item.product?.name}
+                                      className="w-12 h-12 rounded-lg object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                                      <Package className="h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <p className="font-medium">{item.product?.name || "منتج"}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {item.quantity} × {item.unit_price} ر.س
+                                    </p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <h3 className="font-semibold">
-                                    {item.order?.restaurant_profile?.business_name || "غير محدد"}
-                                  </h3>
-                                  <p className="text-sm text-muted-foreground">
-                                    {item.order?.restaurant_profile?.full_name}
+                                <div className="flex items-center gap-4">
+                                  <p className="font-medium">
+                                    {(item.quantity * item.unit_price).toFixed(2)} ر.س
                                   </p>
+                                  <Select
+                                    value={item.status}
+                                    onValueChange={(value) => handleStatusChange(item.id, value)}
+                                  >
+                                    <SelectTrigger className="w-[140px]">
+                                      <SelectValue>
+                                        <Badge
+                                          variant="secondary"
+                                          className={`${statusColors[item.status]} gap-1`}
+                                        >
+                                          <StatusIcon className="h-3 w-3" />
+                                          {statusLabels[item.status] || item.status}
+                                        </Badge>
+                                      </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {Object.entries(statusLabels).map(([value, label]) => (
+                                        <SelectItem key={value} value={value}>
+                                          {label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                 </div>
                               </div>
-
-                              {item.order?.restaurant_profile?.phone && (
-                                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                                  <Phone className="h-4 w-4 text-muted-foreground" />
-                                  <a 
-                                    href={`tel:${item.order.restaurant_profile.phone}`}
-                                    className="text-primary hover:underline"
-                                  >
-                                    {item.order.restaurant_profile.phone}
-                                  </a>
-                                </div>
-                              )}
-
-                              {(item.order?.restaurant_profile as any)?.google_maps_url && (
-                                <a 
-                                  href={(item.order?.restaurant_profile as any).google_maps_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 p-3 bg-muted rounded-lg hover:bg-muted/80"
-                                >
-                                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-primary">فتح في قوقل ماب</span>
-                                  <ExternalLink className="h-3 w-3 mr-auto" />
-                                </a>
-                              )}
-
-                              {item.order?.delivery_address && (
-                                <div className="p-3 bg-muted rounded-lg">
-                                  <p className="text-sm font-medium mb-1">عنوان التوصيل:</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {item.order.delivery_address}
-                                  </p>
-                                </div>
-                              )}
-
-                              {item.order?.notes && (
-                                <div className="p-3 bg-muted rounded-lg">
-                                  <p className="text-sm font-medium mb-1">ملاحظات:</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {item.order.notes}
-                                  </p>
-                                </div>
-                              )}
-
-                              <Link to={`/profile/${item.order?.restaurant_profile?.user_id}`}>
-                                <Button variant="outline" className="w-full">
-                                  <User className="h-4 w-4" />
-                                  عرض الملف الشخصي
-                                </Button>
-                              </Link>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {item.product?.image_url ? (
-                            <img
-                              src={item.product.image_url}
-                              alt={item.product?.name}
-                              className="w-8 h-8 rounded object-cover"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                              <Package className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          )}
-                          <span>{item.product?.name || "منتج"}</span>
+                            );
+                          })}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {item.quantity} {item.product?.unit}
-                      </TableCell>
-                      <TableCell>
-                        {(item.unit_price * item.quantity).toFixed(2)} ر.س
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(item.created_at), "d MMM yyyy", {
-                          locale: ar,
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={item.status}
-                          onValueChange={(value) =>
-                            handleStatusChange(item.id, value)
-                          }
-                        >
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue>
-                              <Badge
-                                variant="secondary"
-                                className={statusColors[item.status]}
-                              >
-                                {statusLabels[item.status] || item.status}
-                              </Badge>
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(statusLabels).map(([value, label]) => (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+
+                      {/* Order Total */}
+                      <div className="flex justify-between items-center pt-4 border-t">
+                        <span className="font-bold text-lg">إجمالي الطلب:</span>
+                        <span className="font-bold text-xl text-primary">
+                          {calculateOrderTotal(order.items).toFixed(2)} ر.س
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>
