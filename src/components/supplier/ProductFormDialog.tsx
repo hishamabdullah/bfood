@@ -27,9 +27,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useCategories } from "@/hooks/useProducts";
 import { useCreateProduct, useUpdateProduct, SupplierProduct } from "@/hooks/useSupplierProducts";
-import { Loader2 } from "lucide-react";
+import { Loader2, Globe } from "lucide-react";
 
 const productSchema = z.object({
   name: z.string().min(2, "اسم المنتج مطلوب").max(100),
@@ -43,6 +49,13 @@ const productSchema = z.object({
   in_stock: z.boolean().default(true),
   image_url: z.string().url().optional().or(z.literal("")),
   delivery_fee: z.coerce.number().min(0).default(0),
+  // ترجمات اختيارية
+  name_en: z.string().max(100).optional(),
+  name_ur: z.string().max(100).optional(),
+  name_hi: z.string().max(100).optional(),
+  description_en: z.string().max(500).optional(),
+  description_ur: z.string().max(500).optional(),
+  description_hi: z.string().max(500).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -79,6 +92,12 @@ export default function ProductFormDialog({
       in_stock: true,
       image_url: "",
       delivery_fee: 0,
+      name_en: "",
+      name_ur: "",
+      name_hi: "",
+      description_en: "",
+      description_ur: "",
+      description_hi: "",
     },
   });
 
@@ -98,6 +117,12 @@ export default function ProductFormDialog({
         in_stock: product.in_stock,
         image_url: product.image_url || "",
         delivery_fee: product.delivery_fee || 0,
+        name_en: (product as any).name_en || "",
+        name_ur: (product as any).name_ur || "",
+        name_hi: (product as any).name_hi || "",
+        description_en: (product as any).description_en || "",
+        description_ur: (product as any).description_ur || "",
+        description_hi: (product as any).description_hi || "",
       });
     } else {
       form.reset({
@@ -112,6 +137,12 @@ export default function ProductFormDialog({
         in_stock: true,
         image_url: "",
         delivery_fee: 0,
+        name_en: "",
+        name_ur: "",
+        name_hi: "",
+        description_en: "",
+        description_ur: "",
+        description_hi: "",
       });
     }
   }, [product, form]);
@@ -130,6 +161,12 @@ export default function ProductFormDialog({
         in_stock: values.in_stock,
         image_url: values.image_url || null,
         delivery_fee: values.delivery_fee,
+        name_en: values.name_en || null,
+        name_ur: values.name_ur || null,
+        name_hi: values.name_hi || null,
+        description_en: values.description_en || null,
+        description_ur: values.description_ur || null,
+        description_hi: values.description_hi || null,
       };
 
       if (isEditing && product) {
@@ -164,7 +201,7 @@ export default function ProductFormDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>اسم المنتج</FormLabel>
+                  <FormLabel>اسم المنتج (عربي) *</FormLabel>
                   <FormControl>
                     <Input placeholder="مثال: طماطم طازجة" {...field} />
                   </FormControl>
@@ -178,7 +215,7 @@ export default function ProductFormDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>الوصف (اختياري)</FormLabel>
+                  <FormLabel>الوصف بالعربي (اختياري)</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="وصف مختصر للمنتج..."
@@ -189,6 +226,112 @@ export default function ProductFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* ترجمات اختيارية */}
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="translations" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    <span>إضافة ترجمات (اختياري)</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-4 pt-4">
+                  {/* English */}
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      🇬🇧 English
+                    </h4>
+                    <FormField
+                      control={form.control}
+                      name="name_en"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Product Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Fresh Tomatoes" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="description_en"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Description</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Product description..." {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Urdu */}
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      🇵🇰 اردو
+                    </h4>
+                    <FormField
+                      control={form.control}
+                      name="name_ur"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">مصنوعات کا نام</FormLabel>
+                          <FormControl>
+                            <Input placeholder="مثال: تازہ ٹماٹر" {...field} dir="rtl" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="description_ur"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">تفصیل</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="مصنوعات کی تفصیل..." {...field} dir="rtl" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Hindi */}
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      🇮🇳 हिंदी
+                    </h4>
+                    <FormField
+                      control={form.control}
+                      name="name_hi"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">उत्पाद का नाम</FormLabel>
+                          <FormControl>
+                            <Input placeholder="उदा: ताजे टमाटर" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="description_hi"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">विवरण</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="उत्पाद विवरण..." {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             <div className="grid grid-cols-2 gap-4">
               <FormField

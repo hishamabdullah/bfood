@@ -167,10 +167,16 @@ export type Database = {
           created_at: string
           delivery_fee: number | null
           description: string | null
+          description_en: string | null
+          description_hi: string | null
+          description_ur: string | null
           id: string
           image_url: string | null
           in_stock: boolean
           name: string
+          name_en: string | null
+          name_hi: string | null
+          name_ur: string | null
           price: number
           stock_quantity: number | null
           supplier_id: string
@@ -184,10 +190,16 @@ export type Database = {
           created_at?: string
           delivery_fee?: number | null
           description?: string | null
+          description_en?: string | null
+          description_hi?: string | null
+          description_ur?: string | null
           id?: string
           image_url?: string | null
           in_stock?: boolean
           name: string
+          name_en?: string | null
+          name_hi?: string | null
+          name_ur?: string | null
           price: number
           stock_quantity?: number | null
           supplier_id: string
@@ -201,10 +213,16 @@ export type Database = {
           created_at?: string
           delivery_fee?: number | null
           description?: string | null
+          description_en?: string | null
+          description_hi?: string | null
+          description_ur?: string | null
           id?: string
           image_url?: string | null
           in_stock?: boolean
           name?: string
+          name_en?: string | null
+          name_hi?: string | null
+          name_ur?: string | null
           price?: number
           stock_quantity?: number | null
           supplier_id?: string

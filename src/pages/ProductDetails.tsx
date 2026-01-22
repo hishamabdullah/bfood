@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,12 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProductTranslation } from "@/hooks/useProductTranslation";
 import { ArrowRight, Minus, Plus, ShoppingCart, Package, MapPin, Scale, Store } from "lucide-react";
 import { toast } from "sonner";
 
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { getProductName, getProductDescription } = useProductTranslation();
   const { data: product, isLoading, error } = useProduct(id || "");
   const { addItem } = useCart();
   const { user, userRole } = useAuth();
@@ -21,7 +25,7 @@ const ProductDetails = () => {
 
   const handleAddToCart = () => {
     if (!user) {
-      toast.error("يجب تسجيل الدخول أولاً");
+      toast.error(t("auth.loginRequired") || "يجب تسجيل الدخول أولاً");
       navigate("/login");
       return;
     }
@@ -33,7 +37,7 @@ const ProductDetails = () => {
     
     if (product) {
       addItem(product, quantity);
-      toast.success(`تم إضافة ${product.name} للسلة`);
+      toast.success(`تم إضافة ${getProductName(product)} للسلة`);
     }
   };
 
@@ -66,12 +70,12 @@ const ProductDetails = () => {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="text-6xl mb-4">😕</div>
-            <h2 className="text-2xl font-bold mb-2">المنتج غير موجود</h2>
+            <h2 className="text-2xl font-bold mb-2">{t("common.noResults")}</h2>
             <p className="text-muted-foreground mb-6">عذراً، لم نتمكن من العثور على هذا المنتج</p>
             <Link to="/products">
               <Button variant="hero">
                 <ArrowRight className="h-5 w-5" />
-                العودة للمنتجات
+                {t("nav.products")}
               </Button>
             </Link>
           </div>
@@ -81,6 +85,9 @@ const ProductDetails = () => {
     );
   }
 
+  const productName = getProductName(product);
+  const productDescription = getProductDescription(product);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -89,7 +96,7 @@ const ProductDetails = () => {
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
             <Link to="/products" className="hover:text-primary transition-colors">
-              المنتجات
+              {t("nav.products")}
             </Link>
             <span>/</span>
             {product.category && (
@@ -98,7 +105,7 @@ const ProductDetails = () => {
                 <span>/</span>
               </>
             )}
-            <span className="text-foreground">{product.name}</span>
+            <span className="text-foreground">{productName}</span>
           </nav>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -107,7 +114,7 @@ const ProductDetails = () => {
               {product.image_url ? (
                 <img
                   src={product.image_url}
-                  alt={product.name}
+                  alt={productName}
                   className="w-full h-96 object-cover"
                 />
               ) : (
@@ -122,13 +129,13 @@ const ProductDetails = () => {
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <Badge variant={product.in_stock ? "default" : "secondary"}>
-                    {product.in_stock ? "متوفر" : "غير متوفر"}
+                    {product.in_stock ? t("products.inStock") : t("products.outOfStock")}
                   </Badge>
                   {product.category && (
                     <Badge variant="outline">{product.category.name}</Badge>
                   )}
                 </div>
-                <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+                <h1 className="text-3xl font-bold mb-2">{productName}</h1>
                 {product.supplier_profile && (
                   <Link 
                     to={`/suppliers`} 
@@ -143,14 +150,14 @@ const ProductDetails = () => {
               {/* Price */}
               <div className="bg-accent/50 rounded-xl p-4">
                 <span className="text-3xl font-bold text-primary">{product.price}</span>
-                <span className="text-lg text-muted-foreground mr-2">ر.س / {product.unit}</span>
+                <span className="text-lg text-muted-foreground ltr:ml-2 rtl:mr-2">{t("common.sar")} / {product.unit}</span>
               </div>
 
               {/* Description */}
-              {product.description && (
+              {productDescription && (
                 <div>
-                  <h3 className="font-semibold mb-2">الوصف</h3>
-                  <p className="text-muted-foreground">{product.description}</p>
+                  <h3 className="font-semibold mb-2">{t("products.description") || "الوصف"}</h3>
+                  <p className="text-muted-foreground">{productDescription}</p>
                 </div>
               )}
 
@@ -159,21 +166,21 @@ const ProductDetails = () => {
                 <div className="bg-card rounded-xl border border-border p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-1">
                     <MapPin className="h-4 w-4" />
-                    <span className="text-sm">بلد الصنع</span>
+                    <span className="text-sm">{t("products.countryOfOrigin")}</span>
                   </div>
                   <p className="font-semibold">{product.country_of_origin || "غير محدد"}</p>
                 </div>
                 <div className="bg-card rounded-xl border border-border p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-1">
                     <Scale className="h-4 w-4" />
-                    <span className="text-sm">الوحدة</span>
+                    <span className="text-sm">{t("products.unit")}</span>
                   </div>
                   <p className="font-semibold">{product.unit}</p>
                 </div>
                 <div className="bg-card rounded-xl border border-border p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-1">
                     <Package className="h-4 w-4" />
-                    <span className="text-sm">الكمية المتوفرة</span>
+                    <span className="text-sm">{t("products.stockQuantity") || "الكمية المتوفرة"}</span>
                   </div>
                   <p className="font-semibold">{product.stock_quantity || 0} {product.unit}</p>
                 </div>
@@ -182,7 +189,7 @@ const ProductDetails = () => {
               {/* Add to Cart */}
               <div className="bg-card rounded-xl border border-border p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">الكمية</span>
+                  <span className="font-medium">{t("cart.quantity") || "الكمية"}</span>
                   <div className="flex items-center gap-3">
                     <Button
                       variant="outline"
@@ -203,8 +210,8 @@ const ProductDetails = () => {
                 </div>
                 
                 <div className="flex items-center justify-between text-lg">
-                  <span className="font-medium">الإجمالي</span>
-                  <span className="font-bold text-primary">{(product.price * quantity).toFixed(2)} ر.س</span>
+                  <span className="font-medium">{t("cart.total")}</span>
+                  <span className="font-bold text-primary">{(product.price * quantity).toFixed(2)} {t("common.sar")}</span>
                 </div>
 
                 <Button
@@ -215,7 +222,7 @@ const ProductDetails = () => {
                   onClick={handleAddToCart}
                 >
                   <ShoppingCart className="h-5 w-5" />
-                  أضف للسلة
+                  {t("products.addToCart")}
                 </Button>
               </div>
             </div>

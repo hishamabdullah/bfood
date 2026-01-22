@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Package } from "lucide-react";
@@ -7,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Product } from "@/hooks/useProducts";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useProductTranslation } from "@/hooks/useProductTranslation";
 
 interface ProductCardProps {
   product: Product;
@@ -17,13 +19,15 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
   const { addItem } = useCart();
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { getProductName } = useProductTranslation();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
     if (!user) {
-      toast.error("يجب تسجيل الدخول أولاً");
+      toast.error(t("auth.loginRequired") || "يجب تسجيل الدخول أولاً");
       navigate("/login");
       return;
     }
@@ -34,8 +38,10 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
     }
     
     addItem(product, 1);
-    toast.success(`تم إضافة ${product.name} للسلة`);
+    toast.success(`تم إضافة ${getProductName(product)} للسلة`);
   };
+
+  const productName = getProductName(product);
 
   return (
     <Link to={`/products/${product.id}`}>
@@ -48,7 +54,7 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
           {product.image_url ? (
             <img
               src={product.image_url}
-              alt={product.name}
+              alt={productName}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
@@ -60,24 +66,24 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
         <div className="p-4">
           <div className="flex items-start justify-between mb-2">
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-lg truncate">{product.name}</h3>
+              <h3 className="font-semibold text-lg truncate">{productName}</h3>
               <p className="text-sm text-muted-foreground truncate">
-                {product.supplier_profile?.business_name || "مورد غير معروف"}
+                {product.supplier_profile?.business_name || t("products.supplier")}
               </p>
             </div>
-            <Badge variant={product.in_stock ? "default" : "secondary"} className="shrink-0 mr-2">
-              {product.in_stock ? "متوفر" : "نفذ"}
+            <Badge variant={product.in_stock ? "default" : "secondary"} className="shrink-0 ltr:ml-2 rtl:mr-2">
+              {product.in_stock ? t("products.inStock") : t("products.outOfStock")}
             </Badge>
           </div>
 
           <div className="flex items-center justify-between mt-4">
             <div>
               <span className="text-xl font-bold text-primary">{product.price}</span>
-              <span className="text-sm text-muted-foreground mr-1">ر.س/{product.unit}</span>
+              <span className="text-sm text-muted-foreground ltr:ml-1 rtl:mr-1">{t("common.sar")}/{product.unit}</span>
             </div>
             <Button size="sm" disabled={!product.in_stock} onClick={handleAddToCart}>
               <Plus className="h-4 w-4" />
-              أضف للسلة
+              {t("products.addToCart")}
             </Button>
           </div>
         </div>
