@@ -38,6 +38,7 @@ const productSchema = z.object({
   unit: z.string().min(1, "الوحدة مطلوبة"),
   category_id: z.string().optional(),
   stock_quantity: z.coerce.number().min(0).default(0),
+  unlimited_stock: z.boolean().default(false),
   country_of_origin: z.string().default("السعودية"),
   in_stock: z.boolean().default(true),
   image_url: z.string().url().optional().or(z.literal("")),
@@ -73,12 +74,15 @@ export default function ProductFormDialog({
       unit: "كيلو",
       category_id: "",
       stock_quantity: 0,
+      unlimited_stock: false,
       country_of_origin: "السعودية",
       in_stock: true,
       image_url: "",
       delivery_fee: 0,
     },
   });
+
+  const watchUnlimitedStock = form.watch("unlimited_stock");
 
   useEffect(() => {
     if (product) {
@@ -89,6 +93,7 @@ export default function ProductFormDialog({
         unit: product.unit,
         category_id: product.category_id || "",
         stock_quantity: product.stock_quantity || 0,
+        unlimited_stock: (product as any).unlimited_stock || false,
         country_of_origin: product.country_of_origin || "السعودية",
         in_stock: product.in_stock,
         image_url: product.image_url || "",
@@ -102,6 +107,7 @@ export default function ProductFormDialog({
         unit: "كيلو",
         category_id: "",
         stock_quantity: 0,
+        unlimited_stock: false,
         country_of_origin: "السعودية",
         in_stock: true,
         image_url: "",
@@ -112,33 +118,27 @@ export default function ProductFormDialog({
 
   const onSubmit = async (values: ProductFormValues) => {
     try {
+      const productData = {
+        name: values.name,
+        description: values.description || null,
+        price: values.price,
+        unit: values.unit,
+        category_id: values.category_id || null,
+        stock_quantity: values.unlimited_stock ? null : values.stock_quantity,
+        unlimited_stock: values.unlimited_stock,
+        country_of_origin: values.country_of_origin,
+        in_stock: values.in_stock,
+        image_url: values.image_url || null,
+        delivery_fee: values.delivery_fee,
+      };
+
       if (isEditing && product) {
         await updateProduct.mutateAsync({
           id: product.id,
-          name: values.name,
-          description: values.description || null,
-          price: values.price,
-          unit: values.unit,
-          category_id: values.category_id || null,
-          stock_quantity: values.stock_quantity,
-          country_of_origin: values.country_of_origin,
-          in_stock: values.in_stock,
-          image_url: values.image_url || null,
-          delivery_fee: values.delivery_fee,
+          ...productData,
         });
       } else {
-        await createProduct.mutateAsync({
-          name: values.name,
-          description: values.description || null,
-          price: values.price,
-          unit: values.unit,
-          category_id: values.category_id || null,
-          stock_quantity: values.stock_quantity,
-          country_of_origin: values.country_of_origin,
-          in_stock: values.in_stock,
-          image_url: values.image_url || null,
-          delivery_fee: values.delivery_fee,
-        });
+        await createProduct.mutateAsync(productData as any);
       }
       onOpenChange(false);
     } catch (error) {
@@ -231,26 +231,50 @@ export default function ProductFormDialog({
               />
             </div>
 
+            {/* Unlimited Stock Toggle */}
+            <FormField
+              control={form.control}
+              name="unlimited_stock"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <FormLabel className="text-base">كمية غير محدودة</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      تفعيل هذا الخيار يعني أن الكمية متاحة دائماً
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="stock_quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>الكمية المتوفرة</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!watchUnlimitedStock && (
+                <FormField
+                  control={form.control}
+                  name="stock_quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الكمية المتوفرة</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
                 name="category_id"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className={watchUnlimitedStock ? "col-span-2" : ""}>
                     <FormLabel>التصنيف</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>

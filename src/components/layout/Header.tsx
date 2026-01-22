@@ -20,6 +20,7 @@ const Header = () => {
   const itemCount = getItemCount();
   
   const isSupplier = userRole === "supplier";
+  const isRestaurant = userRole === "restaurant";
 
   const handleSignOut = async () => {
     await signOut();
@@ -39,31 +40,29 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          {!isSupplier && (
-            <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-              الرئيسية
-            </Link>
+          {/* المطعم فقط يرى المنتجات والموردين */}
+          {isRestaurant && (
+            <>
+              <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">
+                المنتجات
+              </Link>
+              <Link to="/suppliers" className="text-muted-foreground hover:text-foreground transition-colors">
+                الموردين
+              </Link>
+            </>
           )}
-          {!isSupplier && (
-            <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">
-              المنتجات
-            </Link>
-          )}
-          {!isSupplier && (
-            <Link to="/suppliers" className="text-muted-foreground hover:text-foreground transition-colors">
-              الموردين
-            </Link>
-          )}
+          {/* المورد يرى فقط لوحة التحكم */}
           {isSupplier && (
             <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
               لوحة التحكم
             </Link>
           )}
+          {/* غير المسجلين لا يرون أي روابط */}
         </nav>
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
-          {!isSupplier && (
+          {isRestaurant && (
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -90,7 +89,7 @@ const Header = () => {
                     لوحة التحكم
                   </Link>
                 </DropdownMenuItem>
-                {!isSupplier && (
+                {isRestaurant && (
                   <DropdownMenuItem asChild>
                     <Link to="/orders" className="cursor-pointer">
                       <Package className="h-4 w-4 ml-2" />
@@ -135,33 +134,26 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden border-t border-border bg-background animate-fade-in">
           <nav className="container py-4 flex flex-col gap-4">
-            {!isSupplier && (
-              <Link 
-                to="/" 
-                className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                الرئيسية
-              </Link>
+            {/* المطعم فقط يرى المنتجات والموردين */}
+            {isRestaurant && (
+              <>
+                <Link 
+                  to="/products" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  المنتجات
+                </Link>
+                <Link 
+                  to="/suppliers" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  الموردين
+                </Link>
+              </>
             )}
-            {!isSupplier && (
-              <Link 
-                to="/products" 
-                className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                المنتجات
-              </Link>
-            )}
-            {!isSupplier && (
-              <Link 
-                to="/suppliers" 
-                className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                الموردين
-              </Link>
-            )}
+            {/* المورد يرى فقط لوحة التحكم */}
             {isSupplier && (
               <Link 
                 to="/dashboard" 
@@ -177,7 +169,7 @@ const Header = () => {
                   <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="outline" className="w-full">لوحة التحكم</Button>
                   </Link>
-                  {!isSupplier && (
+                  {isRestaurant && (
                     <Link to="/orders" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="outline" className="w-full gap-2">
                         <Package className="h-4 w-4" />
@@ -185,6 +177,9 @@ const Header = () => {
                       </Button>
                     </Link>
                   )}
+                  <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="outline" className="w-full">الملف الشخصي</Button>
+                  </Link>
                   <Button 
                     variant="ghost" 
                     className="w-full text-destructive"

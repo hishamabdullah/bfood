@@ -20,6 +20,8 @@ interface AuthContextType {
     businessName: string;
     phone: string;
     role: UserRole;
+    region?: string;
+    supplyCategories?: string[];
   }) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -109,6 +111,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       businessName: string;
       phone: string;
       role: UserRole;
+      region?: string;
+      supplyCategories?: string[];
     }
   ) => {
     try {
@@ -131,6 +135,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             full_name: userData.fullName,
             business_name: userData.businessName,
             phone: userData.phone,
+            region: userData.region || null,
+            supply_categories: userData.supplyCategories || null,
           });
 
         if (profileError) throw profileError;

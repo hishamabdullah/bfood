@@ -14,6 +14,7 @@ import Suppliers from "./pages/Suppliers";
 import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
+import Profile from "./pages/Profile";
 import SupplierProducts from "./pages/supplier/SupplierProducts";
 import SupplierOrders from "./pages/supplier/SupplierOrders";
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,8 @@ const App = () => (
               <Route path="/cart" element={<Cart />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:id" element={<Profile />} />
               <Route path="/supplier/products" element={<SupplierProducts />} />
               <Route path="/supplier/orders" element={<SupplierOrders />} />
               <Route path="*" element={<NotFound />} />

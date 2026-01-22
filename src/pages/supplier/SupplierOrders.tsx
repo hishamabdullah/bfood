@@ -19,15 +19,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   ShoppingBag,
   Loader2,
   ArrowRight,
   Package,
+  Phone,
+  MapPin,
+  ExternalLink,
+  User,
 } from "lucide-react";
 import { useSupplierOrders, useUpdateOrderItemStatus } from "@/hooks/useSupplierOrders";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -128,7 +140,83 @@ export default function SupplierOrders() {
                         {item.order_id.slice(0, 8)}...
                       </TableCell>
                       <TableCell>
-                        {item.order?.restaurant_profile?.business_name || "مطعم"}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="link" className="p-0 h-auto font-normal">
+                              {item.order?.restaurant_profile?.business_name || "مطعم"}
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>معلومات المطعم</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                                  <User className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold">
+                                    {item.order?.restaurant_profile?.business_name || "غير محدد"}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    {item.order?.restaurant_profile?.full_name}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {item.order?.restaurant_profile?.phone && (
+                                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                                  <Phone className="h-4 w-4 text-muted-foreground" />
+                                  <a 
+                                    href={`tel:${item.order.restaurant_profile.phone}`}
+                                    className="text-primary hover:underline"
+                                  >
+                                    {item.order.restaurant_profile.phone}
+                                  </a>
+                                </div>
+                              )}
+
+                              {(item.order?.restaurant_profile as any)?.google_maps_url && (
+                                <a 
+                                  href={(item.order?.restaurant_profile as any).google_maps_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 p-3 bg-muted rounded-lg hover:bg-muted/80"
+                                >
+                                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-primary">فتح في قوقل ماب</span>
+                                  <ExternalLink className="h-3 w-3 mr-auto" />
+                                </a>
+                              )}
+
+                              {item.order?.delivery_address && (
+                                <div className="p-3 bg-muted rounded-lg">
+                                  <p className="text-sm font-medium mb-1">عنوان التوصيل:</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {item.order.delivery_address}
+                                  </p>
+                                </div>
+                              )}
+
+                              {item.order?.notes && (
+                                <div className="p-3 bg-muted rounded-lg">
+                                  <p className="text-sm font-medium mb-1">ملاحظات:</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {item.order.notes}
+                                  </p>
+                                </div>
+                              )}
+
+                              <Link to={`/profile/${item.order?.restaurant_profile?.user_id}`}>
+                                <Button variant="outline" className="w-full">
+                                  <User className="h-4 w-4" />
+                                  عرض الملف الشخصي
+                                </Button>
+                              </Link>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

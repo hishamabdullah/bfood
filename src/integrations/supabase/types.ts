@@ -134,6 +134,7 @@ export type Database = {
           stock_quantity: number | null
           supplier_id: string
           unit: string
+          unlimited_stock: boolean | null
           updated_at: string
         }
         Insert: {
@@ -150,6 +151,7 @@ export type Database = {
           stock_quantity?: number | null
           supplier_id: string
           unit?: string
+          unlimited_stock?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -166,6 +168,7 @@ export type Database = {
           stock_quantity?: number | null
           supplier_id?: string
           unit?: string
+          unlimited_stock?: boolean | null
           updated_at?: string
         }
         Relationships: [
@@ -181,31 +184,43 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           business_name: string
           created_at: string
           full_name: string
+          google_maps_url: string | null
           id: string
           phone: string | null
+          region: string | null
+          supply_categories: string[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           business_name: string
           created_at?: string
           full_name: string
+          google_maps_url?: string | null
           id?: string
           phone?: string | null
+          region?: string | null
+          supply_categories?: string[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           business_name?: string
           created_at?: string
           full_name?: string
+          google_maps_url?: string | null
           id?: string
           phone?: string | null
+          region?: string | null
+          supply_categories?: string[] | null
           updated_at?: string
           user_id?: string
         }
