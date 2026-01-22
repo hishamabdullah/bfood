@@ -1,19 +1,45 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { signIn } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // سيتم ربطه بـ Supabase لاحقاً
-    console.log("Login:", { email, password });
+    setIsLoading(true);
+
+    const { error } = await signIn(email, password);
+
+    if (error) {
+      toast({
+        title: "خطأ في تسجيل الدخول",
+        description: error.message === "Invalid login credentials" 
+          ? "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+          : error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "تم تسجيل الدخول بنجاح",
+        description: "مرحباً بعودتك!",
+      });
+      navigate("/dashboard");
+    }
+
+    setIsLoading(false);
   };
 
   return (
@@ -48,6 +74,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -70,6 +97,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -82,8 +110,15 @@ const Login = () => {
             </div>
 
             {/* Submit */}
-            <Button type="submit" variant="hero" className="w-full" size="lg">
-              تسجيل الدخول
+            <Button type="submit" variant="hero" className="w-full" size="lg" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  جاري تسجيل الدخول...
+                </>
+              ) : (
+                "تسجيل الدخول"
+              )}
             </Button>
           </form>
 
