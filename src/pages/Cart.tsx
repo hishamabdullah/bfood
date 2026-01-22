@@ -180,14 +180,17 @@ const Cart = () => {
               <div className="bg-card rounded-2xl border border-border p-6 sticky top-24 space-y-6">
                 <h3 className="font-bold text-xl">ملخص الطلب</h3>
 
-                {/* Delivery Address */}
+                {/* Delivery Address / Google Maps */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">عنوان التوصيل</label>
+                  <label className="block text-sm font-medium mb-2">عنوان التوصيل أو رابط قوقل ماب</label>
                   <Input
-                    placeholder="أدخل عنوان التوصيل..."
+                    placeholder="أدخل عنوان التوصيل أو رابط قوقل ماب..."
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    يمكنك إدخال العنوان أو نسخ رابط موقعك من قوقل ماب
+                  </p>
                 </div>
 
                 {/* Notes */}

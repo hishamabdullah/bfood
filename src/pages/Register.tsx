@@ -3,9 +3,18 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck, Loader2, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { saudiRegions, supplyCategories } from "@/data/saudiRegions";
 
 type UserType = "restaurant" | "supplier";
 
@@ -16,12 +25,14 @@ const Register = () => {
   const [userType, setUserType] = useState<UserType>(initialType);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     businessName: "",
     password: "",
+    region: "",
   });
 
   const { signUp } = useAuth();
@@ -30,6 +41,14 @@ const Register = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,6 +63,24 @@ const Register = () => {
       return;
     }
 
+    if (userType === "supplier" && !formData.region) {
+      toast({
+        title: "المنطقة مطلوبة",
+        description: "يرجى اختيار منطقتك",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (userType === "supplier" && selectedCategories.length === 0) {
+      toast({
+        title: "مجالات التوريد مطلوبة",
+        description: "يرجى اختيار مجال توريد واحد على الأقل",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     const { error } = await signUp(formData.email, formData.password, {
@@ -51,6 +88,8 @@ const Register = () => {
       businessName: formData.businessName,
       phone: formData.phone,
       role: userType,
+      region: userType === "supplier" ? formData.region : undefined,
+      supplyCategories: userType === "supplier" ? selectedCategories : undefined,
     });
 
     if (error) {
@@ -162,6 +201,55 @@ const Register = () => {
                 />
               </div>
             </div>
+
+            {/* Supplier Region */}
+            {userType === "supplier" && (
+              <div className="space-y-2">
+                <Label>المنطقة</Label>
+                <Select
+                  value={formData.region}
+                  onValueChange={(value) => setFormData({ ...formData, region: value })}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger className="w-full">
+                    <MapPin className="h-5 w-5 text-muted-foreground ml-2" />
+                    <SelectValue placeholder="اختر منطقتك" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {saudiRegions.map((region) => (
+                      <SelectItem key={region} value={region}>
+                        {region}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Supplier Categories */}
+            {userType === "supplier" && (
+              <div className="space-y-2">
+                <Label>مجالات التوريد (اختر واحد أو أكثر)</Label>
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded-lg">
+                  {supplyCategories.map((category) => (
+                    <div key={category} className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id={category}
+                        checked={selectedCategories.includes(category)}
+                        onCheckedChange={() => handleCategoryToggle(category)}
+                        disabled={isLoading}
+                      />
+                      <label
+                        htmlFor={category}
+                        className="text-sm cursor-pointer"
+                      >
+                        {category}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Email */}
             <div className="space-y-2">

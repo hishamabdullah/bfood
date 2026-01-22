@@ -15,10 +15,12 @@ import {
   Truck,
   Loader2
 } from "lucide-react";
+import { useSupplierStats } from "@/hooks/useSupplierStats";
 
 const Dashboard = () => {
   const { user, userRole, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: supplierStats, isLoading: statsLoading } = useSupplierStats();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -75,7 +77,9 @@ const Dashboard = () => {
                   <p className="text-sm text-muted-foreground">
                     {isSupplier ? "الطلبات الواردة" : "طلباتي"}
                   </p>
-                  <p className="text-2xl font-bold">0</p>
+                  <p className="text-2xl font-bold">
+                    {isSupplier && supplierStats ? supplierStats.totalOrders : 0}
+                  </p>
                 </div>
               </div>
             </div>
@@ -87,7 +91,9 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">قيد التنفيذ</p>
-                  <p className="text-2xl font-bold">0</p>
+                  <p className="text-2xl font-bold">
+                    {isSupplier && supplierStats ? supplierStats.pendingOrders : 0}
+                  </p>
                 </div>
               </div>
             </div>
@@ -100,7 +106,9 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">منتجاتي</p>
-                    <p className="text-2xl font-bold">0</p>
+                    <p className="text-2xl font-bold">
+                      {supplierStats ? supplierStats.totalProducts : 0}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -115,7 +123,9 @@ const Dashboard = () => {
                   <p className="text-sm text-muted-foreground">
                     {isSupplier ? "إجمالي المبيعات" : "إجمالي المشتريات"}
                   </p>
-                  <p className="text-2xl font-bold">0 ر.س</p>
+                  <p className="text-2xl font-bold">
+                    {isSupplier && supplierStats ? supplierStats.totalSales.toFixed(2) : 0} ر.س
+                  </p>
                 </div>
               </div>
             </div>
