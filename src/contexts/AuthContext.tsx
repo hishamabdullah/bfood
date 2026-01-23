@@ -163,6 +163,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
 
         if (roleError) throw roleError;
+
+        // تحديث الحالة مباشرة بعد التسجيل
+        setUserRole(userData.role);
+        setProfile({
+          full_name: userData.fullName,
+          business_name: userData.businessName,
+          phone: userData.phone,
+          avatar_url: null,
+        });
+        setIsApproved(false); // المستخدم الجديد غير معتمد
       }
 
       return { error: null };
