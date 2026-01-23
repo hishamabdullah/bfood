@@ -200,7 +200,6 @@ const Orders = () => {
                             {/* Items */}
                             <div className="divide-y">
                               {group.items.map((item: any) => {
-                                const itemStatusConfig = getStatusConfig(item.status);
                                 return (
                                   <div key={item.id} className="flex items-center justify-between p-4">
                                     <div className="flex items-center gap-3">
@@ -222,14 +221,9 @@ const Orders = () => {
                                         </p>
                                       </div>
                                     </div>
-                                    <div className="text-left">
-                                      <Badge variant={itemStatusConfig.variant} className="text-xs">
-                                        {itemStatusConfig.label}
-                                      </Badge>
-                                      <p className="text-sm font-medium mt-1">
-                                        {(item.quantity * item.unit_price).toFixed(2)} ر.س
-                                      </p>
-                                    </div>
+                                    <p className="font-medium">
+                                      {(item.quantity * item.unit_price).toFixed(2)} ر.س
+                                    </p>
                                   </div>
                                 );
                               })}
