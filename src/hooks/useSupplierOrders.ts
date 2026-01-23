@@ -85,24 +85,62 @@ export const useUpdateOrderItemStatus = () => {
   });
 };
 
-// Update all items in an order for a specific supplier
+// Update all items in an order for a specific supplier and update main order status
 export const useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   return useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
       if (!user) throw new Error("يجب تسجيل الدخول");
 
-      const { data, error } = await supabase
+      // تحديث حالة جميع عناصر الطلب للمورد
+      const { data: items, error: itemsError } = await supabase
         .from("order_items")
         .update({ status })
         .eq("order_id", orderId)
         .eq("supplier_id", user.id)
         .select();
 
-      if (error) throw error;
-      return data;
+      if (itemsError) throw itemsError;
+
+      // تحديث حالة الطلب الرئيسي
+      const { error: orderError } = await supabase
+        .from("orders")
+        .update({ status })
+        .eq("id", orderId);
+
+      if (orderError) throw orderError;
+
+      // إرسال إشعار للمطعم بتغيير حالة الطلب
+      const { data: order } = await supabase
+        .from("orders")
+        .select("restaurant_id")
+        .eq("id", orderId)
+        .maybeSingle();
+
+      if (order?.restaurant_id) {
+        const statusLabels: Record<string, string> = {
+          pending: "في الانتظار",
+          confirmed: "مؤكد",
+          preparing: "قيد التحضير",
+          shipped: "تم الشحن",
+          delivered: "تم التوصيل",
+          cancelled: "ملغي",
+        };
+
+        const supplierName = profile?.business_name || "المورد";
+        
+        await supabase.from("notifications").insert({
+          user_id: order.restaurant_id,
+          title: "تحديث حالة الطلب",
+          message: `قام ${supplierName} بتحديث حالة طلبك إلى: ${statusLabels[status] || status}`,
+          type: "status_update",
+          order_id: orderId,
+        });
+      }
+
+      return items;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["supplier-orders"] });
