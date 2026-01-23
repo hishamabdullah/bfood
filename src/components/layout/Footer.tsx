@@ -43,6 +43,11 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">{t("footer.support")}</h4>
             <ul className="space-y-2">
               <li>
+                <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t("footer.contactUs")}
+                </Link>
+              </li>
+              <li>
                 <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t("footer.privacyPolicy")}
                 </Link>
