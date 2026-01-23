@@ -8,6 +8,7 @@ export type SupplierOrderItem = Tables<"order_items"> & {
   product?: Tables<"products"> | null;
   order?: (Tables<"orders"> & {
     restaurant_profile?: Tables<"profiles"> | null;
+    branch?: Tables<"branches"> | null;
   }) | null;
 };
 
@@ -25,7 +26,7 @@ export const useSupplierOrders = () => {
         .select(`
           *,
           product:products(*),
-          order:orders(*)
+          order:orders(*, branch:branches(*))
         `)
         .eq("supplier_id", user.id)
         .order("created_at", { ascending: false });
@@ -50,6 +51,7 @@ export const useSupplierOrders = () => {
         order: item.order ? {
           ...item.order,
           restaurant_profile: profiles.find(p => p.user_id === item.order?.restaurant_id) || null,
+          branch: item.order.branch || null,
         } : null,
       })) || [];
 

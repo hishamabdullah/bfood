@@ -77,6 +77,7 @@ interface GroupedOrder {
   deliveryAddress?: string;
   notes?: string;
   status: string; // Overall status based on items
+  branch?: any; // Branch info
 }
 
 export default function SupplierOrders() {
@@ -103,6 +104,7 @@ export default function SupplierOrders() {
           deliveryAddress: item.order?.delivery_address || undefined,
           notes: item.order?.notes || undefined,
           status: item.status, // Initialize with first item status
+          branch: item.order?.branch || undefined,
         };
       }
       grouped[orderId].items.push(item);
@@ -275,7 +277,31 @@ export default function SupplierOrders() {
                           )}
                         </div>
 
-                        {order.deliveryAddress && (
+                        {/* Branch Info */}
+                        {order.branch && (
+                          <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                            <p className="text-sm font-medium mb-1 flex items-center gap-1">
+                              <MapPin className="h-4 w-4 text-primary" />
+                              الفرع: {order.branch.name}
+                            </p>
+                            {order.branch.address && (
+                              <p className="text-sm text-muted-foreground mr-5">{order.branch.address}</p>
+                            )}
+                            {order.branch.google_maps_url && (
+                              <a 
+                                href={order.branch.google_maps_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-primary hover:underline flex items-center gap-1 mr-5 mt-1"
+                              >
+                                فتح موقع الفرع في قوقل ماب
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
+                        )}
+
+                        {order.deliveryAddress && !order.branch && (
                           <div className="mt-3 p-3 bg-background rounded-lg">
                             <p className="text-sm font-medium mb-1">عنوان التوصيل:</p>
                             {order.deliveryAddress.startsWith("http") ? (
