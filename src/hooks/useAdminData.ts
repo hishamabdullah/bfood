@@ -300,3 +300,77 @@ export const useAdminCreateUser = () => {
     },
   });
 };
+
+// تحديث بيانات المستخدم
+export const useAdminUpdateUser = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (userData: {
+      userId: string;
+      fullName?: string;
+      businessName?: string;
+      phone?: string;
+      region?: string;
+      supplyCategories?: string[];
+    }) => {
+      const { userId, ...updateData } = userData;
+      
+      const profileUpdate: Record<string, unknown> = {};
+      if (updateData.fullName) profileUpdate.full_name = updateData.fullName;
+      if (updateData.businessName) profileUpdate.business_name = updateData.businessName;
+      if (updateData.phone !== undefined) profileUpdate.phone = updateData.phone;
+      if (updateData.region !== undefined) profileUpdate.region = updateData.region;
+      if (updateData.supplyCategories !== undefined) profileUpdate.supply_categories = updateData.supplyCategories;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update(profileUpdate)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ title: "تم تحديث بيانات المستخدم بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ في تحديث البيانات", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+// حذف مستخدم
+export const useAdminDeleteUser = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // حذف الدور أولاً
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId);
+
+      if (roleError) throw roleError;
+
+      // حذف الملف الشخصي
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", userId);
+
+      if (profileError) throw profileError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      toast({ title: "تم حذف المستخدم بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ في حذف المستخدم", description: error.message, variant: "destructive" });
+    },
+  });
+};
