@@ -131,13 +131,36 @@ const Header = () => {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden p-2"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        {/* Mobile Actions */}
+        <div className="md:hidden flex items-center gap-2">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+          
+          {/* جرس الإشعارات للموردين */}
+          {isSupplier && <NotificationBell />}
+          
+          {/* السلة للمطاعم */}
+          {isRestaurant && (
+            <Link to="/cart">
+              <Button variant="ghost" size="icon" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -left-1 h-5 w-5 rounded-full bg-secondary text-xs text-secondary-foreground flex items-center justify-center">
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+          )}
+          
+          {/* Mobile Menu Button */}
+          <button
+            className="p-2"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -173,11 +196,6 @@ const Header = () => {
                 {t("nav.dashboard")}
               </Link>
             )}
-            
-            {/* Language Switcher for Mobile */}
-            <div className="py-2">
-              <LanguageSwitcher />
-            </div>
             
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
               {user ? (
