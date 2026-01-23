@@ -4,11 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ShoppingBag, Users, FolderTree, Loader2 } from "lucide-react";
+import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck } from "lucide-react";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOrdersTable from "@/components/admin/AdminOrdersTable";
 import AdminCategoriesManager from "@/components/admin/AdminCategoriesManager";
 import AdminUsersManager from "@/components/admin/AdminUsersManager";
+import AdminApprovalManager from "@/components/admin/AdminApprovalManager";
 
 const Admin = () => {
   const { user, userRole, loading } = useAuth();
@@ -54,8 +55,12 @@ const Admin = () => {
           </div>
 
           {/* Tabs */}
-          <Tabs defaultValue="orders" className="space-y-6">
+          <Tabs defaultValue="approvals" className="space-y-6">
             <TabsList className="bg-muted/50 p-1">
+              <TabsTrigger value="approvals" className="flex items-center gap-2">
+                <UserCheck className="h-4 w-4" />
+                الموافقات
+              </TabsTrigger>
               <TabsTrigger value="orders" className="flex items-center gap-2">
                 <ShoppingBag className="h-4 w-4" />
                 الطلبات
@@ -69,6 +74,10 @@ const Admin = () => {
                 التصنيفات
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="approvals">
+              <AdminApprovalManager />
+            </TabsContent>
 
             <TabsContent value="orders">
               <AdminOrdersTable />

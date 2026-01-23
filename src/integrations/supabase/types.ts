@@ -297,6 +297,7 @@ export type Database = {
           full_name: string
           google_maps_url: string | null
           id: string
+          is_approved: boolean
           minimum_order_amount: number | null
           phone: string | null
           region: string | null
@@ -313,6 +314,7 @@ export type Database = {
           full_name: string
           google_maps_url?: string | null
           id?: string
+          is_approved?: boolean
           minimum_order_amount?: number | null
           phone?: string | null
           region?: string | null
@@ -329,6 +331,7 @@ export type Database = {
           full_name?: string
           google_maps_url?: string | null
           id?: string
+          is_approved?: boolean
           minimum_order_amount?: number | null
           phone?: string | null
           region?: string | null
@@ -373,6 +376,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_user_approved: { Args: { _user_id: string }; Returns: boolean }
       supplier_has_order_items: {
         Args: { _order_id: string; _supplier_id: string }
         Returns: boolean
