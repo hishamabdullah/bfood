@@ -34,8 +34,8 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
+        {/* Logo - goes to dashboard if logged in, otherwise home */}
+        <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
             <span className="text-xl font-bold text-primary-foreground">B</span>
           </div>
