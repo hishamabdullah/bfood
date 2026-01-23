@@ -1,0 +1,302 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast";
+
+export type AdminOrder = Tables<"orders"> & {
+  restaurant_profile?: Tables<"profiles"> | null;
+  branch?: Tables<"branches"> | null;
+  items?: (Tables<"order_items"> & {
+    product?: Tables<"products"> | null;
+    supplier_profile?: Tables<"profiles"> | null;
+  })[];
+};
+
+export type AdminUser = Tables<"profiles"> & {
+  role?: string;
+  email?: string;
+};
+
+// جلب جميع الطلبات للمدير
+export const useAdminOrders = () => {
+  return useQuery({
+    queryKey: ["admin-orders"],
+    queryFn: async () => {
+      const { data: orders, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          branch:branches(*)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // جلب معلومات المطاعم
+      const restaurantIds = [...new Set(orders?.map(o => o.restaurant_id) || [])];
+      const { data: restaurantProfiles } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("user_id", restaurantIds);
+
+      // جلب عناصر الطلبات
+      const orderIds = orders?.map(o => o.id) || [];
+      const { data: orderItems } = await supabase
+        .from("order_items")
+        .select(`
+          *,
+          product:products(*)
+        `)
+        .in("order_id", orderIds);
+
+      // جلب ملفات الموردين
+      const supplierIds = [...new Set(orderItems?.map(i => i.supplier_id) || [])];
+      const { data: supplierProfiles } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("user_id", supplierIds);
+
+      // دمج البيانات
+      const enrichedOrders = orders?.map(order => ({
+        ...order,
+        restaurant_profile: restaurantProfiles?.find(p => p.user_id === order.restaurant_id) || null,
+        items: orderItems
+          ?.filter(item => item.order_id === order.id)
+          .map(item => ({
+            ...item,
+            supplier_profile: supplierProfiles?.find(p => p.user_id === item.supplier_id) || null,
+          })) || [],
+      })) || [];
+
+      return enrichedOrders as AdminOrder[];
+    },
+  });
+};
+
+// جلب جميع المستخدمين
+export const useAdminUsers = () => {
+  return useQuery({
+    queryKey: ["admin-users"],
+    queryFn: async () => {
+      const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // جلب الأدوار
+      const userIds = profiles?.map(p => p.user_id) || [];
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("*")
+        .in("user_id", userIds);
+
+      const enrichedUsers = profiles?.map(profile => ({
+        ...profile,
+        role: roles?.find(r => r.user_id === profile.user_id)?.role || "unknown",
+      })) || [];
+
+      return enrichedUsers as AdminUser[];
+    },
+  });
+};
+
+// إحصائيات المدير
+export const useAdminStats = () => {
+  return useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
+      // عدد الطلبات
+      const { count: ordersCount } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true });
+
+      // عدد المنتجات
+      const { count: productsCount } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true });
+
+      // جلب الأدوار لحساب المستخدمين
+      const { data: allRoles } = await supabase
+        .from("user_roles")
+        .select("role");
+
+      const restaurantsCount = allRoles?.filter(r => r.role === "restaurant").length || 0;
+      const suppliersCount = allRoles?.filter(r => r.role === "supplier").length || 0;
+
+      // إجمالي المبيعات
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("total_amount, delivery_fee");
+
+      const totalSales = orders?.reduce((sum, o) => sum + Number(o.total_amount) + Number(o.delivery_fee), 0) || 0;
+
+      return {
+        ordersCount: ordersCount || 0,
+        productsCount: productsCount || 0,
+        restaurantsCount,
+        suppliersCount,
+        totalSales,
+      };
+    },
+  });
+};
+
+// إدارة التصنيفات
+export const useAdminCategories = () => {
+  return useQuery({
+    queryKey: ["admin-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useCreateCategory = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (category: { name: string; icon?: string }) => {
+      const { data, error } = await supabase
+        .from("categories")
+        .insert(category)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast({ title: "تم إضافة التصنيف بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ في إضافة التصنيف", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+export const useUpdateCategory = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...category }: { id: string; name?: string; icon?: string }) => {
+      const { data, error } = await supabase
+        .from("categories")
+        .update(category)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast({ title: "تم تحديث التصنيف بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ في تحديث التصنيف", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+export const useDeleteCategory = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (categoryId: string) => {
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", categoryId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast({ title: "تم حذف التصنيف بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ في حذف التصنيف", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+// تسجيل مستخدم جديد (مطعم أو مورد)
+export const useAdminCreateUser = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (userData: {
+      email: string;
+      password: string;
+      fullName: string;
+      businessName: string;
+      phone: string;
+      role: "restaurant" | "supplier";
+      region?: string;
+      supplyCategories?: string[];
+    }) => {
+      // إنشاء المستخدم عبر Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("فشل في إنشاء المستخدم");
+
+      // إنشاء الملف الشخصي
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          user_id: authData.user.id,
+          full_name: userData.fullName,
+          business_name: userData.businessName,
+          phone: userData.phone,
+          region: userData.region || null,
+          supply_categories: userData.supplyCategories || null,
+        });
+
+      if (profileError) throw profileError;
+
+      // إنشاء الدور
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: authData.user.id,
+          role: userData.role,
+        });
+
+      if (roleError) throw roleError;
+
+      return authData.user;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      toast({ title: "تم تسجيل المستخدم بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ في تسجيل المستخدم", description: error.message, variant: "destructive" });
+    },
+  });
+};
