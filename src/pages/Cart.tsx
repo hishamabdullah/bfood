@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,11 @@ import { useCart } from "@/contexts/CartContext";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useProductTranslation } from "@/hooks/useProductTranslation";
 
 const Cart = () => {
+  const { t } = useTranslation();
+  const { getProductName } = useProductTranslation();
   const { items, updateQuantity, removeItem, clearCart, getSubtotal, getItemsBySupplier } = useCart();
   const { user, userRole } = useAuth();
   const createOrder = useCreateOrder();
@@ -23,7 +27,6 @@ const Cart = () => {
   const subtotal = getSubtotal();
   const groupedBySupplier = getItemsBySupplier();
   
-  // حساب إجمالي رسوم التوصيل من المنتجات
   const deliveryFee = items.reduce((total, item) => {
     const productDeliveryFee = item.product.delivery_fee || 0;
     return total + productDeliveryFee;
@@ -32,18 +35,18 @@ const Cart = () => {
 
   const handleCheckout = async () => {
     if (!user) {
-      toast.error("يجب تسجيل الدخول أولاً");
+      toast.error(t("cart.loginRequired") || "يجب تسجيل الدخول أولاً");
       navigate("/login");
       return;
     }
 
     if (userRole !== "restaurant") {
-      toast.error("فقط المطاعم يمكنها إنشاء طلبات");
+      toast.error(t("cart.restaurantOnly") || "فقط المطاعم يمكنها إنشاء طلبات");
       return;
     }
 
     if (items.length === 0) {
-      toast.error("السلة فارغة");
+      toast.error(t("cart.empty"));
       return;
     }
 
@@ -55,11 +58,11 @@ const Cart = () => {
       });
       
       clearCart();
-      toast.success("تم إنشاء الطلب بنجاح!");
+      toast.success(t("cart.orderSuccess") || "تم إنشاء الطلب بنجاح!");
       navigate("/dashboard");
     } catch (error) {
       console.error("Error creating order:", error);
-      toast.error("حدث خطأ أثناء إنشاء الطلب");
+      toast.error(t("cart.orderError") || "حدث خطأ أثناء إنشاء الطلب");
     }
   };
 
@@ -72,11 +75,11 @@ const Cart = () => {
             <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
               <ShoppingBag className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">السلة فارغة</h2>
-            <p className="text-muted-foreground mb-6">لم تضف أي منتجات بعد</p>
+            <h2 className="text-2xl font-bold mb-2">{t("cart.empty")}</h2>
+            <p className="text-muted-foreground mb-6">{t("cart.emptyMessage")}</p>
             <Link to="/products">
               <Button variant="hero">
-                تصفح المنتجات
+                {t("cart.browseProducts")}
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
@@ -92,7 +95,7 @@ const Cart = () => {
       <Header />
       <main className="flex-1">
         <div className="container py-8">
-          <h1 className="text-3xl font-bold mb-8">سلة المشتريات</h1>
+          <h1 className="text-3xl font-bold mb-8">{t("cart.title")}</h1>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
@@ -113,7 +116,7 @@ const Cart = () => {
                           {item.product.image_url ? (
                             <img 
                               src={item.product.image_url} 
-                              alt={item.product.name}
+                              alt={getProductName(item.product)}
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -125,11 +128,11 @@ const Cart = () => {
                         <div className="flex-1 min-w-0">
                           <Link to={`/products/${item.product.id}`}>
                             <h4 className="font-semibold mb-1 hover:text-primary transition-colors">
-                              {item.product.name}
+                              {getProductName(item.product)}
                             </h4>
                           </Link>
                           <p className="text-sm text-muted-foreground mb-2">
-                            {item.product.price} ر.س / {item.product.unit}
+                            {item.product.price} {t("common.sar")} / {item.product.unit}
                           </p>
 
                           {/* Quantity Controls */}
@@ -157,7 +160,7 @@ const Cart = () => {
                         {/* Price & Remove */}
                         <div className="text-left">
                           <p className="font-bold text-lg text-primary">
-                            {(item.product.price * item.quantity).toFixed(2)} ر.س
+                            {(item.product.price * item.quantity).toFixed(2)} {t("common.sar")}
                           </p>
                           <Button
                             variant="ghost"
@@ -178,26 +181,23 @@ const Cart = () => {
             {/* Order Summary */}
             <div className="lg:col-span-1">
               <div className="bg-card rounded-2xl border border-border p-6 sticky top-24 space-y-6">
-                <h3 className="font-bold text-xl">ملخص الطلب</h3>
+                <h3 className="font-bold text-xl">{t("cart.orderSummary")}</h3>
 
                 {/* Delivery Address / Google Maps */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">عنوان التوصيل أو رابط قوقل ماب</label>
+                  <label className="block text-sm font-medium mb-2">{t("cart.deliveryAddress")}</label>
                   <Input
-                    placeholder="أدخل عنوان التوصيل أو رابط قوقل ماب..."
+                    placeholder={t("cart.deliveryAddress")}
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    يمكنك إدخال العنوان أو نسخ رابط موقعك من قوقل ماب
-                  </p>
                 </div>
 
                 {/* Notes */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">ملاحظات</label>
+                  <label className="block text-sm font-medium mb-2">{t("cart.notes")}</label>
                   <Textarea
-                    placeholder="أي ملاحظات إضافية..."
+                    placeholder={t("cart.notesPlaceholder")}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
@@ -206,18 +206,18 @@ const Cart = () => {
 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">المجموع الفرعي</span>
-                    <span>{subtotal.toFixed(2)} ر.س</span>
+                    <span className="text-muted-foreground">{t("cart.subtotal")}</span>
+                    <span>{subtotal.toFixed(2)} {t("common.sar")}</span>
                   </div>
                   {deliveryFee > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">رسوم التوصيل</span>
-                      <span>{deliveryFee.toFixed(2)} ر.س</span>
+                      <span className="text-muted-foreground">{t("cart.deliveryFee")}</span>
+                      <span>{deliveryFee.toFixed(2)} {t("common.sar")}</span>
                     </div>
                   )}
                   <div className="border-t border-border pt-4 flex justify-between">
-                    <span className="font-bold">الإجمالي</span>
-                    <span className="font-bold text-xl text-primary">{total.toFixed(2)} ر.س</span>
+                    <span className="font-bold">{t("cart.total")}</span>
+                    <span className="font-bold text-xl text-primary">{total.toFixed(2)} {t("common.sar")}</span>
                   </div>
                 </div>
 
@@ -228,12 +228,12 @@ const Cart = () => {
                   onClick={handleCheckout}
                   disabled={createOrder.isPending}
                 >
-                  {createOrder.isPending ? "جاري إنشاء الطلب..." : "إتمام الطلب"}
+                  {createOrder.isPending ? t("cart.processingOrder") : t("cart.checkout")}
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  سيتم تقسيم الطلب تلقائياً حسب الموردين
+                  {t("cart.orderSplitNote")}
                 </p>
               </div>
             </div>
