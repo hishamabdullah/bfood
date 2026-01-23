@@ -8,7 +8,7 @@ import { Shield, ShoppingBag, Users, FolderTree, Loader2 } from "lucide-react";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOrdersTable from "@/components/admin/AdminOrdersTable";
 import AdminCategoriesManager from "@/components/admin/AdminCategoriesManager";
-import AdminUsersTable from "@/components/admin/AdminUsersTable";
+import AdminUsersManager from "@/components/admin/AdminUsersManager";
 
 const Admin = () => {
   const { user, userRole, loading } = useAuth();
@@ -75,7 +75,7 @@ const Admin = () => {
             </TabsContent>
 
             <TabsContent value="users">
-              <AdminUsersTable />
+              <AdminUsersManager />
             </TabsContent>
 
             <TabsContent value="categories">
