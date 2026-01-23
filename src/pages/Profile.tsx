@@ -53,6 +53,8 @@ const Profile = () => {
     google_maps_url: "",
     region: "",
     supply_categories: [] as string[],
+    minimum_order_amount: 0,
+    default_delivery_fee: 0,
   });
 
   useEffect(() => {
@@ -88,6 +90,8 @@ const Profile = () => {
           google_maps_url: data.google_maps_url || "",
           region: data.region || "",
           supply_categories: data.supply_categories || [],
+          minimum_order_amount: data.minimum_order_amount || 0,
+          default_delivery_fee: data.default_delivery_fee || 0,
         });
       }
     } catch (error) {
@@ -131,6 +135,8 @@ const Profile = () => {
           google_maps_url: profileData.google_maps_url,
           region: profileData.region || null,
           supply_categories: profileData.supply_categories.length > 0 ? profileData.supply_categories : null,
+          minimum_order_amount: profileData.minimum_order_amount || 0,
+          default_delivery_fee: profileData.default_delivery_fee || 0,
         })
         .eq("user_id", user.id);
 
@@ -366,6 +372,46 @@ const Profile = () => {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Minimum Order Amount - For suppliers */}
+            {isSupplier && (
+              <div className="space-y-2">
+                <Label htmlFor="minimum_order_amount">الحد الأدنى للطلب (ر.س)</Label>
+                <Input
+                  id="minimum_order_amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0"
+                  value={profileData.minimum_order_amount}
+                  onChange={(e) => setProfileData({ ...profileData, minimum_order_amount: parseFloat(e.target.value) || 0 })}
+                  disabled={!isOwnProfile}
+                />
+                <p className="text-xs text-muted-foreground">
+                  إذا كان الطلب أقل من هذا المبلغ سيتم تطبيق رسوم التوصيل
+                </p>
+              </div>
+            )}
+
+            {/* Default Delivery Fee - For suppliers */}
+            {isSupplier && (
+              <div className="space-y-2">
+                <Label htmlFor="default_delivery_fee">رسوم التوصيل الافتراضية (ر.س)</Label>
+                <Input
+                  id="default_delivery_fee"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0"
+                  value={profileData.default_delivery_fee}
+                  onChange={(e) => setProfileData({ ...profileData, default_delivery_fee: parseFloat(e.target.value) || 0 })}
+                  disabled={!isOwnProfile}
+                />
+                <p className="text-xs text-muted-foreground">
+                  رسوم توصيل تطبق إذا كان الطلب أقل من الحد الأدنى
+                </p>
               </div>
             )}
 

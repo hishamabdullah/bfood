@@ -112,6 +112,7 @@ export type Database = {
       order_items: {
         Row: {
           created_at: string
+          delivery_fee: number | null
           id: string
           order_id: string
           product_id: string
@@ -122,6 +123,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delivery_fee?: number | null
           id?: string
           order_id: string
           product_id: string
@@ -132,6 +134,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delivery_fee?: number | null
           id?: string
           order_id?: string
           product_id?: string
@@ -290,9 +293,11 @@ export type Database = {
           bio: string | null
           business_name: string
           created_at: string
+          default_delivery_fee: number | null
           full_name: string
           google_maps_url: string | null
           id: string
+          minimum_order_amount: number | null
           phone: string | null
           region: string | null
           supply_categories: string[] | null
@@ -304,9 +309,11 @@ export type Database = {
           bio?: string | null
           business_name: string
           created_at?: string
+          default_delivery_fee?: number | null
           full_name: string
           google_maps_url?: string | null
           id?: string
+          minimum_order_amount?: number | null
           phone?: string | null
           region?: string | null
           supply_categories?: string[] | null
@@ -318,9 +325,11 @@ export type Database = {
           bio?: string | null
           business_name?: string
           created_at?: string
+          default_delivery_fee?: number | null
           full_name?: string
           google_maps_url?: string | null
           id?: string
+          minimum_order_amount?: number | null
           phone?: string | null
           region?: string | null
           supply_categories?: string[] | null

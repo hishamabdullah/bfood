@@ -1,18 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Package } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Package, Truck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, type SupplierGroup } from "@/contexts/CartContext";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
 import { BranchSelector } from "@/components/cart/BranchSelector";
 import { useBranches } from "@/hooks/useBranches";
+
+// Helper to calculate supplier delivery fee
+const calculateSupplierDeliveryFee = (group: SupplierGroup) => {
+  const supplierProfile = group.supplierProfile;
+  const minimumOrderAmount = supplierProfile?.minimum_order_amount || 0;
+  const defaultDeliveryFee = supplierProfile?.default_delivery_fee || 0;
+  
+  // Calculate supplier subtotal
+  const supplierSubtotal = group.items.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  );
+  
+  // If below minimum, apply delivery fee
+  if (supplierSubtotal < minimumOrderAmount) {
+    return defaultDeliveryFee;
+  }
+  return 0;
+};
 
 const Cart = () => {
   const { t } = useTranslation();
@@ -46,11 +65,33 @@ const Cart = () => {
   const subtotal = getSubtotal();
   const groupedBySupplier = getItemsBySupplier();
   
-  const deliveryFee = items.reduce((total, item) => {
-    const productDeliveryFee = item.product.delivery_fee || 0;
-    return total + productDeliveryFee;
-  }, 0);
-  const total = subtotal + deliveryFee;
+  // Calculate delivery fees per supplier
+  const supplierDeliveryFees = useMemo(() => {
+    const fees: Record<string, { fee: number; reason: string }> = {};
+    Object.entries(groupedBySupplier).forEach(([supplierId, group]) => {
+      const supplierProfile = group.supplierProfile;
+      const minimumOrderAmount = supplierProfile?.minimum_order_amount || 0;
+      const defaultDeliveryFee = supplierProfile?.default_delivery_fee || 0;
+      
+      const supplierSubtotal = group.items.reduce(
+        (sum, item) => sum + item.product.price * item.quantity,
+        0
+      );
+      
+      if (minimumOrderAmount > 0 && supplierSubtotal < minimumOrderAmount) {
+        fees[supplierId] = {
+          fee: defaultDeliveryFee,
+          reason: `أقل من الحد الأدنى (${minimumOrderAmount} ر.س)`,
+        };
+      } else {
+        fees[supplierId] = { fee: 0, reason: "" };
+      }
+    });
+    return fees;
+  }, [groupedBySupplier]);
+  
+  const totalDeliveryFee = Object.values(supplierDeliveryFees).reduce((sum, { fee }) => sum + fee, 0);
+  const total = subtotal + totalDeliveryFee;
 
   const handleCheckout = async () => {
     if (!user) {
@@ -75,6 +116,7 @@ const Cart = () => {
         deliveryAddress: deliveryAddress || undefined,
         notes: notes || undefined,
         branchId: selectedBranchId || undefined,
+        supplierDeliveryFees,
       });
       
       clearCart();
@@ -120,82 +162,113 @@ const Cart = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {Object.entries(groupedBySupplier).map(([supplier, supplierItems]) => (
-                <div key={supplier} className="bg-card rounded-2xl border border-border overflow-hidden">
-                  {/* Supplier Header */}
-                  <div className="bg-muted/50 px-6 py-3 border-b border-border">
-                    <h3 className="font-semibold">{supplier}</h3>
-                  </div>
+              {Object.entries(groupedBySupplier).map(([supplierId, group]) => {
+                const supplierFeeInfo = supplierDeliveryFees[supplierId];
+                const supplierSubtotal = group.items.reduce(
+                  (sum, item) => sum + item.product.price * item.quantity,
+                  0
+                );
+                
+                return (
+                  <div key={supplierId} className="bg-card rounded-2xl border border-border overflow-hidden">
+                    {/* Supplier Header */}
+                    <div className="bg-muted/50 px-6 py-3 border-b border-border">
+                      <h3 className="font-semibold">{group.supplierName}</h3>
+                    </div>
 
-                  {/* Items */}
-                  <div className="divide-y divide-border">
-                    {supplierItems.map((item) => (
-                      <div key={item.id} className="p-4 flex gap-4">
-                        {/* Image */}
-                        <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                          {item.product.image_url ? (
-                            <img 
-                              src={item.product.image_url} 
-                              alt={getProductName(item.product)}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <Package className="h-8 w-8 text-muted-foreground" />
-                          )}
-                        </div>
+                    {/* Items */}
+                    <div className="divide-y divide-border">
+                      {group.items.map((item) => (
+                        <div key={item.id} className="p-4 flex gap-4">
+                          {/* Image */}
+                          <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                            {item.product.image_url ? (
+                              <img 
+                                src={item.product.image_url} 
+                                alt={getProductName(item.product)}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Package className="h-8 w-8 text-muted-foreground" />
+                            )}
+                          </div>
 
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <Link to={`/products/${item.product.id}`}>
-                            <h4 className="font-semibold mb-1 hover:text-primary transition-colors">
-                              {getProductName(item.product)}
-                            </h4>
-                          </Link>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {item.product.price} {t("common.sar")} / {item.product.unit}
-                          </p>
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <Link to={`/products/${item.product.id}`}>
+                              <h4 className="font-semibold mb-1 hover:text-primary transition-colors">
+                                {getProductName(item.product)}
+                              </h4>
+                            </Link>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {item.product.price} {t("common.sar")} / {item.product.unit}
+                            </p>
 
-                          {/* Quantity Controls */}
-                          <div className="flex items-center gap-2">
+                            {/* Quantity Controls */}
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-12 text-center font-medium">{item.quantity}</span>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Price & Remove */}
+                          <div className="text-left">
+                            <p className="font-bold text-lg text-primary">
+                              {(item.product.price * item.quantity).toFixed(2)} {t("common.sar")}
+                            </p>
                             <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive mt-2"
+                              onClick={() => removeItem(item.id)}
                             >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="w-12 text-center font-medium">{item.quantity}</span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            >
-                              <Plus className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
+                      ))}
+                    </div>
 
-                        {/* Price & Remove */}
-                        <div className="text-left">
-                          <p className="font-bold text-lg text-primary">
-                            {(item.product.price * item.quantity).toFixed(2)} {t("common.sar")}
-                          </p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive mt-2"
-                            onClick={() => removeItem(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                    {/* Supplier Footer with Subtotal and Delivery Fee */}
+                    <div className="bg-muted/30 px-6 py-3 border-t border-border space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>المجموع الجزئي</span>
+                        <span>{supplierSubtotal.toFixed(2)} {t("common.sar")}</span>
                       </div>
-                    ))}
+                      {supplierFeeInfo && supplierFeeInfo.fee > 0 && (
+                        <div className="flex justify-between text-sm text-amber-600">
+                          <span className="flex items-center gap-1">
+                            <Truck className="h-4 w-4" />
+                            رسوم التوصيل ({supplierFeeInfo.reason})
+                          </span>
+                          <span>{supplierFeeInfo.fee.toFixed(2)} {t("common.sar")}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold pt-2 border-t border-border">
+                        <span>إجمالي {group.supplierName}</span>
+                        <span className="text-primary">
+                          {(supplierSubtotal + (supplierFeeInfo?.fee || 0)).toFixed(2)} {t("common.sar")}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Order Summary */}
@@ -227,10 +300,10 @@ const Cart = () => {
                     <span className="text-muted-foreground">{t("cart.subtotal")}</span>
                     <span>{subtotal.toFixed(2)} {t("common.sar")}</span>
                   </div>
-                  {deliveryFee > 0 && (
+                  {totalDeliveryFee > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("cart.deliveryFee")}</span>
-                      <span>{deliveryFee.toFixed(2)} {t("common.sar")}</span>
+                      <span>{totalDeliveryFee.toFixed(2)} {t("common.sar")}</span>
                     </div>
                   )}
                   <div className="border-t border-border pt-4 flex justify-between">
