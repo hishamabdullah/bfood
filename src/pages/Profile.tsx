@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { saudiRegions, supplyCategories } from "@/data/saudiRegions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
+import { BranchesManager } from "@/components/branches/BranchesManager";
 
 const Profile = () => {
   const { id } = useParams();
@@ -403,6 +404,13 @@ const Profile = () => {
               </Button>
             )}
           </div>
+
+          {/* Branches Manager - For restaurants only */}
+          {isOwnProfile && isRestaurant && (
+            <div className="mt-8">
+              <BranchesManager />
+            </div>
+          )}
         </div>
       </main>
       <Footer />

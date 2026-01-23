@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Package } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,6 +11,8 @@ import { useCreateOrder } from "@/hooks/useOrders";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
+import { BranchSelector } from "@/components/cart/BranchSelector";
+import { useBranches } from "@/hooks/useBranches";
 
 const Cart = () => {
   const { t } = useTranslation();
@@ -20,9 +21,27 @@ const Cart = () => {
   const { user, userRole } = useAuth();
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
+  const { data: branches = [] } = useBranches();
   
+  const [selectedBranchId, setSelectedBranchId] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Auto-select default branch when branches load
+  useEffect(() => {
+    if (branches.length > 0 && !selectedBranchId) {
+      const defaultBranch = branches.find((b) => b.is_default);
+      if (defaultBranch) {
+        setSelectedBranchId(defaultBranch.id);
+        setDeliveryAddress(defaultBranch.google_maps_url || defaultBranch.address || "");
+      }
+    }
+  }, [branches, selectedBranchId]);
+
+  const handleBranchChange = (branchId: string, address: string) => {
+    setSelectedBranchId(branchId);
+    setDeliveryAddress(address);
+  };
 
   const subtotal = getSubtotal();
   const groupedBySupplier = getItemsBySupplier();
@@ -55,6 +74,7 @@ const Cart = () => {
         items,
         deliveryAddress: deliveryAddress || undefined,
         notes: notes || undefined,
+        branchId: selectedBranchId || undefined,
       });
       
       clearCart();
@@ -183,15 +203,13 @@ const Cart = () => {
               <div className="bg-card rounded-2xl border border-border p-6 sticky top-24 space-y-6">
                 <h3 className="font-bold text-xl">{t("cart.orderSummary")}</h3>
 
-                {/* Delivery Address / Google Maps */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">{t("cart.deliveryAddress")}</label>
-                  <Input
-                    placeholder={t("cart.deliveryAddress")}
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                  />
-                </div>
+                {/* Branch Selector */}
+                <BranchSelector
+                  selectedBranchId={selectedBranchId}
+                  onBranchChange={handleBranchChange}
+                  customAddress={deliveryAddress}
+                  onCustomAddressChange={setDeliveryAddress}
+                />
 
                 {/* Notes */}
                 <div>
