@@ -78,6 +78,7 @@ interface GroupedOrder {
   notes?: string;
   status: string; // Overall status based on items
   branch?: any; // Branch info
+  deliveryFee: number; // Supplier-specific delivery fee
 }
 
 export default function SupplierOrders() {
@@ -105,9 +106,11 @@ export default function SupplierOrders() {
           notes: item.order?.notes || undefined,
           status: item.status, // Initialize with first item status
           branch: item.order?.branch || undefined,
+          deliveryFee: 0,
         };
       }
       grouped[orderId].items.push(item);
+      grouped[orderId].deliveryFee += item.delivery_fee || 0;
     });
 
     // Determine overall status (use most common or first item's status)
@@ -147,8 +150,9 @@ export default function SupplierOrders() {
   };
 
   // Calculate order total for supplier's items only
-  const calculateOrderTotal = (items: any[]) => {
-    return items.reduce((total, item) => total + item.unit_price * item.quantity, 0);
+  const calculateOrderTotal = (items: any[], deliveryFee: number = 0) => {
+    const itemsTotal = items.reduce((total, item) => total + item.unit_price * item.quantity, 0);
+    return itemsTotal + deliveryFee;
   };
 
   return (
@@ -366,11 +370,26 @@ export default function SupplierOrders() {
                       </div>
 
                       {/* Order Total */}
-                      <div className="flex justify-between items-center pt-4 border-t">
-                        <span className="font-bold text-lg">إجمالي الطلب:</span>
-                        <span className="font-bold text-xl text-primary">
-                          {calculateOrderTotal(order.items).toFixed(2)} ر.س
-                        </span>
+                      <div className="pt-4 border-t space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">مجموع المنتجات:</span>
+                          <span>{(calculateOrderTotal(order.items, 0)).toFixed(2)} ر.س</span>
+                        </div>
+                        {order.deliveryFee > 0 && (
+                          <div className="flex justify-between items-center text-sm text-amber-600">
+                            <span className="flex items-center gap-1">
+                              <Truck className="h-4 w-4" />
+                              رسوم التوصيل:
+                            </span>
+                            <span>{order.deliveryFee.toFixed(2)} ر.س</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center pt-2 border-t">
+                          <span className="font-bold text-lg">إجمالي الطلب:</span>
+                          <span className="font-bold text-xl text-primary">
+                            {calculateOrderTotal(order.items, order.deliveryFee).toFixed(2)} ر.س
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

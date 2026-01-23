@@ -8,6 +8,7 @@ interface CreateOrderParams {
   deliveryAddress?: string;
   notes?: string;
   branchId?: string;
+  supplierDeliveryFees?: Record<string, { fee: number; reason: string }>;
 }
 
 export const useCreateOrder = () => {
@@ -15,7 +16,7 @@ export const useCreateOrder = () => {
   const { user, profile } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ items, deliveryAddress, notes, branchId }: CreateOrderParams) => {
+    mutationFn: async ({ items, deliveryAddress, notes, branchId, supplierDeliveryFees = {} }: CreateOrderParams) => {
       if (!user) throw new Error("يجب تسجيل الدخول أولاً");
 
       // Calculate total
@@ -23,12 +24,13 @@ export const useCreateOrder = () => {
         (total, item) => total + item.product.price * item.quantity,
         0
       );
-      // حساب رسوم التوصيل من المنتجات
-      const deliveryFee = items.reduce(
-        (total, item) => total + (item.product.delivery_fee || 0),
+      
+      // حساب رسوم التوصيل من الحد الأدنى للموردين
+      const totalDeliveryFee = Object.values(supplierDeliveryFees).reduce(
+        (total, { fee }) => total + fee,
         0
       );
-      const totalAmount = subtotal + deliveryFee;
+      const totalAmount = subtotal + totalDeliveryFee;
 
       // Create order
       const { data: order, error: orderError } = await supabase
@@ -36,7 +38,7 @@ export const useCreateOrder = () => {
         .insert({
           restaurant_id: user.id,
           total_amount: totalAmount,
-          delivery_fee: deliveryFee,
+          delivery_fee: totalDeliveryFee,
           delivery_address: deliveryAddress,
           notes,
           status: "pending",
@@ -47,15 +49,35 @@ export const useCreateOrder = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        product_id: item.product.id,
-        supplier_id: item.product.supplier_id,
-        quantity: item.quantity,
-        unit_price: item.product.price,
-        status: "pending",
-      }));
+      // Group items by supplier
+      const itemsBySupplier: Record<string, CartItem[]> = {};
+      items.forEach((item) => {
+        const supplierId = item.product.supplier_id;
+        if (!itemsBySupplier[supplierId]) {
+          itemsBySupplier[supplierId] = [];
+        }
+        itemsBySupplier[supplierId].push(item);
+      });
+
+      // Create order items with supplier-specific delivery fee
+      const orderItems = items.map((item) => {
+        const supplierId = item.product.supplier_id;
+        // Calculate per-item delivery fee proportionally
+        const supplierItems = itemsBySupplier[supplierId];
+        const supplierTotalFee = supplierDeliveryFees[supplierId]?.fee || 0;
+        // Distribute delivery fee across first item of each supplier for simplicity
+        const isFirstItem = supplierItems[0].product.id === item.product.id;
+        
+        return {
+          order_id: order.id,
+          product_id: item.product.id,
+          supplier_id: supplierId,
+          quantity: item.quantity,
+          unit_price: item.product.price,
+          status: "pending",
+          delivery_fee: isFirstItem ? supplierTotalFee : 0,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from("order_items")

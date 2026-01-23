@@ -10,6 +10,7 @@ export type OrderItem = Tables<"order_items"> & {
 
 export type Order = Tables<"orders"> & {
   order_items?: OrderItem[];
+  branch?: Tables<"branches"> | null;
 };
 
 export const useRestaurantOrders = () => {
@@ -24,6 +25,7 @@ export const useRestaurantOrders = () => {
         .from("orders")
         .select(`
           *,
+          branch:branches(*),
           order_items (
             *,
             product:products (

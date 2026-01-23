@@ -17,7 +17,9 @@ import {
   CalendarDays,
   RotateCcw,
   User,
-  Store
+  Store,
+  MapPin,
+  ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -44,21 +46,35 @@ const getStatusConfig = (status: string) => {
   }
 };
 
-// Group order items by supplier
+// Group order items by supplier with status and delivery fee
 const groupItemsBySupplier = (orderItems: any[]) => {
-  const grouped: Record<string, { supplier: any; items: any[] }> = {};
+  const grouped: Record<string, { 
+    supplier: any; 
+    items: any[]; 
+    status: string;
+    deliveryFee: number;
+    subtotal: number;
+  }> = {};
   
   orderItems?.forEach((item) => {
     const supplierId = item.supplier_id;
-    const supplierName = item.supplier_profile?.business_name || "مورد غير معروف";
     
     if (!grouped[supplierId]) {
       grouped[supplierId] = {
         supplier: item.supplier_profile,
         items: [],
+        status: item.status || "pending",
+        deliveryFee: 0,
+        subtotal: 0,
       };
     }
     grouped[supplierId].items.push(item);
+    grouped[supplierId].deliveryFee += item.delivery_fee || 0;
+    grouped[supplierId].subtotal += item.unit_price * item.quantity;
+    // Use the latest status from items
+    if (item.status) {
+      grouped[supplierId].status = item.status;
+    }
   });
   
   return Object.values(grouped);
@@ -140,8 +156,6 @@ const Orders = () => {
           {orders && orders.length > 0 ? (
             <div className="space-y-6">
               {orders.map((order) => {
-                const statusConfig = getStatusConfig(order.status);
-                const StatusIcon = statusConfig.icon;
                 const groupedItems = groupItemsBySupplier(order.order_items);
                 
                 return (
@@ -152,10 +166,6 @@ const Orders = () => {
                           <CardTitle className="text-lg">
                             طلب #{order.id.slice(0, 8)}
                           </CardTitle>
-                          <Badge variant={statusConfig.variant} className="gap-1">
-                            <StatusIcon className="h-3 w-3" />
-                            {statusConfig.label}
-                          </Badge>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -176,64 +186,119 @@ const Orders = () => {
                     </CardHeader>
                     <CardContent className="pt-6">
                       <div className="space-y-6">
-                        {/* Grouped by Supplier */}
-                        {groupedItems.map((group, index) => (
-                          <div key={index} className="border rounded-xl overflow-hidden">
-                            {/* Supplier Header */}
-                            <div className="bg-muted/30 px-4 py-3 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Store className="h-4 w-4 text-primary" />
-                                <span className="font-semibold">
-                                  {group.supplier?.business_name || "مورد غير معروف"}
-                                </span>
+                        {/* Grouped by Supplier - Each with separate status */}
+                        {groupedItems.map((group, index) => {
+                          const statusConfig = getStatusConfig(group.status);
+                          const StatusIcon = statusConfig.icon;
+                          const supplierTotal = group.subtotal + group.deliveryFee;
+                          
+                          return (
+                            <div key={index} className="border rounded-xl overflow-hidden">
+                              {/* Supplier Header with Status */}
+                              <div className="bg-muted/30 px-4 py-3 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Store className="h-4 w-4 text-primary" />
+                                  <span className="font-semibold">
+                                    {group.supplier?.business_name || "مورد غير معروف"}
+                                  </span>
+                                  <Badge variant={statusConfig.variant} className="gap-1 mr-2">
+                                    <StatusIcon className="h-3 w-3" />
+                                    {statusConfig.label}
+                                  </Badge>
+                                </div>
+                                {group.supplier?.user_id && (
+                                  <Link to={`/profile/${group.supplier.user_id}`}>
+                                    <Button variant="ghost" size="sm" className="gap-1 text-xs">
+                                      <User className="h-3 w-3" />
+                                      الملف الشخصي
+                                    </Button>
+                                  </Link>
+                                )}
                               </div>
-                              {group.supplier?.user_id && (
-                                <Link to={`/profile/${group.supplier.user_id}`}>
-                                  <Button variant="ghost" size="sm" className="gap-1 text-xs">
-                                    <User className="h-3 w-3" />
-                                    الملف الشخصي
-                                  </Button>
-                                </Link>
-                              )}
-                            </div>
-                            
-                            {/* Items */}
-                            <div className="divide-y">
-                              {group.items.map((item: any) => {
-                                return (
-                                  <div key={item.id} className="flex items-center justify-between p-4">
-                                    <div className="flex items-center gap-3">
-                                      {item.product?.image_url ? (
-                                        <img 
-                                          src={item.product.image_url} 
-                                          alt={item.product?.name}
-                                          className="w-12 h-12 rounded-lg object-cover"
-                                        />
-                                      ) : (
-                                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                                          <Package className="h-5 w-5 text-muted-foreground" />
+                              
+                              {/* Items */}
+                              <div className="divide-y">
+                                {group.items.map((item: any) => {
+                                  return (
+                                    <div key={item.id} className="flex items-center justify-between p-4">
+                                      <div className="flex items-center gap-3">
+                                        {item.product?.image_url ? (
+                                          <img 
+                                            src={item.product.image_url} 
+                                            alt={item.product?.name}
+                                            className="w-12 h-12 rounded-lg object-cover"
+                                          />
+                                        ) : (
+                                          <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                                            <Package className="h-5 w-5 text-muted-foreground" />
+                                          </div>
+                                        )}
+                                        <div>
+                                          <p className="font-medium">{item.product?.name || "منتج محذوف"}</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            {item.quantity} × {item.unit_price} ر.س
+                                          </p>
                                         </div>
-                                      )}
-                                      <div>
-                                        <p className="font-medium">{item.product?.name || "منتج محذوف"}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          {item.quantity} × {item.unit_price} ر.س
-                                        </p>
                                       </div>
+                                      <p className="font-medium">
+                                        {(item.quantity * item.unit_price).toFixed(2)} ر.س
+                                      </p>
                                     </div>
-                                    <p className="font-medium">
-                                      {(item.quantity * item.unit_price).toFixed(2)} ر.س
-                                    </p>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Supplier Footer with Subtotal and Delivery Fee */}
+                              <div className="bg-muted/20 px-4 py-3 border-t space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">المجموع الجزئي</span>
+                                  <span>{group.subtotal.toFixed(2)} ر.س</span>
+                                </div>
+                                {group.deliveryFee > 0 && (
+                                  <div className="flex justify-between text-amber-600">
+                                    <span className="flex items-center gap-1">
+                                      <Truck className="h-3 w-3" />
+                                      رسوم التوصيل
+                                    </span>
+                                    <span>{group.deliveryFee.toFixed(2)} ر.س</span>
                                   </div>
-                                );
-                              })}
+                                )}
+                                <div className="flex justify-between font-semibold pt-1 border-t border-border">
+                                  <span>إجمالي المورد</span>
+                                  <span className="text-primary">{supplierTotal.toFixed(2)} ر.س</span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
 
                         {/* Order Details */}
                         <div className="border-t pt-4 space-y-2">
-                          {order.delivery_address && (
+                          {/* Branch Info */}
+                          {order.branch && (
+                            <div className="p-3 bg-primary/5 rounded-lg border border-primary/10 mb-3">
+                              <p className="text-sm font-medium mb-1 flex items-center gap-1">
+                                <MapPin className="h-4 w-4 text-primary" />
+                                الفرع: {order.branch.name}
+                              </p>
+                              {order.branch.address && (
+                                <p className="text-sm text-muted-foreground mr-5">{order.branch.address}</p>
+                              )}
+                              {order.branch.google_maps_url && (
+                                <a 
+                                  href={order.branch.google_maps_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-primary hover:underline flex items-center gap-1 mr-5 mt-1"
+                                >
+                                  فتح في قوقل ماب
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+                          
+                          {order.delivery_address && !order.branch && (
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">عنوان التوصيل:</span>
                               <span className="max-w-[300px] text-left truncate">
@@ -259,7 +324,7 @@ const Orders = () => {
                             </div>
                           )}
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">رسوم التوصيل:</span>
+                            <span className="text-muted-foreground">رسوم التوصيل الإجمالية:</span>
                             <span>{order.delivery_fee} ر.س</span>
                           </div>
                           <div className="flex justify-between font-bold text-lg border-t pt-2">

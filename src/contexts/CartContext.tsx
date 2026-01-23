@@ -7,6 +7,13 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface SupplierGroup {
+  supplierId: string;
+  supplierName: string;
+  supplierProfile: any;
+  items: CartItem[];
+}
+
 interface CartContextType {
   items: CartItem[];
   addItem: (product: Product, quantity?: number) => void;
@@ -15,7 +22,7 @@ interface CartContextType {
   clearCart: () => void;
   getItemCount: () => number;
   getSubtotal: () => number;
-  getItemsBySupplier: () => Record<string, CartItem[]>;
+  getItemsBySupplier: () => Record<string, SupplierGroup>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -90,14 +97,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const getItemsBySupplier = () => {
     return items.reduce((acc, item) => {
       const supplierId = item.product.supplier_id;
-      const supplierName = item.product.supplier_profile?.business_name || "مورد غير معروف";
       
-      if (!acc[supplierName]) {
-        acc[supplierName] = [];
+      if (!acc[supplierId]) {
+        acc[supplierId] = {
+          supplierId,
+          supplierName: item.product.supplier_profile?.business_name || "مورد غير معروف",
+          supplierProfile: item.product.supplier_profile || null,
+          items: [],
+        };
       }
-      acc[supplierName].push(item);
+      acc[supplierId].items.push(item);
       return acc;
-    }, {} as Record<string, CartItem[]>);
+    }, {} as Record<string, { supplierId: string; supplierName: string; supplierProfile: any; items: CartItem[] }>);
   };
 
   return (
