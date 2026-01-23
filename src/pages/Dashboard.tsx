@@ -19,16 +19,20 @@ import { useSupplierStats } from "@/hooks/useSupplierStats";
 import { useRestaurantStats } from "@/hooks/useRestaurantStats";
 
 const Dashboard = () => {
-  const { user, userRole, profile, loading, signOut } = useAuth();
+  const { user, userRole, profile, loading, isApproved } = useAuth();
   const navigate = useNavigate();
   const { data: supplierStats, isLoading: supplierStatsLoading } = useSupplierStats();
   const { data: restaurantStats, isLoading: restaurantStatsLoading } = useRestaurantStats();
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/login");
+    if (!loading) {
+      if (!user) {
+        navigate("/login");
+      } else if (!isApproved && userRole !== "admin") {
+        navigate("/pending-approval");
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, isApproved, userRole, navigate]);
 
   if (loading) {
     return (
@@ -38,7 +42,7 @@ const Dashboard = () => {
     );
   }
 
-  if (!user) {
+  if (!user || (!isApproved && userRole !== "admin")) {
     return null;
   }
 

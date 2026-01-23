@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: UserRole | null;
+  isApproved: boolean;
   profile: {
     full_name: string;
     business_name: string;
@@ -39,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isApproved, setIsApproved] = useState<boolean>(false);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,17 +55,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (roleData) {
         setUserRole(roleData.role as UserRole);
+        // المدير يعتبر معتمداً تلقائياً
+        if (roleData.role === "admin") {
+          setIsApproved(true);
+        }
       }
 
       // جلب الملف الشخصي
       const { data: profileData } = await supabaseUntyped
         .from("profiles")
-        .select("full_name, business_name, phone, avatar_url")
+        .select("full_name, business_name, phone, avatar_url, is_approved")
         .eq("user_id", userId)
         .maybeSingle();
 
       if (profileData) {
-        setProfile(profileData as AuthContextType["profile"]);
+        setProfile({
+          full_name: profileData.full_name,
+          business_name: profileData.business_name,
+          phone: profileData.phone,
+          avatar_url: profileData.avatar_url,
+        });
+        setIsApproved(profileData.is_approved || roleData?.role === "admin");
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -85,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setUserRole(null);
           setProfile(null);
+          setIsApproved(false);
         }
         setLoading(false);
       }
@@ -178,6 +191,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setUserRole(null);
     setProfile(null);
+    setIsApproved(false);
   };
 
   return (
@@ -186,6 +200,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         session,
         userRole,
+        isApproved,
         profile,
         loading,
         signUp,
