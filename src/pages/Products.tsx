@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { useSupplierProfile } from "@/hooks/useSuppliers";
 import ProductCard from "@/components/products/ProductCard";
 
 const Products = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const supplierId = searchParams.get("supplier");
   
@@ -22,7 +24,6 @@ const Products = () => {
   const { data: supplierProfile } = useSupplierProfile(supplierId || "");
 
   const filteredProducts = products?.filter((product) => {
-    // فلتر حسب المورد إذا تم تحديده
     if (supplierId && product.supplier_id !== supplierId) {
       return false;
     }
@@ -46,10 +47,12 @@ const Products = () => {
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">
-              {supplierId && supplierProfile ? `منتجات ${supplierProfile.business_name}` : "المنتجات"}
+              {supplierId && supplierProfile 
+                ? t("products.supplierProducts", { name: supplierProfile.business_name }) 
+                : t("products.title")}
             </h1>
             <p className="text-muted-foreground">
-              {supplierId ? "تصفح منتجات هذا المورد" : "تصفح المنتجات من جميع الموردين"}
+              {supplierId ? t("products.subtitle") : t("products.subtitle")}
             </p>
             
             {/* Supplier Filter Badge */}
@@ -67,7 +70,7 @@ const Products = () => {
                 </div>
                 <Link to="/suppliers">
                   <Button variant="outline" size="sm">
-                    عودة للموردين
+                    {t("suppliers.viewProducts")}
                   </Button>
                 </Link>
               </div>
@@ -80,7 +83,7 @@ const Products = () => {
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
-                placeholder="ابحث عن منتج أو مورد..."
+                placeholder={t("products.searchPlaceholder")}
                 className="pr-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -95,7 +98,7 @@ const Products = () => {
                 onClick={() => setSelectedCategory("all")}
                 className="whitespace-nowrap"
               >
-                الكل
+                {t("common.all")}
               </Button>
               {categoriesLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
@@ -147,8 +150,8 @@ const Products = () => {
           {!productsLoading && filteredProducts.length === 0 && (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-xl font-semibold mb-2">لا توجد نتائج</h3>
-              <p className="text-muted-foreground">جرب البحث بكلمات مختلفة</p>
+              <h3 className="text-xl font-semibold mb-2">{t("common.noResults")}</h3>
+              <p className="text-muted-foreground">{t("products.searchPlaceholder")}</p>
             </div>
           )}
         </div>
