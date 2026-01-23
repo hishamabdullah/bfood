@@ -7,6 +7,7 @@ interface CreateOrderParams {
   items: CartItem[];
   deliveryAddress?: string;
   notes?: string;
+  branchId?: string;
 }
 
 export const useCreateOrder = () => {
@@ -14,7 +15,7 @@ export const useCreateOrder = () => {
   const { user, profile } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ items, deliveryAddress, notes }: CreateOrderParams) => {
+    mutationFn: async ({ items, deliveryAddress, notes, branchId }: CreateOrderParams) => {
       if (!user) throw new Error("يجب تسجيل الدخول أولاً");
 
       // Calculate total
@@ -39,6 +40,7 @@ export const useCreateOrder = () => {
           delivery_address: deliveryAddress,
           notes,
           status: "pending",
+          branch_id: branchId || null,
         })
         .select()
         .single();

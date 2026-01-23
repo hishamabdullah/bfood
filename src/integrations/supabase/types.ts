@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      branches: {
+        Row: {
+          address: string | null
+          created_at: string
+          google_maps_url: string | null
+          id: string
+          is_default: boolean
+          name: string
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          google_maps_url?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          google_maps_url?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -126,6 +159,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          branch_id: string | null
           created_at: string
           delivery_address: string | null
           delivery_fee: number
@@ -137,6 +171,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          branch_id?: string | null
           created_at?: string
           delivery_address?: string | null
           delivery_fee?: number
@@ -148,6 +183,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          branch_id?: string | null
           created_at?: string
           delivery_address?: string | null
           delivery_fee?: number
@@ -158,7 +194,15 @@ export type Database = {
           total_amount?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
