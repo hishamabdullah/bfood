@@ -14,8 +14,18 @@ import { z } from "zod";
 const contactSchema = z.object({
   name: z.string().trim().min(2, "الاسم يجب أن يكون حرفين على الأقل").max(100, "الاسم طويل جداً"),
   email: z.string().trim().email("البريد الإلكتروني غير صحيح").max(255, "البريد الإلكتروني طويل جداً"),
-  phone: z.string().trim().min(10, "رقم الهاتف يجب أن يكون 10 أرقام على الأقل").max(15, "رقم الهاتف طويل جداً").optional().or(z.literal("")),
-  message: z.string().trim().min(10, "الرسالة يجب أن تكون 10 أحرف على الأقل").max(1000, "الرسالة طويلة جداً (الحد الأقصى 1000 حرف)")
+  phone: z
+    .string()
+    .trim()
+    .min(10, "رقم الهاتف يجب أن يكون 10 أرقام على الأقل")
+    .max(15, "رقم الهاتف طويل جداً")
+    .optional()
+    .or(z.literal("")),
+  message: z
+    .string()
+    .trim()
+    .min(10, "الرسالة يجب أن تكون 10 أحرف على الأقل")
+    .max(1000, "الرسالة طويلة جداً (الحد الأقصى 1000 حرف)"),
 });
 
 const ContactUs = () => {
@@ -25,16 +35,16 @@ const ContactUs = () => {
     name: "",
     email: "",
     phone: "",
-    message: ""
+    message: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -46,7 +56,7 @@ const ContactUs = () => {
     const result = contactSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach(err => {
+      result.error.errors.forEach((err) => {
         if (err.path[0]) {
           fieldErrors[err.path[0] as string] = err.message;
         }
@@ -61,14 +71,14 @@ const ContactUs = () => {
       // Create WhatsApp message with form data
       const whatsappMessage = encodeURIComponent(
         `مرحباً، أنا ${formData.name}\n` +
-        `البريد: ${formData.email}\n` +
-        (formData.phone ? `الهاتف: ${formData.phone}\n` : "") +
-        `\nالرسالة:\n${formData.message}`
+          `البريد: ${formData.email}\n` +
+          (formData.phone ? `الهاتف: ${formData.phone}\n` : "") +
+          `\nالرسالة:\n${formData.message}`,
       );
-      
+
       // Open WhatsApp with the message
       window.open(`https://wa.me/966505897171?text=${whatsappMessage}`, "_blank");
-      
+
       toast.success("تم فتح واتساب لإرسال رسالتك");
       setFormData({ name: "", email: "", phone: "", message: "" });
     } catch (error) {
@@ -83,20 +93,20 @@ const ContactUs = () => {
       icon: Phone,
       title: "رقم الهاتف",
       value: "0505897171",
-      href: "tel:+966505897171"
+      href: "tel:+966505897171",
     },
     {
       icon: MessageSquare,
       title: "واتساب",
       value: "تواصل عبر واتساب",
-      href: "https://wa.me/966505897171"
+      href: "https://wa.me/966505897171",
     },
     {
       icon: Mail,
       title: "البريد الإلكتروني",
-      value: "support@bfood.sa",
-      href: "mailto:support@bfood.sa"
-    }
+      value: "support@bfood.io",
+      href: "mailto:support@bfood.sa",
+    },
   ];
 
   return (
@@ -155,9 +165,7 @@ const ContactUs = () => {
             <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle>أرسل لنا رسالة</CardTitle>
-                <CardDescription>
-                  املأ النموذج أدناه وسنتواصل معك في أقرب وقت ممكن
-                </CardDescription>
+                <CardDescription>املأ النموذج أدناه وسنتواصل معك في أقرب وقت ممكن</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -172,9 +180,7 @@ const ContactUs = () => {
                         onChange={handleChange}
                         className={errors.name ? "border-destructive" : ""}
                       />
-                      {errors.name && (
-                        <p className="text-sm text-destructive">{errors.name}</p>
-                      )}
+                      {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">البريد الإلكتروني *</Label>
@@ -188,9 +194,7 @@ const ContactUs = () => {
                         className={errors.email ? "border-destructive" : ""}
                         dir="ltr"
                       />
-                      {errors.email && (
-                        <p className="text-sm text-destructive">{errors.email}</p>
-                      )}
+                      {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                     </div>
                   </div>
 
@@ -206,9 +210,7 @@ const ContactUs = () => {
                       className={errors.phone ? "border-destructive" : ""}
                       dir="ltr"
                     />
-                    {errors.phone && (
-                      <p className="text-sm text-destructive">{errors.phone}</p>
-                    )}
+                    {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -222,20 +224,11 @@ const ContactUs = () => {
                       onChange={handleChange}
                       className={errors.message ? "border-destructive" : ""}
                     />
-                    {errors.message && (
-                      <p className="text-sm text-destructive">{errors.message}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground text-left">
-                      {formData.message.length}/1000
-                    </p>
+                    {errors.message && <p className="text-sm text-destructive">{errors.message}</p>}
+                    <p className="text-xs text-muted-foreground text-left">{formData.message.length}/1000</p>
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    size="lg"
-                    disabled={isSubmitting}
-                  >
+                  <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
                     {isSubmitting ? (
                       "جاري الإرسال..."
                     ) : (
