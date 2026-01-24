@@ -36,8 +36,8 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo - goes to dashboard if logged in, otherwise home */}
         <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
-            <span className="text-xl font-bold text-primary-foreground leading-none flex items-center justify-center w-full h-full">B</span>
+          <div className="grid h-10 w-10 place-items-center rounded-xl gradient-primary">
+            <span className="relative -top-px grid h-full w-full place-items-center text-xl font-bold leading-none text-primary-foreground">B</span>
           </div>
           <span className="text-xl font-bold text-foreground">BFOOD</span>
         </Link>
