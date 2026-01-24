@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -34,8 +36,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useCategories } from "@/hooks/useProducts";
-import { useCreateProduct, useUpdateProduct, SupplierProduct } from "@/hooks/useSupplierProducts";
 import { Loader2, Globe } from "lucide-react";
+import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
+
+type AdminProduct = Tables<"products"> & {
+  category?: Tables<"categories"> | null;
+  supplier_profile?: Tables<"profiles"> | null;
+};
 
 const productSchema = z.object({
   name: z.string().min(2, "اسم المنتج مطلوب").max(100),
@@ -49,30 +57,54 @@ const productSchema = z.object({
   in_stock: z.boolean().default(true),
   image_url: z.string().url().optional().or(z.literal("")),
   delivery_fee: z.coerce.number().min(0).default(0),
-  // ترجمة إنجليزية اختيارية
   name_en: z.string().max(100).optional(),
   description_en: z.string().max(500).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
-interface ProductFormDialogProps {
+interface AdminProductFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product?: SupplierProduct | null;
+  product?: AdminProduct | null;
 }
 
 const units = ["كيلو", "جرام", "قطعة", "صندوق", "كرتون", "لتر", "علبة"];
 
-export default function ProductFormDialog({
+const useAdminUpdateProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...product }: { id: string } & Partial<Tables<"products">>) => {
+      const { data, error } = await supabase
+        .from("products")
+        .update(product)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("تم تحديث المنتج بنجاح");
+    },
+    onError: (error) => {
+      console.error("Error updating product:", error);
+      toast.error("حدث خطأ أثناء تحديث المنتج");
+    },
+  });
+};
+
+export default function AdminProductFormDialog({
   open,
   onOpenChange,
   product,
-}: ProductFormDialogProps) {
+}: AdminProductFormDialogProps) {
   const { data: categories } = useCategories();
-  const createProduct = useCreateProduct();
-  const updateProduct = useUpdateProduct();
-  const isEditing = !!product;
+  const updateProduct = useAdminUpdateProduct();
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -104,36 +136,23 @@ export default function ProductFormDialog({
         unit: product.unit,
         category_id: product.category_id || "",
         stock_quantity: product.stock_quantity || 0,
-        unlimited_stock: (product as any).unlimited_stock || false,
+        unlimited_stock: product.unlimited_stock || false,
         country_of_origin: product.country_of_origin || "السعودية",
         in_stock: product.in_stock,
         image_url: product.image_url || "",
         delivery_fee: product.delivery_fee || 0,
-        name_en: (product as any).name_en || "",
-        description_en: (product as any).description_en || "",
-      });
-    } else {
-      form.reset({
-        name: "",
-        description: "",
-        price: 0,
-        unit: "كيلو",
-        category_id: "",
-        stock_quantity: 0,
-        unlimited_stock: false,
-        country_of_origin: "السعودية",
-        in_stock: true,
-        image_url: "",
-        delivery_fee: 0,
-        name_en: "",
-        description_en: "",
+        name_en: product.name_en || "",
+        description_en: product.description_en || "",
       });
     }
   }, [product, form]);
 
   const onSubmit = async (values: ProductFormValues) => {
+    if (!product) return;
+
     try {
-      const productData = {
+      await updateProduct.mutateAsync({
+        id: product.id,
         name: values.name,
         description: values.description || null,
         price: values.price,
@@ -147,31 +166,20 @@ export default function ProductFormDialog({
         delivery_fee: values.delivery_fee,
         name_en: values.name_en || null,
         description_en: values.description_en || null,
-      };
-
-      if (isEditing && product) {
-        await updateProduct.mutateAsync({
-          id: product.id,
-          ...productData,
-        });
-      } else {
-        await createProduct.mutateAsync(productData as any);
-      }
+      });
       onOpenChange(false);
     } catch (error) {
       // Error handled in mutation
     }
   };
 
-  const isLoading = createProduct.isPending || updateProduct.isPending;
+  const isLoading = updateProduct.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "تعديل المنتج" : "إضافة منتج جديد"}
-          </DialogTitle>
+          <DialogTitle>تعديل المنتج</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -197,17 +205,14 @@ export default function ProductFormDialog({
                 <FormItem>
                   <FormLabel>الوصف بالعربي (اختياري)</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="وصف مختصر للمنتج..."
-                      {...field}
-                    />
+                    <Textarea placeholder="وصف مختصر للمنتج..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* ترجمة إنجليزية اختيارية */}
+            {/* English Translation */}
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="translations" className="border rounded-lg px-4">
                 <AccordionTrigger className="hover:no-underline">
@@ -217,7 +222,6 @@ export default function ProductFormDialog({
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-4 pt-4">
-                  {/* English */}
                   <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                     <h4 className="font-medium text-sm flex items-center gap-2">
                       🇬🇧 English
@@ -305,10 +309,7 @@ export default function ProductFormDialog({
                     </p>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
@@ -392,11 +393,7 @@ export default function ProductFormDialog({
                 <FormItem>
                   <FormLabel>رابط الصورة (اختياري)</FormLabel>
                   <FormControl>
-                    <Input
-                      type="url"
-                      placeholder="https://example.com/image.jpg"
-                      {...field}
-                    />
+                    <Input type="url" placeholder="https://example.com/image.jpg" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -409,33 +406,25 @@ export default function ProductFormDialog({
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-lg border p-4">
                   <div>
-                    <FormLabel className="text-base">متوفر</FormLabel>
+                    <FormLabel className="text-base">متوفر للطلب</FormLabel>
                     <p className="text-sm text-muted-foreground">
-                      هل المنتج متوفر للطلب؟
+                      إظهار المنتج للمطاعم
                     </p>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
             />
 
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="flex-1"
-              >
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 إلغاء
               </Button>
-              <Button type="submit" disabled={isLoading} className="flex-1">
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isEditing ? "حفظ التغييرات" : "إضافة المنتج"}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                حفظ التعديلات
               </Button>
             </div>
           </form>

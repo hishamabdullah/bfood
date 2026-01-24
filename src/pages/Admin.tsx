@@ -4,12 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck } from "lucide-react";
+import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package } from "lucide-react";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOrdersTable from "@/components/admin/AdminOrdersTable";
 import AdminCategoriesManager from "@/components/admin/AdminCategoriesManager";
 import AdminUsersManager from "@/components/admin/AdminUsersManager";
 import AdminApprovalManager from "@/components/admin/AdminApprovalManager";
+import AdminProductsManager from "@/components/admin/AdminProductsManager";
 
 const Admin = () => {
   const { user, userRole, loading } = useAuth();
@@ -45,7 +46,7 @@ const Admin = () => {
               <h1 className="text-3xl font-bold">لوحة تحكم المدير</h1>
             </div>
             <p className="text-muted-foreground">
-              إدارة كاملة للنظام - الطلبات والمستخدمين والتصنيفات
+              إدارة كاملة للنظام - الطلبات والمستخدمين والتصنيفات والمنتجات
             </p>
           </div>
 
@@ -56,10 +57,14 @@ const Admin = () => {
 
           {/* Tabs */}
           <Tabs defaultValue="approvals" className="space-y-6">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 flex-wrap h-auto gap-1">
               <TabsTrigger value="approvals" className="flex items-center gap-2">
                 <UserCheck className="h-4 w-4" />
                 الموافقات
+              </TabsTrigger>
+              <TabsTrigger value="products" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                المنتجات
               </TabsTrigger>
               <TabsTrigger value="orders" className="flex items-center gap-2">
                 <ShoppingBag className="h-4 w-4" />
@@ -77,6 +82,10 @@ const Admin = () => {
 
             <TabsContent value="approvals">
               <AdminApprovalManager />
+            </TabsContent>
+
+            <TabsContent value="products">
+              <AdminProductsManager />
             </TabsContent>
 
             <TabsContent value="orders">
