@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, ShoppingCart, User, LogOut, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import NotificationBell from "./NotificationBell";
 import LanguageSwitcher from "./LanguageSwitcher";
 import {
@@ -19,6 +20,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, userRole, profile, signOut } = useAuth();
   const { getItemCount } = useCart();
+  const { data: siteSettings } = useSiteSettings();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const itemCount = getItemCount();
@@ -31,14 +33,24 @@ const Header = () => {
     navigate("/");
   };
 
+  const headerLogoUrl = siteSettings?.header_logo_url;
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo - goes to dashboard if logged in, otherwise home */}
         <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-xl gradient-primary">
-            <span className="relative -top-px grid h-full w-full place-items-center text-xl font-bold leading-none text-primary-foreground">B</span>
-          </div>
+          {headerLogoUrl ? (
+            <img 
+              src={headerLogoUrl} 
+              alt="BFOOD" 
+              className="h-10 w-10 rounded-xl object-contain"
+            />
+          ) : (
+            <div className="grid h-10 w-10 place-items-center rounded-xl gradient-primary">
+              <span className="relative -top-px grid h-full w-full place-items-center text-xl font-bold leading-none text-primary-foreground">B</span>
+            </div>
+          )}
           <span className="text-xl font-bold text-foreground">BFOOD</span>
         </Link>
 
