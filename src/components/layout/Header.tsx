@@ -37,7 +37,7 @@ const Header = () => {
         {/* Logo - goes to dashboard if logged in, otherwise home */}
         <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
-            <span className="text-xl font-bold text-primary-foreground">B</span>
+            <span className="text-xl font-bold text-primary-foreground leading-none flex items-center justify-center w-full h-full">B</span>
           </div>
           <span className="text-xl font-bold text-foreground">BFOOD</span>
         </Link>
