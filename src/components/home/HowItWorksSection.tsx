@@ -1,43 +1,46 @@
+import { useTranslation } from "react-i18next";
 import { UserPlus, Search, ShoppingBag, Truck } from "lucide-react";
 
-const steps = [
-  {
-    icon: UserPlus,
-    number: "01",
-    title: "أنشئ حسابك",
-    description: "سجّل كمطعم أو مورد في دقائق معدودة"
-  },
-  {
-    icon: Search,
-    number: "02",
-    title: "تصفح المنتجات",
-    description: "استعرض آلاف المنتجات من موردين متعددين"
-  },
-  {
-    icon: ShoppingBag,
-    number: "03",
-    title: "أضف للسلة",
-    description: "اختر منتجاتك وأضفها لسلة واحدة موحدة"
-  },
-  {
-    icon: Truck,
-    number: "04",
-    title: "استلم طلبك",
-    description: "تابع طلبك واستلمه في الوقت المحدد"
-  }
-];
-
 const HowItWorksSection = () => {
+  const { t } = useTranslation();
+
+  const steps = [
+    {
+      icon: UserPlus,
+      number: "01",
+      titleKey: "home.createAccount",
+      descKey: "home.createAccountDesc"
+    },
+    {
+      icon: Search,
+      number: "02",
+      titleKey: "home.browseProductsStep",
+      descKey: "home.browseProductsStepDesc"
+    },
+    {
+      icon: ShoppingBag,
+      number: "03",
+      titleKey: "home.addToCart",
+      descKey: "home.addToCartDesc"
+    },
+    {
+      icon: Truck,
+      number: "04",
+      titleKey: "home.receiveOrder",
+      descKey: "home.receiveOrderDesc"
+    }
+  ];
+
   return (
     <section className="py-20 bg-muted/30">
       <div className="container">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            كيف تعمل <span className="text-gradient-primary">المنصة</span>؟
+            {t("home.howPlatformWorks")} <span className="text-gradient-primary">{t("home.platform")}</span>؟
           </h2>
           <p className="text-muted-foreground text-lg">
-            أربع خطوات بسيطة للحصول على منتجاتك
+            {t("home.fourSimpleSteps")}
           </p>
         </div>
 
@@ -62,8 +65,8 @@ const HowItWorksSection = () => {
                 </span>
               </div>
               
-              <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-              <p className="text-muted-foreground">{step.description}</p>
+              <h3 className="text-xl font-semibold mb-2">{t(step.titleKey)}</h3>
+              <p className="text-muted-foreground">{t(step.descKey)}</p>
             </div>
           ))}
         </div>

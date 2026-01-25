@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const CTASection = () => {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === "ar";
+  const Arrow = isRTL ? ArrowLeft : ArrowRight;
+
   return (
     <section className="py-20 bg-background">
       <div className="container">
@@ -15,10 +20,10 @@ const CTASection = () => {
 
           <div className="relative z-10">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-4">
-              ابدأ رحلتك مع BFOOD اليوم
+              {t("home.startJourney")}
             </h2>
             <p className="text-primary-foreground/80 text-lg max-w-2xl mx-auto mb-8">
-              انضم لآلاف المطاعم والموردين الذين يثقون بمنصتنا لتسهيل أعمالهم
+              {t("home.ctaDescription")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
@@ -26,8 +31,8 @@ const CTASection = () => {
                   size="xl" 
                   className="w-full sm:w-auto bg-white text-primary hover:bg-white/90"
                 >
-                  أنشئ حسابك مجاناً
-                  <ArrowLeft className="h-5 w-5" />
+                  {t("home.createFreeAccount")}
+                  <Arrow className="h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/contact">
@@ -36,7 +41,7 @@ const CTASection = () => {
                   size="xl" 
                   className="w-full sm:w-auto border-white/30 text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
                 >
-                  تواصل معنا
+                  {t("home.contactUs")}
                 </Button>
               </Link>
             </div>
