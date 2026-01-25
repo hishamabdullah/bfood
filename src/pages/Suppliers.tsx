@@ -11,17 +11,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, MapPin, Package, User as UserIcon } from "lucide-react";
+import { Search, MapPin, Package, User as UserIcon, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSuppliers, useRegions } from "@/hooks/useSuppliers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { saudiRegions } from "@/data/saudiRegions";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFavoriteSuppliers, useToggleFavoriteSupplier } from "@/hooks/useFavorites";
+import { toast } from "sonner";
 
 const Suppliers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   
+  const { user, userRole } = useAuth();
   const { data: suppliers, isLoading } = useSuppliers(selectedRegion);
+  const { data: favoriteSuppliers = [] } = useFavoriteSuppliers();
+  const toggleFavorite = useToggleFavoriteSupplier();
+
+  const handleToggleFavorite = (supplierId: string, isFavorite: boolean) => {
+    if (!user) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      return;
+    }
+    if (userRole !== "restaurant") {
+      toast.error("فقط المطاعم يمكنها إضافة للمفضلة");
+      return;
+    }
+    toggleFavorite.mutate({ supplierId, isFavorite });
+  };
   const { data: availableRegions } = useRegions();
 
   const filteredSuppliers = suppliers?.filter(
@@ -97,12 +115,12 @@ const Suppliers = () => {
               {filteredSuppliers.map((supplier, index) => (
                 <div
                   key={supplier.id}
-                  className="bg-card rounded-2xl border border-border p-6 hover:shadow-card transition-all duration-300 animate-fade-in"
+                  className="bg-card rounded-2xl border border-border p-6 hover:shadow-card transition-all duration-300 animate-fade-in relative"
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   {/* Header */}
                   <div className="flex items-start gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                    <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden relative">
                       {supplier.avatar_url ? (
                         <img 
                           src={supplier.avatar_url} 
@@ -113,6 +131,19 @@ const Suppliers = () => {
                         <UserIcon className="h-8 w-8 text-muted-foreground" />
                       )}
                     </div>
+                    {/* Favorite Button */}
+                    {userRole === "restaurant" && (
+                      <button
+                        onClick={() => handleToggleFavorite(supplier.user_id, favoriteSuppliers.includes(supplier.user_id))}
+                        className="absolute top-4 left-4 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
+                      >
+                        <Heart
+                          className={`h-5 w-5 transition-colors ${
+                            favoriteSuppliers.includes(supplier.user_id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+                    )}
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{supplier.business_name}</h3>
                       <p className="text-sm text-muted-foreground">{supplier.full_name}</p>

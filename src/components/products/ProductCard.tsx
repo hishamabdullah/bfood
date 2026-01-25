@@ -2,13 +2,14 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, MapPin } from "lucide-react";
+import { Plus, Package, MapPin, Heart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Product } from "@/hooks/useProducts";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
+import { useFavoriteProducts, useToggleFavoriteProduct } from "@/hooks/useFavorites";
 
 interface ProductCardProps {
   product: Product;
@@ -21,6 +22,25 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { getProductName } = useProductTranslation();
+  const { data: favoriteProducts = [] } = useFavoriteProducts();
+  const toggleFavorite = useToggleFavoriteProduct();
+  
+  const isFavorite = favoriteProducts.includes(product.id);
+  
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      navigate("/login");
+      return;
+    }
+    if (userRole !== "restaurant") {
+      toast.error("فقط المطاعم يمكنها إضافة للمفضلة");
+      return;
+    }
+    toggleFavorite.mutate({ productId: product.id, isFavorite });
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -50,7 +70,7 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
         style={{ animationDelay: `${index * 0.05}s` }}
       >
         {/* Product Image */}
-        <div className="h-40 bg-muted flex items-center justify-center overflow-hidden">
+        <div className="h-40 bg-muted flex items-center justify-center overflow-hidden relative">
           {product.image_url ? (
             <img
               src={product.image_url}
@@ -59,6 +79,19 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
             />
           ) : (
             <Package className="h-16 w-16 text-muted-foreground" />
+          )}
+          {/* Favorite Button */}
+          {userRole === "restaurant" && (
+            <button
+              onClick={handleToggleFavorite}
+              className="absolute top-2 left-2 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
+            >
+              <Heart
+                className={`h-5 w-5 transition-colors ${
+                  isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                }`}
+              />
+            </button>
           )}
         </div>
 
