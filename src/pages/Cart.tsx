@@ -244,21 +244,18 @@ const Cart = () => {
                       ))}
                     </div>
 
-                    {/* Supplier Footer with Subtotal and Delivery Fee */}
+                    {/* Supplier Footer with Delivery Fee */}
                     <div className="bg-muted/30 px-6 py-3 border-t border-border space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>المجموع الجزئي</span>
-                        <span>{supplierSubtotal.toFixed(2)} {t("common.sar")}</span>
+                      <div className={`flex justify-between text-sm ${supplierFeeInfo && supplierFeeInfo.fee > 0 ? "text-amber-600" : ""}`}>
+                        <span className="flex items-center gap-1">
+                          <Truck className="h-4 w-4" />
+                          {t("cart.deliveryFee")}
+                          {supplierFeeInfo && supplierFeeInfo.fee > 0 && (
+                            <span className="text-xs">({supplierFeeInfo.reason})</span>
+                          )}
+                        </span>
+                        <span>{(supplierFeeInfo?.fee || 0).toFixed(2)} {t("common.sar")}</span>
                       </div>
-                      {supplierFeeInfo && supplierFeeInfo.fee > 0 && (
-                        <div className="flex justify-between text-sm text-amber-600">
-                          <span className="flex items-center gap-1">
-                            <Truck className="h-4 w-4" />
-                            رسوم التوصيل ({supplierFeeInfo.reason})
-                          </span>
-                          <span>{supplierFeeInfo.fee.toFixed(2)} {t("common.sar")}</span>
-                        </div>
-                      )}
                       <div className="flex justify-between font-semibold pt-2 border-t border-border">
                         <span>إجمالي {group.supplierName}</span>
                         <span className="text-primary">
