@@ -28,7 +28,8 @@ const Dashboard = () => {
     if (!loading) {
       if (!user) {
         navigate("/login");
-      } else if (!isApproved && userRole !== "admin") {
+      } else if (!isApproved && userRole === "restaurant") {
+        // فقط المطاعم غير المعتمدة تُحوّل لصفحة الانتظار
         navigate("/pending-approval");
       }
     }
@@ -42,7 +43,7 @@ const Dashboard = () => {
     );
   }
 
-  if (!user || (!isApproved && userRole !== "admin")) {
+  if (!user || (!isApproved && userRole === "restaurant")) {
     return null;
   }
 
