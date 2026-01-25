@@ -28,10 +28,15 @@ export const BranchSelector = ({
 
   // Set initial mode based on branches availability
   useEffect(() => {
-    if (!isLoading && branches.length === 0) {
-      setIsCustomMode(true);
+    if (!isLoading) {
+      if (branches.length === 0) {
+        setIsCustomMode(true);
+      } else if (!selectedBranchId && !isCustomMode) {
+        // If branches exist but none selected, don't auto-switch to custom
+        setIsCustomMode(false);
+      }
     }
-  }, [branches, isLoading]);
+  }, [branches, isLoading, selectedBranchId, isCustomMode]);
 
   // Handle branch selection from dropdown
   const handleBranchSelect = (value: string) => {
@@ -61,57 +66,78 @@ export const BranchSelector = ({
     );
   }
 
-  // Determine the current select value
-  const selectValue = isCustomMode ? "custom" : selectedBranchId || "";
+  // If no branches exist, show only manual entry mode
+  const hasBranches = branches.length > 0;
 
   return (
     <div className="space-y-4">
       <div>
         <Label className="flex items-center gap-2 mb-2">
           <Building2 className="h-4 w-4" />
-          {t("فرع التوصيل") || "فرع التوصيل"}
+          {t("cart.deliveryBranch") || "فرع التوصيل"}
         </Label>
 
-        <div className="flex gap-2">
-          <Select value={selectValue} onValueChange={handleBranchSelect}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder={t("cart.selectBranch") || "اختر فرع التوصيل"} />
-            </SelectTrigger>
-            <SelectContent>
-              {branches.map((branch) => (
-                <SelectItem key={branch.id} value={branch.id}>
+        {hasBranches ? (
+          // Show dropdown + add button when branches exist
+          <div className="flex gap-2">
+            <Select 
+              value={isCustomMode ? "custom" : selectedBranchId} 
+              onValueChange={handleBranchSelect}
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder={t("cart.selectBranch") || "اختر فرع التوصيل"} />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                {branches.map((branch) => (
+                  <SelectItem key={branch.id} value={branch.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{branch.name}</span>
+                      {branch.is_default && (
+                        <span className="text-xs text-muted-foreground">({t("common.default") || "افتراضي"})</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">
                   <div className="flex items-center gap-2">
-                    <span>{branch.name}</span>
-                    {branch.is_default && (
-                      <span className="text-xs text-muted-foreground">({t("common.default") || "افتراضي"})</span>
-                    )}
+                    <Edit className="h-4 w-4" />
+                    <span>{t("cart.enterManually") || "إدخال عنوان يدوياً"}</span>
                   </div>
                 </SelectItem>
-              ))}
-              <SelectItem value="custom">
-                <div className="flex items-center gap-2">
-                  <Edit className="h-4 w-4" />
-                  <span>{t("cart.enterManually") || "إدخال عنوان يدوياً"}</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+              </SelectContent>
+            </Select>
 
-          {/* Separate button for adding new branch */}
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={handleAddNewBranch}
-            title={t("cart.addNewBranch") || "إضافة فرع جديد"}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={handleAddNewBranch}
+              title={t("cart.addNewBranch") || "إضافة فرع جديد"}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          // Show only add button when no branches exist
+          <div className="flex gap-2">
+            <div className="flex-1 h-10 px-3 py-2 rounded-md border border-input bg-muted/50 text-sm text-muted-foreground flex items-center">
+              {t("cart.noBranches") || "لا توجد فروع محفوظة"}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={handleAddNewBranch}
+              title={t("cart.addNewBranch") || "إضافة فرع جديد"}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Show selected branch info */}
-      {!isCustomMode && selectedBranchId && (
+      {!isCustomMode && selectedBranchId && hasBranches && (
         <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
           {(() => {
             const branch = branches.find((b) => b.id === selectedBranchId);
@@ -140,8 +166,8 @@ export const BranchSelector = ({
         </div>
       )}
 
-      {/* Custom address input */}
-      {isCustomMode && (
+      {/* Custom address input - show when in custom mode OR when no branches exist */}
+      {(isCustomMode || !hasBranches) && (
         <div>
           <Label className="mb-2 block">{t("cart.deliveryAddress") || "عنوان التوصيل"}</Label>
           <Input
