@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useBranches } from "@/hooks/useBranches";
 import { BranchFormDialog } from "@/components/branches/BranchFormDialog";
 import { Building2, Plus, MapPin, Edit } from "lucide-react";
@@ -29,32 +30,32 @@ export const BranchSelector = ({
   const { t } = useTranslation();
   const { data: branches = [], isLoading } = useBranches();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [mode, setMode] = useState<"branch" | "custom">("branch");
+  const [isCustomMode, setIsCustomMode] = useState(false);
 
-  // Update mode when branches load
+  // Set initial mode based on branches availability
   useEffect(() => {
     if (!isLoading && branches.length === 0) {
-      setMode("custom");
+      setIsCustomMode(true);
     }
   }, [branches, isLoading]);
 
-  // Find the default branch
-  const defaultBranch = branches.find((b) => b.is_default);
-
-  // Auto-select default branch when branches load
+  // Handle branch selection from dropdown
   const handleBranchSelect = (value: string) => {
     if (value === "custom") {
-      setMode("custom");
+      setIsCustomMode(true);
       onBranchChange("", "");
-    } else if (value === "add-new") {
-      setIsAddDialogOpen(true);
     } else {
-      setMode("branch");
+      setIsCustomMode(false);
       const branch = branches.find((b) => b.id === value);
       if (branch) {
         onBranchChange(branch.id, branch.google_maps_url || branch.address || "");
       }
     }
+  };
+
+  // Handle adding new branch - separate from select
+  const handleAddNewBranch = () => {
+    setIsAddDialogOpen(true);
   };
 
   if (isLoading) {
@@ -66,6 +67,9 @@ export const BranchSelector = ({
     );
   }
 
+  // Determine the current select value
+  const selectValue = isCustomMode ? "custom" : selectedBranchId || "";
+
   return (
     <div className="space-y-4">
       <div>
@@ -74,42 +78,49 @@ export const BranchSelector = ({
           {t("cart.deliveryBranch") || "فرع التوصيل"}
         </Label>
         
-        <Select
-          value={mode === "custom" ? "custom" : selectedBranchId}
-          onValueChange={handleBranchSelect}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="اختر فرع التوصيل أو أدخل عنوان" />
-          </SelectTrigger>
-          <SelectContent>
-            {branches.map((branch) => (
-              <SelectItem key={branch.id} value={branch.id}>
+        <div className="flex gap-2">
+          <Select
+            value={selectValue}
+            onValueChange={handleBranchSelect}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder={t("cart.selectBranch") || "اختر فرع التوصيل"} />
+            </SelectTrigger>
+            <SelectContent>
+              {branches.map((branch) => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{branch.name}</span>
+                    {branch.is_default && (
+                      <span className="text-xs text-muted-foreground">({t("common.default") || "افتراضي"})</span>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+              <SelectItem value="custom">
                 <div className="flex items-center gap-2">
-                  <span>{branch.name}</span>
-                  {branch.is_default && (
-                    <span className="text-xs text-muted-foreground">(افتراضي)</span>
-                  )}
+                  <Edit className="h-4 w-4" />
+                  <span>{t("cart.enterManually") || "إدخال عنوان يدوياً"}</span>
                 </div>
               </SelectItem>
-            ))}
-            <SelectItem value="custom">
-              <div className="flex items-center gap-2">
-                <Edit className="h-4 w-4" />
-                <span>إدخال عنوان يدوياً</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="add-new">
-              <div className="flex items-center gap-2 text-primary">
-                <Plus className="h-4 w-4" />
-                <span>إضافة فرع جديد</span>
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+            </SelectContent>
+          </Select>
+          
+          {/* Separate button for adding new branch */}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleAddNewBranch}
+            title={t("cart.addNewBranch") || "إضافة فرع جديد"}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Show selected branch info */}
-      {mode === "branch" && selectedBranchId && (
+      {!isCustomMode && selectedBranchId && (
         <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
           {(() => {
             const branch = branches.find((b) => b.id === selectedBranchId);
@@ -129,7 +140,7 @@ export const BranchSelector = ({
                     rel="noopener noreferrer"
                     className="text-primary hover:underline text-xs"
                   >
-                    عرض على الخريطة
+                    {t("cart.viewOnMap") || "عرض على الخريطة"}
                   </a>
                 )}
               </div>
@@ -139,11 +150,11 @@ export const BranchSelector = ({
       )}
 
       {/* Custom address input */}
-      {mode === "custom" && (
+      {isCustomMode && (
         <div>
-          <Label className="mb-2 block">{t("cart.deliveryAddress")}</Label>
+          <Label className="mb-2 block">{t("cart.deliveryAddress") || "عنوان التوصيل"}</Label>
           <Input
-            placeholder="أدخل رابط قوقل ماب أو العنوان..."
+            placeholder={t("cart.enterAddressOrLink") || "أدخل رابط قوقل ماب أو العنوان..."}
             value={customAddress}
             onChange={(e) => onCustomAddressChange(e.target.value)}
             dir="ltr"
