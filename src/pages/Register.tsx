@@ -262,13 +262,13 @@ const Register = () => {
             <div className="space-y-2">
               <Label htmlFor="email">{t("auth.email")}</Label>
               <div className="relative">
-                <Mail className="absolute end-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   placeholder="example@email.com"
-                  className="pe-10"
+                  className="pr-10"
                   dir="ltr"
                   value={formData.email}
                   onChange={handleChange}
@@ -282,13 +282,13 @@ const Register = () => {
             <div className="space-y-2">
               <Label htmlFor="phone">{t("auth.phone")}</Label>
               <div className="relative">
-                <Phone className="absolute end-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+                <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                 <Input
                   id="phone"
                   name="phone"
                   type="tel"
                   placeholder="05XXXXXXXX"
-                  className="pe-10"
+                  className="pr-10"
                   dir="ltr"
                   value={formData.phone}
                   onChange={handleChange}
@@ -307,7 +307,7 @@ const Register = () => {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pe-10"
+                  className="pr-10"
                   dir="ltr"
                   value={formData.password}
                   onChange={handleChange}
@@ -318,7 +318,7 @@ const Register = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
