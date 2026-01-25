@@ -201,7 +201,11 @@ const Orders = () => {
                                   <span className="font-semibold">
                                     {group.supplier?.business_name || "مورد غير معروف"}
                                   </span>
-                                  <Badge variant={statusConfig.variant} className="gap-1 mr-2">
+                                  <Badge variant="outline" className="gap-1 mr-2">
+                                    <Package className="h-3 w-3" />
+                                    {group.items.reduce((total, item) => total + item.quantity, 0)} منتج
+                                  </Badge>
+                                  <Badge variant={statusConfig.variant} className="gap-1">
                                     <StatusIcon className="h-3 w-3" />
                                     {statusConfig.label}
                                   </Badge>
@@ -323,10 +327,29 @@ const Orders = () => {
                               <span>{order.notes}</span>
                             </div>
                           )}
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">رسوم التوصيل الإجمالية:</span>
-                            <span>{order.delivery_fee} ر.س</span>
-                          </div>
+                          
+                          {/* رسوم التوصيل مفصلة لكل مورد */}
+                          {groupedItems.filter(g => g.deliveryFee > 0).length > 0 && (
+                            <div className="space-y-1 pt-2 border-t">
+                              <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                                <Truck className="h-4 w-4" />
+                                رسوم التوصيل:
+                              </p>
+                              {groupedItems.filter(g => g.deliveryFee > 0).map((group, idx) => (
+                                <div key={idx} className="flex justify-between text-sm mr-5">
+                                  <span className="text-muted-foreground">{group.supplier?.business_name}</span>
+                                  <span className="text-amber-600">{group.deliveryFee.toFixed(2)} ر.س</span>
+                                </div>
+                              ))}
+                              {groupedItems.filter(g => g.deliveryFee > 0).length > 1 && (
+                                <div className="flex justify-between text-sm mr-5 font-medium pt-1 border-t border-dashed">
+                                  <span className="text-muted-foreground">إجمالي رسوم التوصيل</span>
+                                  <span className="text-amber-600">{Number(order.delivery_fee).toFixed(2)} ر.س</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
                           <div className="flex justify-between font-bold text-lg border-t pt-2">
                             <span>الإجمالي:</span>
                             <span className="text-primary">{order.total_amount} ر.س</span>

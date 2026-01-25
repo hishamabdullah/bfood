@@ -334,8 +334,12 @@ export default function SupplierOrders() {
 
                       {/* Order Items */}
                       <div className="border rounded-xl overflow-hidden">
-                        <div className="bg-muted/30 px-4 py-2 border-b">
+                        <div className="bg-muted/30 px-4 py-2 border-b flex items-center justify-between">
                           <h4 className="font-medium text-sm">المنتجات المطلوبة</h4>
+                          <Badge variant="outline" className="gap-1">
+                            <Package className="h-3 w-3" />
+                            {order.items.reduce((total, item) => total + item.quantity, 0)} منتج
+                          </Badge>
                         </div>
                         <div className="divide-y">
                           {order.items.map((item) => {
