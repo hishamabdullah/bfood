@@ -40,17 +40,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [initialized, setInitialized] = useState(false);
 
   const fetchUserData = useCallback(async (userId: string): Promise<void> => {
+    console.log("fetchUserData called for:", userId);
     try {
-      // جلب الدور
-      const { data: roleData, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .maybeSingle();
+      // جلب الدور والملف الشخصي بشكل متوازي
+      const [roleResult, profileResult] = await Promise.all([
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .maybeSingle(),
+        supabase
+          .from("profiles")
+          .select("full_name, business_name, phone, avatar_url, is_approved")
+          .eq("user_id", userId)
+          .maybeSingle()
+      ]);
+
+      const { data: roleData, error: roleError } = roleResult;
+      const { data: profileData, error: profileError } = profileResult;
 
       if (roleError) {
         console.error("Error fetching role:", roleError);
       }
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+      }
+
+      console.log("Fetched roleData:", roleData);
+      console.log("Fetched profileData:", profileData);
 
       let approved = false;
       let fetchedRole: UserRole | null = null;
@@ -63,26 +80,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // جلب الملف الشخصي
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("full_name, business_name, phone, avatar_url, is_approved")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-      }
-
       if (profileData) {
         // المطاعم فقط تحتاج موافقة - الموردين والمدراء معتمدون تلقائياً
         if (fetchedRole === "restaurant") {
           approved = profileData.is_approved === true;
-        } else {
+        } else if (fetchedRole === "admin" || fetchedRole === "supplier") {
           // المورد والمدير معتمدون دائماً
           approved = true;
         }
       }
+
+      console.log("Final role:", fetchedRole, "approved:", approved);
       
       // تحديث الحالة
       setUserRole(fetchedRole);
