@@ -38,11 +38,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const fetchUserData = useCallback(async (userId: string): Promise<void> => {
-    console.log("fetchUserData called for:", userId);
     try {
-      // جلب الدور والملف الشخصي بشكل متوازي
       const [roleResult, profileResult] = await Promise.all([
         supabase
           .from("user_roles")
@@ -56,43 +55,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .maybeSingle()
       ]);
 
-      const { data: roleData, error: roleError } = roleResult;
-      const { data: profileData, error: profileError } = profileResult;
-
-      if (roleError) {
-        console.error("Error fetching role:", roleError);
-      }
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-      }
-
-      console.log("Fetched roleData:", roleData);
-      console.log("Fetched profileData:", profileData);
+      const { data: roleData } = roleResult;
+      const { data: profileData } = profileResult;
 
       let approved = false;
       let fetchedRole: UserRole | null = null;
       
       if (roleData) {
         fetchedRole = roleData.role as UserRole;
-        // المدير والمورد يعتبران معتمدين تلقائياً
         if (fetchedRole === "admin" || fetchedRole === "supplier") {
           approved = true;
         }
       }
 
       if (profileData) {
-        // المطاعم فقط تحتاج موافقة - الموردين والمدراء معتمدون تلقائياً
         if (fetchedRole === "restaurant") {
           approved = profileData.is_approved === true;
         } else if (fetchedRole === "admin" || fetchedRole === "supplier") {
-          // المورد والمدير معتمدون دائماً
           approved = true;
         }
       }
-
-      console.log("Final role:", fetchedRole, "approved:", approved);
       
-      // تحديث الحالة
       setUserRole(fetchedRole);
       setIsApproved(approved);
       if (profileData) {
@@ -109,12 +92,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // تجنب التهيئة المتكررة
     if (initialized) return;
     
     let isMounted = true;
     
-    // جلب الجلسة الأولية
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
@@ -142,10 +123,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     initializeAuth();
     
-    // إعداد مستمع حالة المصادقة
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!isMounted) return;
+        
+        // تخطي إذا كنا في منتصف عملية تسجيل الدخول
+        if (isSigningIn) return;
         
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -168,7 +151,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [initialized, fetchUserData]);
+  }, [initialized, fetchUserData, isSigningIn]);
 
   const signUp = async (
     email: string,
@@ -237,6 +220,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
+    setIsSigningIn(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -245,7 +229,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
       
-      // انتظار جلب بيانات المستخدم قبل إتمام تسجيل الدخول
       if (data.user) {
         setUser(data.user);
         setSession(data.session);
@@ -255,6 +238,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: null };
     } catch (error) {
       return { error: error as Error };
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
