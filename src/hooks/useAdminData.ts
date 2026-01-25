@@ -372,3 +372,100 @@ export const useAdminDeleteUser = () => {
     },
   });
 };
+
+// تحديث إيميل المستخدم
+export const useAdminUpdateUserEmail = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ userId, newEmail }: { userId: string; newEmail: string }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        throw new Error("غير مصرح");
+      }
+
+      const response = await supabase.functions.invoke("admin-update-user-email", {
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: { userId, newEmail },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "خطأ في تحديث الإيميل");
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ title: "تم تحديث البريد الإلكتروني بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ في تحديث البريد الإلكتروني", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+// تحديث حالة الطلب
+export const useAdminUpdateOrderStatus = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ orderId, status, updateItems = true }: { orderId: string; status: string; updateItems?: boolean }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        throw new Error("غير مصرح");
+      }
+
+      const response = await supabase.functions.invoke("admin-update-order-status", {
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: { orderId, status, updateItems },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "خطأ في تحديث حالة الطلب");
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "تم تحديث حالة الطلب بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ في تحديث حالة الطلب", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+// إعادة تفعيل منتج
+export const useActivateProduct = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      const { error } = await supabase
+        .from("products")
+        .update({ in_stock: true })
+        .eq("id", productId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast({ title: "تم تفعيل المنتج بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ في تفعيل المنتج", description: error.message, variant: "destructive" });
+    },
+  });
+};

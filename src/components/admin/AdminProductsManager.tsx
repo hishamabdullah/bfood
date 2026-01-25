@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Pencil, Trash2, Search, Package, Power } from "lucide-react";
+import { Loader2, Pencil, Trash2, Search, Package, Power, PowerOff } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import AdminProductFormDialog from "./AdminProductFormDialog";
@@ -128,10 +128,35 @@ const useDeactivateProduct = () => {
   });
 };
 
+const useActivateProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      const { error } = await supabase
+        .from("products")
+        .update({ in_stock: true })
+        .eq("id", productId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("تم تفعيل المنتج بنجاح");
+    },
+    onError: (error) => {
+      console.error("Error activating product:", error);
+      toast.error("حدث خطأ أثناء تفعيل المنتج");
+    },
+  });
+};
+
 export default function AdminProductsManager() {
   const { data: products, isLoading } = useAdminProducts();
   const deleteProduct = useDeleteProduct();
   const deactivateProduct = useDeactivateProduct();
+  const activateProduct = useActivateProduct();
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
@@ -269,18 +294,39 @@ export default function AdminProductsManager() {
                         size="icon"
                         variant="ghost"
                         onClick={() => handleEdit(product)}
+                        title="تعديل المنتج"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {product.in_stock && (
+                      {product.in_stock ? (
                         <Button
                           size="icon"
                           variant="ghost"
                           className="text-orange-500 hover:text-orange-600"
                           onClick={() => deactivateProduct.mutate(product.id)}
+                          disabled={deactivateProduct.isPending}
                           title="إلغاء تفعيل المنتج"
                         >
-                          <Power className="h-4 w-4" />
+                          {deactivateProduct.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <PowerOff className="h-4 w-4" />
+                          )}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-green-500 hover:text-green-600"
+                          onClick={() => activateProduct.mutate(product.id)}
+                          disabled={activateProduct.isPending}
+                          title="تفعيل المنتج"
+                        >
+                          {activateProduct.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Power className="h-4 w-4" />
+                          )}
                         </Button>
                       )}
                       <Button

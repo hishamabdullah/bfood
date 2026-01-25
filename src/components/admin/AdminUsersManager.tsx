@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Loader2, Plus, Store, Truck, Shield, Search, Pencil, Trash2 } from "lucide-react";
-import { useAdminUsers, useAdminCreateUser, useAdminUpdateUser, useAdminDeleteUser, AdminUser } from "@/hooks/useAdminData";
+import { Loader2, Plus, Store, Truck, Search, Pencil, Trash2, Mail } from "lucide-react";
+import { useAdminUsers, useAdminCreateUser, useAdminUpdateUser, useAdminDeleteUser, useAdminUpdateUserEmail, AdminUser } from "@/hooks/useAdminData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -44,27 +43,18 @@ import {
 } from "@/components/ui/select";
 import { saudiRegions, supplyCategories } from "@/data/saudiRegions";
 
-const roleLabels: Record<string, string> = {
-  restaurant: "مطعم",
-  supplier: "مورد",
-  admin: "مدير",
-};
-
-const roleColors: Record<string, string> = {
-  restaurant: "bg-blue-100 text-blue-800",
-  supplier: "bg-orange-100 text-orange-800",
-  admin: "bg-purple-100 text-purple-800",
-};
-
 const AdminUsersManager = () => {
   const { data: users, isLoading } = useAdminUsers();
   const createUser = useAdminCreateUser();
   const updateUser = useAdminUpdateUser();
   const deleteUser = useAdminDeleteUser();
+  const updateUserEmail = useAdminUpdateUserEmail();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editingEmailUser, setEditingEmailUser] = useState<AdminUser | null>(null);
+  const [newEmail, setNewEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState<"restaurant" | "supplier">("restaurant");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -132,6 +122,11 @@ const AdminUsersManager = () => {
     setSelectedCategories(user.supply_categories || []);
   };
 
+  const handleOpenEditEmail = (user: AdminUser) => {
+    setEditingEmailUser(user);
+    setNewEmail(user.email || "");
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -161,6 +156,19 @@ const AdminUsersManager = () => {
 
     setEditingUser(null);
     resetForm();
+  };
+
+  const handleUpdateEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEmailUser) return;
+
+    await updateUserEmail.mutateAsync({
+      userId: editingEmailUser.user_id,
+      newEmail,
+    });
+
+    setEditingEmailUser(null);
+    setNewEmail("");
   };
 
   const handleDelete = async (userId: string) => {
@@ -229,13 +237,23 @@ const AdminUsersManager = () => {
                     {format(new Date(user.created_at), "dd MMM yyyy", { locale: ar })}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleOpenEdit(user)}
+                        title="تعديل البيانات"
                       >
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenEditEmail(user)}
+                        title="تغيير البريد الإلكتروني"
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <Mail className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -509,6 +527,46 @@ const AdminUsersManager = () => {
               <Button type="submit" disabled={updateUser.isPending}>
                 {updateUser.isPending && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
                 حفظ التعديلات
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* نافذة تغيير البريد الإلكتروني */}
+      <Dialog open={!!editingEmailUser} onOpenChange={() => setEditingEmailUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>تغيير البريد الإلكتروني</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateEmail} className="space-y-4">
+            <div>
+              <Label className="text-muted-foreground text-sm">المستخدم</Label>
+              <p className="font-medium">{editingEmailUser?.business_name}</p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground text-sm">البريد الحالي</Label>
+              <p className="font-medium" dir="ltr">{editingEmailUser?.email || "-"}</p>
+            </div>
+            <div>
+              <Label htmlFor="newEmail">البريد الإلكتروني الجديد</Label>
+              <Input
+                id="newEmail"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+                dir="ltr"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => setEditingEmailUser(null)}>
+                إلغاء
+              </Button>
+              <Button type="submit" disabled={updateUserEmail.isPending}>
+                {updateUserEmail.isPending && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
+                تحديث البريد
               </Button>
             </div>
           </form>

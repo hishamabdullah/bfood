@@ -1,13 +1,26 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import { Clock, Mail, Phone } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Clock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const PendingApproval = () => {
   const { user, signOut, loading, isApproved, userRole } = useAuth();
   const navigate = useNavigate();
+  const bellAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize audio
+  useEffect(() => {
+    bellAudioRef.current = new Audio("/sounds/notification-bell.mp3");
+    bellAudioRef.current.load();
+
+    return () => {
+      bellAudioRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     if (!loading) {
@@ -22,6 +35,48 @@ const PendingApproval = () => {
       }
     }
   }, [user, loading, isApproved, userRole, navigate]);
+
+  // Listen for approval in real-time
+  useEffect(() => {
+    if (!user || userRole !== "restaurant") return;
+
+    const channel = supabase
+      .channel("pending-approval-listener")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updatedProfile = payload.new as { is_approved: boolean };
+          
+          if (updatedProfile.is_approved) {
+            // Play bell sound
+            bellAudioRef.current?.play().catch(console.error);
+            
+            // Show success toast
+            toast.success("تمت الموافقة على حسابك!", {
+              description: "جاري تحويلك إلى لوحة التحكم...",
+            });
+            
+            // Navigate to dashboard after a short delay
+            setTimeout(() => {
+              navigate("/dashboard");
+              // Force reload to update auth context
+              window.location.reload();
+            }, 1500);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, userRole, navigate]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -51,7 +106,7 @@ const PendingApproval = () => {
         <CardContent className="space-y-6">
           <div className="bg-muted/50 rounded-lg p-4 space-y-3">
             <p className="text-sm text-muted-foreground">
-              سيتم إعلامك عند الموافقة على حسابك. يمكنك التواصل معنا للاستفسار:
+              سيتم إعلامك تلقائياً عند الموافقة على حسابك وتحويلك إلى لوحة التحكم. يمكنك التواصل معنا للاستفسار:
             </p>
             <div className="flex items-center justify-center gap-4 text-sm">
               <a href="mailto:support@bfood.io" className="flex items-center gap-1 text-primary hover:underline">
