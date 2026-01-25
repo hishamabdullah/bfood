@@ -67,12 +67,13 @@ const Login = () => {
             <div className="space-y-2">
               <Label htmlFor="email">{t("auth.email")}</Label>
               <div className="relative">
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground rtl:right-3 ltr:left-3" />
+                <Mail className="absolute end-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="example@email.com"
-                  className="ps-10"
+                  className="pe-10"
+                  dir="ltr"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -95,6 +96,7 @@ const Login = () => {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   className="pe-10"
+                  dir="ltr"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -103,7 +105,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
+                  className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
