@@ -37,6 +37,7 @@ interface PendingUser {
   is_approved: boolean;
   created_at: string;
   role?: string;
+  email?: string | null;
 }
 
 const roleLabels: Record<string, string> = {
@@ -55,30 +56,30 @@ const AdminApprovalManager = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // جلب المستخدمين في انتظار الموافقة
+  // جلب المستخدمين مع الإيميل
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["pending-approvals"],
     queryFn: async () => {
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // استخدام Edge Function لجلب المستخدمين مع الإيميل
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        throw new Error("غير مصرح");
+      }
 
-      if (error) throw error;
+      const response = await supabase.functions.invoke("admin-get-users", {
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      });
 
-      // جلب الأدوار
-      const userIds = profiles?.map(p => p.user_id) || [];
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("*")
-        .in("user_id", userIds);
+      if (response.error) {
+        throw new Error(response.error.message || "خطأ في جلب المستخدمين");
+      }
 
-      const enrichedUsers = profiles?.map(profile => ({
-        ...profile,
-        role: roles?.find(r => r.user_id === profile.user_id)?.role || "unknown",
-      })).filter(u => u.role !== "admin") || [];
-
-      return enrichedUsers as PendingUser[];
+      // تصفية المستخدمين غير المدراء
+      const allUsers = (response.data || []) as PendingUser[];
+      return allUsers.filter(u => u.role !== "admin");
     },
   });
 
@@ -127,11 +128,13 @@ const AdminApprovalManager = () => {
 
   const filterUsers = (usersList: PendingUser[]) => {
     if (!searchQuery) return usersList;
+    const query = searchQuery.toLowerCase();
     return usersList.filter(
       u =>
-        u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.phone?.includes(searchQuery)
+        u.full_name.toLowerCase().includes(query) ||
+        u.business_name.toLowerCase().includes(query) ||
+        u.phone?.includes(searchQuery) ||
+        u.email?.toLowerCase().includes(query)
     );
   };
 
@@ -149,6 +152,7 @@ const AdminApprovalManager = () => {
         <TableRow>
           <TableHead className="text-right">الاسم</TableHead>
           <TableHead className="text-right">اسم النشاط</TableHead>
+          <TableHead className="text-right">البريد الإلكتروني</TableHead>
           <TableHead className="text-right">النوع</TableHead>
           <TableHead className="text-right">الهاتف</TableHead>
           <TableHead className="text-right">المنطقة</TableHead>
@@ -159,7 +163,7 @@ const AdminApprovalManager = () => {
       <TableBody>
         {filterUsers(usersList).length === 0 ? (
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
               لا توجد حسابات
             </TableCell>
           </TableRow>
@@ -168,6 +172,7 @@ const AdminApprovalManager = () => {
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.full_name}</TableCell>
               <TableCell>{user.business_name}</TableCell>
+              <TableCell dir="ltr" className="text-right text-sm text-muted-foreground">{user.email || "-"}</TableCell>
               <TableCell>
                 <Badge className={roleColors[user.role || ""] || "bg-gray-100"}>
                   {user.role === "restaurant" && <Building2 className="w-3 h-3 ml-1" />}
@@ -246,7 +251,7 @@ const AdminApprovalManager = () => {
       <div className="relative max-w-md">
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="البحث بالاسم أو النشاط أو الهاتف..."
+          placeholder="البحث بالاسم أو النشاط أو الهاتف أو البريد..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pr-10"
