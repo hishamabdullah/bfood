@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBranches } from "@/hooks/useBranches";
+import { useAuth } from "@/contexts/AuthContext";
 import { BranchFormDialog } from "@/components/branches/BranchFormDialog";
 import { Building2, Plus, MapPin } from "lucide-react";
 
@@ -21,7 +22,8 @@ export const BranchSelector = ({
   onCustomAddressChange,
 }: BranchSelectorProps) => {
   const { t } = useTranslation();
-  const { data: branches = [], isLoading } = useBranches();
+  const { user, loading: authLoading } = useAuth();
+  const { data: branches = [], isLoading: branchesLoading } = useBranches();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const handleBranchSelect = (value: string) => {
@@ -37,13 +39,36 @@ export const BranchSelector = ({
     }
   };
 
+  // فقط نظهر التحميل إذا كان المستخدم موجود والفروع تُحمّل
+  const isLoading = authLoading || (!!user && branchesLoading);
+
   if (isLoading) {
     return (
       <div className="space-y-2">
-        <div className="animate-pulse">
-          <div className="h-4 w-24 bg-muted rounded mb-2" />
-          <div className="h-10 bg-muted rounded" />
-        </div>
+        <Label className="flex items-center gap-2 mb-2">
+          <Building2 className="h-4 w-4" />
+          {t("cart.deliveryBranch") || "فرع التوصيل"}
+        </Label>
+        <div className="animate-pulse h-10 bg-muted rounded" />
+      </div>
+    );
+  }
+
+  // إذا لم يكن المستخدم مسجل دخول، نظهر حقل العنوان فقط
+  if (!user) {
+    return (
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2 mb-2">
+          <Building2 className="h-4 w-4" />
+          {t("cart.deliveryAddress") || "عنوان التوصيل"}
+        </Label>
+        <Input
+          placeholder={t("cart.enterAddressOrLink") || "أدخل رابط قوقل ماب أو العنوان"}
+          value={customAddress}
+          onChange={(e) => onCustomAddressChange(e.target.value)}
+          className="bg-background"
+          dir="ltr"
+        />
       </div>
     );
   }
