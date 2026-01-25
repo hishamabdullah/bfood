@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBranches } from "@/hooks/useBranches";
@@ -65,10 +71,13 @@ export const BranchSelector = ({
       <div>
         <Label className="flex items-center gap-2 mb-2">
           <Building2 className="h-4 w-4" />
-          {t("فرع التوصيل") || "فرع التوصيل"}
+          {t("cart.deliveryBranch") || "فرع التوصيل"}
         </Label>
-
-        <Select value={mode === "custom" ? "custom" : selectedBranchId} onValueChange={handleBranchSelect}>
+        
+        <Select
+          value={mode === "custom" ? "custom" : selectedBranchId}
+          onValueChange={handleBranchSelect}
+        >
           <SelectTrigger>
             <SelectValue placeholder="اختر فرع التوصيل أو أدخل عنوان" />
           </SelectTrigger>
@@ -77,7 +86,9 @@ export const BranchSelector = ({
               <SelectItem key={branch.id} value={branch.id}>
                 <div className="flex items-center gap-2">
                   <span>{branch.name}</span>
-                  {branch.is_default && <span className="text-xs text-muted-foreground">(افتراضي)</span>}
+                  {branch.is_default && (
+                    <span className="text-xs text-muted-foreground">(افتراضي)</span>
+                  )}
                 </div>
               </SelectItem>
             ))}
@@ -140,7 +151,11 @@ export const BranchSelector = ({
         </div>
       )}
 
-      <BranchFormDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} branch={null} />
+      <BranchFormDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        branch={null}
+      />
     </div>
   );
 };
