@@ -252,21 +252,17 @@ const Orders = () => {
                                 })}
                               </div>
 
-                              {/* Supplier Footer with Subtotal and Delivery Fee */}
+                              {/* Supplier Footer with Delivery Fee */}
                               <div className="bg-muted/20 px-4 py-3 border-t space-y-1 text-sm">
                                 <div className="flex justify-between">
-                                  <span className="text-muted-foreground">المجموع الجزئي</span>
-                                  <span>{group.subtotal.toFixed(2)} ر.س</span>
+                                  <span className="text-muted-foreground flex items-center gap-1">
+                                    <Truck className="h-3 w-3" />
+                                    رسوم التوصيل
+                                  </span>
+                                  <span className={group.deliveryFee > 0 ? "text-amber-600" : ""}>
+                                    {group.deliveryFee.toFixed(2)} ر.س
+                                  </span>
                                 </div>
-                                {group.deliveryFee > 0 && (
-                                  <div className="flex justify-between text-amber-600">
-                                    <span className="flex items-center gap-1">
-                                      <Truck className="h-3 w-3" />
-                                      رسوم التوصيل
-                                    </span>
-                                    <span>{group.deliveryFee.toFixed(2)} ر.س</span>
-                                  </div>
-                                )}
                                 <div className="flex justify-between font-semibold pt-1 border-t border-border">
                                   <span>إجمالي المورد</span>
                                   <span className="text-primary">{supplierTotal.toFixed(2)} ر.س</span>
