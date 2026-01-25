@@ -73,31 +73,29 @@ export const useAdminOrders = () => {
   });
 };
 
-// جلب جميع المستخدمين
+// جلب جميع المستخدمين مع الإيميل
 export const useAdminUsers = () => {
   return useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // استخدام Edge Function لجلب المستخدمين مع الإيميل
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        throw new Error("غير مصرح");
+      }
 
-      if (error) throw error;
+      const response = await supabase.functions.invoke("admin-get-users", {
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      });
 
-      // جلب الأدوار
-      const userIds = profiles?.map(p => p.user_id) || [];
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("*")
-        .in("user_id", userIds);
+      if (response.error) {
+        throw new Error(response.error.message || "خطأ في جلب المستخدمين");
+      }
 
-      const enrichedUsers = profiles?.map(profile => ({
-        ...profile,
-        role: roles?.find(r => r.user_id === profile.user_id)?.role || "unknown",
-      })) || [];
-
-      return enrichedUsers as AdminUser[];
+      return response.data as AdminUser[];
     },
   });
 };
