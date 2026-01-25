@@ -1,9 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Package, 
   ShoppingBag, 
@@ -13,16 +20,27 @@ import {
   ArrowLeft,
   Store,
   Truck,
-  Loader2
+  Loader2,
+  MapPin,
+  User as UserIcon
 } from "lucide-react";
 import { useSupplierStats } from "@/hooks/useSupplierStats";
 import { useRestaurantStats } from "@/hooks/useRestaurantStats";
+import { useSuppliers } from "@/hooks/useSuppliers";
+import { saudiRegions } from "@/data/saudiRegions";
+import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
   const { user, userRole, profile, loading, isApproved } = useAuth();
   const navigate = useNavigate();
+  const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  
   const { data: supplierStats, isLoading: supplierStatsLoading } = useSupplierStats();
   const { data: restaurantStats, isLoading: restaurantStatsLoading } = useRestaurantStats();
+  const { data: suppliers, isLoading: suppliersLoading } = useSuppliers(selectedRegion);
+
+  // Get top 6 suppliers for display
+  const displayedSuppliers = suppliers?.slice(0, 6) || [];
 
   useEffect(() => {
     if (!loading) {
@@ -201,6 +219,120 @@ const Dashboard = () => {
               </>
             ) : null}
           </div>
+
+          {/* Suppliers Section for Restaurants */}
+          {isRestaurant && (
+            <div className="mt-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-bold">الموردين</h2>
+                  <p className="text-sm text-muted-foreground">اختر منطقة لعرض الموردين المتاحين</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                    <SelectTrigger className="w-[200px]">
+                      <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
+                      <SelectValue placeholder="جميع المناطق" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">جميع المناطق</SelectItem>
+                      {saudiRegions.map((region) => (
+                        <SelectItem key={region} value={region}>
+                          {region}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Link to="/suppliers">
+                    <Button variant="outline" size="sm">
+                      عرض الكل
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {suppliersLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-card rounded-2xl border border-border p-5 animate-pulse">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-xl bg-muted" />
+                        <div className="flex-1">
+                          <div className="h-4 w-24 bg-muted rounded mb-2" />
+                          <div className="h-3 w-16 bg-muted rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : displayedSuppliers.length === 0 ? (
+                <div className="bg-card rounded-2xl border border-border p-8 text-center">
+                  <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">لا يوجد موردين في هذه المنطقة</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {displayedSuppliers.map((supplier) => (
+                    <div
+                      key={supplier.id}
+                      className="bg-card rounded-2xl border border-border p-5 hover:shadow-card transition-all duration-300"
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                          {supplier.avatar_url ? (
+                            <img
+                              src={supplier.avatar_url}
+                              alt={supplier.business_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <UserIcon className="h-6 w-6 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">{supplier.business_name}</h3>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            <span>{supplier.region || "غير محدد"}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {supplier.supply_categories && supplier.supply_categories.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {supplier.supply_categories.slice(0, 2).map((cat: string) => (
+                            <Badge key={cat} variant="secondary" className="text-xs">
+                              {cat}
+                            </Badge>
+                          ))}
+                          {supplier.supply_categories.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{supplier.supply_categories.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        <Link to={`/products?supplier=${supplier.user_id}`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Package className="h-4 w-4 ml-1" />
+                            المنتجات ({supplier.productsCount || 0})
+                          </Button>
+                        </Link>
+                        <Link to={`/profile/${supplier.user_id}`}>
+                          <Button variant="ghost" size="icon" className="h-9 w-9">
+                            <UserIcon className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Admin Panel Link */}
           {isAdmin && (
