@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -31,6 +32,7 @@ import { saudiRegions } from "@/data/saudiRegions";
 import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { user, userRole, profile, loading, isApproved } = useAuth();
   const navigate = useNavigate();
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
@@ -83,11 +85,11 @@ const Dashboard = () => {
                 <Store className="h-8 w-8 text-primary" />
               )}
               <h1 className="text-3xl font-bold">
-                مرحباً، {profile?.full_name || "مستخدم"}
+                {t("dashboard.welcome")}، {profile?.full_name || t("common.loading")}
               </h1>
             </div>
             <p className="text-muted-foreground">
-              {profile?.business_name} • {isSupplier ? "مورد" : isRestaurant ? "مطعم" : "مدير"}
+              {profile?.business_name} • {isSupplier ? t("auth.supplier") : isRestaurant ? t("auth.restaurant") : t("dashboard.admin")}
             </p>
           </div>
 
@@ -100,7 +102,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {isSupplier ? "الطلبات الواردة" : "طلباتي"}
+                    {isSupplier ? t("orders.incomingOrders") : t("dashboard.myOrders")}
                   </p>
                   <p className="text-2xl font-bold">
                     {isSupplier ? (supplierStats?.totalOrders || 0) : (restaurantStats?.totalOrders || 0)}
@@ -115,7 +117,7 @@ const Dashboard = () => {
                   <Clock className="h-6 w-6 text-secondary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">قيد التنفيذ</p>
+                  <p className="text-sm text-muted-foreground">{t("orders.inProgress")}</p>
                   <p className="text-2xl font-bold">
                     {isSupplier ? (supplierStats?.pendingOrders || 0) : (restaurantStats?.pendingOrders || 0)}
                   </p>
@@ -130,7 +132,7 @@ const Dashboard = () => {
                     <Package className="h-6 w-6 text-accent-foreground" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">منتجاتي</p>
+                    <p className="text-sm text-muted-foreground">{t("dashboard.myProducts")}</p>
                     <p className="text-2xl font-bold">
                       {supplierStats?.totalProducts || 0}
                     </p>
@@ -146,13 +148,13 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {isSupplier ? "إجمالي المبيعات" : "إجمالي المشتريات"}
+                    {isSupplier ? t("dashboard.totalSales") : t("dashboard.totalPurchases")}
                   </p>
                   <p className="text-2xl font-bold">
                     {isSupplier 
                       ? (supplierStats?.totalSales?.toFixed(2) || "0.00") 
                       : (restaurantStats?.totalPurchases?.toFixed(2) || "0.00")
-                    } ر.س
+                    } {t("common.sar")}
                   </p>
                 </div>
               </div>
@@ -164,26 +166,26 @@ const Dashboard = () => {
             {isSupplier ? (
               <>
                 <div className="bg-card rounded-2xl border border-border p-6">
-                  <h3 className="text-lg font-semibold mb-4">إدارة المنتجات</h3>
+                  <h3 className="text-lg font-semibold mb-4">{t("dashboard.manageProducts")}</h3>
                   <p className="text-muted-foreground mb-4">
-                    أضف منتجات جديدة وحدّث الأسعار والمخزون
+                    {t("dashboard.manageProductsDesc")}
                   </p>
                   <Link to="/supplier/products">
                     <Button variant="hero">
                       <Plus className="h-5 w-5" />
-                      إضافة منتج جديد
+                      {t("dashboard.addNewProduct")}
                     </Button>
                   </Link>
                 </div>
 
                 <div className="bg-card rounded-2xl border border-border p-6">
-                  <h3 className="text-lg font-semibold mb-4">الطلبات الواردة</h3>
+                  <h3 className="text-lg font-semibold mb-4">{t("orders.incomingOrders")}</h3>
                   <p className="text-muted-foreground mb-4">
-                    راجع الطلبات الجديدة وحدّث حالتها
+                    {t("dashboard.incomingOrdersDesc")}
                   </p>
                   <Link to="/supplier/orders">
                     <Button variant="outline">
-                      عرض الطلبات
+                      {t("dashboard.viewOrders")}
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
                   </Link>
@@ -192,26 +194,26 @@ const Dashboard = () => {
             ) : isRestaurant ? (
               <>
                 <div className="bg-card rounded-2xl border border-border p-6">
-                  <h3 className="text-lg font-semibold mb-4">تصفح المنتجات</h3>
+                  <h3 className="text-lg font-semibold mb-4">{t("dashboard.browseProducts")}</h3>
                   <p className="text-muted-foreground mb-4">
-                    استعرض المنتجات من جميع الموردين وأضفها للسلة
+                    {t("dashboard.browseProductsDesc")}
                   </p>
                   <Link to="/products">
                     <Button variant="hero">
-                      تصفح المنتجات
+                      {t("dashboard.browseProducts")}
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
                   </Link>
                 </div>
 
                 <div className="bg-card rounded-2xl border border-border p-6">
-                  <h3 className="text-lg font-semibold mb-4">طلباتي</h3>
+                  <h3 className="text-lg font-semibold mb-4">{t("dashboard.myOrders")}</h3>
                   <p className="text-muted-foreground mb-4">
-                    تابع حالة طلباتك الحالية والسابقة
+                    {t("dashboard.myOrdersDesc")}
                   </p>
                   <Link to="/orders">
                     <Button variant="outline">
-                      عرض الطلبات
+                      {t("dashboard.viewOrders")}
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
                   </Link>
@@ -225,17 +227,17 @@ const Dashboard = () => {
             <div className="mt-8">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-xl font-bold">الموردين</h2>
-                  <p className="text-sm text-muted-foreground">اختر منطقة لعرض الموردين المتاحين</p>
+                  <h2 className="text-xl font-bold">{t("common.suppliers")}</h2>
+                  <p className="text-sm text-muted-foreground">{t("suppliers.selectRegion")}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <Select value={selectedRegion} onValueChange={setSelectedRegion}>
                     <SelectTrigger className="w-[200px]">
-                      <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
-                      <SelectValue placeholder="جميع المناطق" />
+                      <MapPin className="h-4 w-4 me-2 text-muted-foreground" />
+                      <SelectValue placeholder={t("suppliers.allRegions")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">جميع المناطق</SelectItem>
+                      <SelectItem value="all">{t("suppliers.allRegions")}</SelectItem>
                       {saudiRegions.map((region) => (
                         <SelectItem key={region} value={region}>
                           {region}
@@ -245,7 +247,7 @@ const Dashboard = () => {
                   </Select>
                   <Link to="/suppliers">
                     <Button variant="outline" size="sm">
-                      عرض الكل
+                      {t("common.viewAll")}
                       <ArrowLeft className="h-4 w-4" />
                     </Button>
                   </Link>
@@ -269,7 +271,7 @@ const Dashboard = () => {
               ) : displayedSuppliers.length === 0 ? (
                 <div className="bg-card rounded-2xl border border-border p-8 text-center">
                   <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">لا يوجد موردين في هذه المنطقة</p>
+                  <p className="text-muted-foreground">{t("suppliers.noSuppliers")}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -294,7 +296,7 @@ const Dashboard = () => {
                           <h3 className="font-semibold truncate">{supplier.business_name}</h3>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <MapPin className="h-3 w-3" />
-                            <span>{supplier.region || "غير محدد"}</span>
+                            <span>{supplier.region || t("common.noResults")}</span>
                           </div>
                         </div>
                       </div>
@@ -317,8 +319,8 @@ const Dashboard = () => {
                       <div className="flex gap-2">
                         <Link to={`/products?supplier=${supplier.user_id}`} className="flex-1">
                           <Button variant="outline" size="sm" className="w-full">
-                            <Package className="h-4 w-4 ml-1" />
-                            المنتجات ({supplier.productsCount || 0})
+                            <Package className="h-4 w-4 me-1" />
+                            {t("common.products")} ({supplier.productsCount || 0})
                           </Button>
                         </Link>
                         <Link to={`/profile/${supplier.user_id}`}>
@@ -337,13 +339,13 @@ const Dashboard = () => {
           {/* Admin Panel Link */}
           {isAdmin && (
             <div className="mt-8 bg-card rounded-2xl border border-border p-6">
-              <h3 className="text-lg font-semibold mb-4">لوحة تحكم المدير</h3>
+              <h3 className="text-lg font-semibold mb-4">{t("dashboard.adminPanel")}</h3>
               <p className="text-muted-foreground mb-4">
-                إدارة المستخدمين والطلبات والإعدادات
+                {t("dashboard.adminPanelDesc")}
               </p>
               <Link to="/admin">
                 <Button variant="hero">
-                  الذهاب للوحة التحكم
+                  {t("dashboard.goToAdminPanel")}
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
