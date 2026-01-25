@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User, Session, createClient } from "@supabase/supabase-js";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 type UserRole = "admin" | "restaurant" | "supplier";
@@ -30,12 +30,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// عميل بدون أنواع للاستعلامات المخصصة (حتى تتحدث الأنواع)
-const supabaseUntyped = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-);
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -43,33 +37,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
-  const fetchUserData = async (userId: string): Promise<boolean> => {
+  const fetchUserData = useCallback(async (userId: string): Promise<void> => {
     try {
+      console.log("Fetching user data for:", userId);
+      
       // جلب الدور
-      const { data: roleData } = await supabaseUntyped
+      const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
         .maybeSingle();
 
+      if (roleError) {
+        console.error("Error fetching role:", roleError);
+      }
+
       let approved = false;
+      let fetchedRole: UserRole | null = null;
       
       if (roleData) {
-        setUserRole(roleData.role as UserRole);
+        fetchedRole = roleData.role as UserRole;
+        console.log("Fetched role:", fetchedRole);
         // المدير يعتبر معتمداً تلقائياً
-        if (roleData.role === "admin") {
+        if (fetchedRole === "admin") {
           approved = true;
         }
       }
 
       // جلب الملف الشخصي
-      const { data: profileData } = await supabaseUntyped
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("full_name, business_name, phone, avatar_url, is_approved")
         .eq("user_id", userId)
         .maybeSingle();
 
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+      }
+
+      if (profileData) {
+        console.log("Fetched profile, is_approved:", profileData.is_approved);
+        // تعيين الموافقة بناءً على البيانات أو كون المستخدم مدير
+        approved = profileData.is_approved === true || fetchedRole === "admin";
+      }
+      
+      console.log("Final approved status:", approved, "Role:", fetchedRole);
+      
+      // تحديث الحالة
+      setUserRole(fetchedRole);
+      setIsApproved(approved);
       if (profileData) {
         setProfile({
           full_name: profileData.full_name,
@@ -77,68 +95,75 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           phone: profileData.phone,
           avatar_url: profileData.avatar_url,
         });
-        approved = profileData.is_approved || roleData?.role === "admin";
       }
-      
-      setIsApproved(approved);
-      return approved;
     } catch (error) {
       console.error("Error fetching user data:", error);
-      return false;
     }
-  };
+  }, []);
 
   useEffect(() => {
+    // تجنب التهيئة المتكررة
+    if (initialized) return;
+    
     let isMounted = true;
     
-    // إعداد مستمع حالة المصادقة أولاً
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    // جلب الجلسة الأولية
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
         if (!isMounted) return;
         
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (initialSession?.user) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          await fetchUserData(initialSession.user.id);
+        }
+        
+        if (isMounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        if (isMounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
+      }
+    };
+    
+    initializeAuth();
+    
+    // إعداد مستمع حالة المصادقة
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        if (!isMounted) return;
+        
+        console.log("Auth state changed:", event);
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
 
-        if (session?.user) {
-          // انتظار جلب بيانات المستخدم قبل إنهاء التحميل
-          await fetchUserData(session.user.id);
+        if (newSession?.user) {
+          await fetchUserData(newSession.user.id);
         } else {
           setUserRole(null);
           setProfile(null);
           setIsApproved(false);
         }
         
-        if (isMounted) {
+        if (isMounted && initialized) {
           setLoading(false);
         }
       }
     );
 
-    // ثم جلب الجلسة الحالية
-    const initSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!isMounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchUserData(session.user.id);
-      }
-      
-      if (isMounted) {
-        setLoading(false);
-      }
-    };
-    
-    initSession();
-
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initialized, fetchUserData]);
 
   const signUp = async (
     email: string,
@@ -165,7 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (data.user) {
         // إنشاء الملف الشخصي
-        const { error: profileError } = await supabaseUntyped
+        const { error: profileError } = await supabase
           .from("profiles")
           .insert({
             user_id: data.user.id,
@@ -174,17 +199,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             phone: userData.phone,
             region: userData.region || null,
             supply_categories: userData.supplyCategories || null,
-          });
+          } as any);
 
         if (profileError) throw profileError;
 
         // إنشاء الدور
-        const { error: roleError } = await supabaseUntyped
+        const { error: roleError } = await supabase
           .from("user_roles")
           .insert({
             user_id: data.user.id,
             role: userData.role,
-          });
+          } as any);
 
         if (roleError) throw roleError;
 
