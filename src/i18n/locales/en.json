@@ -194,7 +194,9 @@
     "notes": "Notes",
     "notesPlaceholder": "Any additional notes...",
     "orderSplitNote": "Order will be automatically split by suppliers",
-    "processingOrder": "Processing order..."
+    "processingOrder": "Processing order...",
+    "belowMinimum": "Below minimum ({{amount}} SAR)",
+    "freeDelivery": "Free delivery!"
   },
   "orders": {
     "title": "My Orders",

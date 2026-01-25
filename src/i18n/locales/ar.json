@@ -194,7 +194,9 @@
     "notes": "ملاحظات",
     "notesPlaceholder": "أي ملاحظات إضافية...",
     "orderSplitNote": "سيتم تقسيم الطلب تلقائياً حسب الموردين",
-    "processingOrder": "جاري إنشاء الطلب..."
+    "processingOrder": "جاري إنشاء الطلب...",
+    "belowMinimum": "أقل من الحد الأدنى ({{amount}} ر.س)",
+    "freeDelivery": "توصيل مجاني!"
   },
   "orders": {
     "title": "طلباتي",
