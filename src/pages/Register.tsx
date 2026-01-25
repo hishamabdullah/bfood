@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import { saudiRegions, supplyCategories } from "@/data/saudiRegions";
 type UserType = "restaurant" | "supplier";
 
 const Register = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const initialType = (searchParams.get("type") as UserType) || "restaurant";
   
@@ -56,8 +58,8 @@ const Register = () => {
     
     if (formData.password.length < 6) {
       toast({
-        title: "كلمة المرور قصيرة",
-        description: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+        title: t("auth.passwordTooShort"),
+        description: t("auth.passwordMinLength"),
         variant: "destructive",
       });
       return;
@@ -65,8 +67,8 @@ const Register = () => {
 
     if (userType === "supplier" && !formData.region) {
       toast({
-        title: "المنطقة مطلوبة",
-        description: "يرجى اختيار منطقتك",
+        title: t("auth.regionRequired"),
+        description: t("auth.selectYourRegion"),
         variant: "destructive",
       });
       return;
@@ -74,8 +76,8 @@ const Register = () => {
 
     if (userType === "supplier" && selectedCategories.length === 0) {
       toast({
-        title: "مجالات التوريد مطلوبة",
-        description: "يرجى اختيار مجال توريد واحد على الأقل",
+        title: t("auth.categoriesRequired"),
+        description: t("auth.selectCategory"),
         variant: "destructive",
       });
       return;
@@ -94,16 +96,16 @@ const Register = () => {
 
     if (error) {
       toast({
-        title: "خطأ في التسجيل",
+        title: t("auth.registerError"),
         description: error.message === "User already registered"
-          ? "هذا البريد الإلكتروني مسجل مسبقاً"
+          ? t("auth.userAlreadyExists")
           : error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "تم إنشاء الحساب بنجاح",
-        description: "مرحباً بك في BFOOD!",
+        title: t("auth.registerSuccess"),
+        description: t("auth.welcomeMessage"),
       });
       // الموردين يذهبون للداشبورد مباشرة، المطاعم لصفحة انتظار الموافقة
       if (userType === "supplier") {
@@ -130,8 +132,8 @@ const Register = () => {
         {/* Card */}
         <div className="bg-card rounded-2xl shadow-elevated p-8 animate-scale-in">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold mb-2">إنشاء حساب جديد</h1>
-            <p className="text-muted-foreground">انضم إلى منصة BFOOD اليوم</p>
+            <h1 className="text-2xl font-bold mb-2">{t("auth.createNewAccount")}</h1>
+            <p className="text-muted-foreground">{t("auth.joinBfood")}</p>
           </div>
 
           {/* User Type Toggle */}
@@ -147,7 +149,7 @@ const Register = () => {
               disabled={isLoading}
             >
               <Store className="h-5 w-5" />
-              مطعم
+              {t("auth.restaurant")}
             </button>
             <button
               type="button"
@@ -160,21 +162,21 @@ const Register = () => {
               disabled={isLoading}
             >
               <Truck className="h-5 w-5" />
-              مورد
+              {t("auth.supplier")}
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">الاسم الكامل</Label>
+              <Label htmlFor="name">{t("auth.fullName")}</Label>
               <div className="relative">
-                <User className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <User className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="name"
                   name="name"
-                  placeholder="أدخل اسمك الكامل"
-                  className="pr-10"
+                  placeholder={t("auth.fullName")}
+                  className="ps-10"
                   value={formData.name}
                   onChange={handleChange}
                   required
@@ -186,19 +188,19 @@ const Register = () => {
             {/* Business Name */}
             <div className="space-y-2">
               <Label htmlFor="businessName">
-                {userType === "restaurant" ? "اسم المطعم" : "اسم الشركة/المتجر"}
+                {userType === "restaurant" ? t("auth.restaurantName") : t("auth.companyName")}
               </Label>
               <div className="relative">
                 {userType === "restaurant" ? (
-                  <Store className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Store className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 ) : (
-                  <Truck className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Truck className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 )}
                 <Input
                   id="businessName"
                   name="businessName"
-                  placeholder={userType === "restaurant" ? "اسم المطعم" : "اسم الشركة"}
-                  className="pr-10"
+                  placeholder={userType === "restaurant" ? t("auth.restaurantName") : t("auth.companyName")}
+                  className="ps-10"
                   value={formData.businessName}
                   onChange={handleChange}
                   required
@@ -210,15 +212,15 @@ const Register = () => {
             {/* Supplier Region */}
             {userType === "supplier" && (
               <div className="space-y-2">
-                <Label>المنطقة</Label>
+                <Label>{t("auth.region")}</Label>
                 <Select
                   value={formData.region}
                   onValueChange={(value) => setFormData({ ...formData, region: value })}
                   disabled={isLoading}
                 >
                   <SelectTrigger className="w-full">
-                    <MapPin className="h-5 w-5 text-muted-foreground ml-2" />
-                    <SelectValue placeholder="اختر منطقتك" />
+                    <MapPin className="h-5 w-5 text-muted-foreground me-2" />
+                    <SelectValue placeholder={t("auth.chooseRegion")} />
                   </SelectTrigger>
                   <SelectContent>
                     {saudiRegions.map((region) => (
@@ -234,7 +236,7 @@ const Register = () => {
             {/* Supplier Categories */}
             {userType === "supplier" && (
               <div className="space-y-2">
-                <Label>مجالات التوريد (اختر واحد أو أكثر)</Label>
+                <Label>{t("auth.categoriesHint")}</Label>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded-lg">
                   {supplyCategories.map((category) => (
                     <div key={category} className="flex items-center space-x-2 space-x-reverse">
@@ -258,15 +260,15 @@ const Register = () => {
 
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <div className="relative">
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Mail className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   placeholder="example@email.com"
-                  className="pr-10"
+                  className="ps-10"
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -277,15 +279,15 @@ const Register = () => {
 
             {/* Phone */}
             <div className="space-y-2">
-              <Label htmlFor="phone">رقم الجوال</Label>
+              <Label htmlFor="phone">{t("auth.phone")}</Label>
               <div className="relative">
-                <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Phone className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="phone"
                   name="phone"
                   type="tel"
                   placeholder="05XXXXXXXX"
-                  className="pr-10"
+                  className="ps-10"
                   value={formData.phone}
                   onChange={handleChange}
                   required
@@ -296,15 +298,15 @@ const Register = () => {
 
             {/* Password */}
             <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Lock className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pr-10 pl-10"
+                  className="ps-10 pe-10"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -314,7 +316,7 @@ const Register = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -326,19 +328,19 @@ const Register = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  جاري إنشاء الحساب...
+                  {t("auth.creatingAccount")}
                 </>
               ) : (
-                "إنشاء الحساب"
+                t("auth.createAccount")
               )}
             </Button>
           </form>
 
           {/* Login Link */}
           <p className="text-center text-muted-foreground mt-6">
-            لديك حساب بالفعل؟{" "}
+            {t("auth.hasAccount")}{" "}
             <Link to="/login" className="text-primary font-semibold hover:underline">
-              سجّل دخولك
+              {t("auth.loginButton")}
             </Link>
           </p>
         </div>

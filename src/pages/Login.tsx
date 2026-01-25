@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,16 +27,16 @@ const Login = () => {
 
     if (error) {
       toast({
-        title: "خطأ في تسجيل الدخول",
+        title: t("auth.loginError"),
         description: error.message === "Invalid login credentials" 
-          ? "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+          ? t("auth.invalidCredentials")
           : error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: "مرحباً بعودتك!",
+        title: t("auth.loginSuccess"),
+        description: t("auth.welcomeBackMessage"),
       });
       navigate("/dashboard");
     }
@@ -56,21 +58,21 @@ const Login = () => {
         {/* Card */}
         <div className="bg-card rounded-2xl shadow-elevated p-8 animate-scale-in">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2">مرحباً بعودتك</h1>
-            <p className="text-muted-foreground">سجّل دخولك للوصول لحسابك</p>
+            <h1 className="text-2xl font-bold mb-2">{t("auth.welcomeBack")}</h1>
+            <p className="text-muted-foreground">{t("auth.loginToAccess")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <div className="relative">
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground rtl:right-3 ltr:left-3" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="example@email.com"
-                  className="pr-10"
+                  className="ps-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -82,18 +84,18 @@ const Login = () => {
             {/* Password */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">كلمة المرور</Label>
+                <Label htmlFor="password">{t("auth.password")}</Label>
                 <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                  نسيت كلمة المرور؟
+                  {t("auth.forgotPassword")}
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground rtl:right-3 ltr:left-3" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pr-10 pl-10"
+                  className="ps-10 pe-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -102,7 +104,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground rtl:left-3 ltr:right-3"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -114,10 +116,10 @@ const Login = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  جاري تسجيل الدخول...
+                  {t("auth.loggingIn")}
                 </>
               ) : (
-                "تسجيل الدخول"
+                t("auth.loginButton")
               )}
             </Button>
           </form>
@@ -125,15 +127,15 @@ const Login = () => {
           {/* Divider */}
           <div className="my-6 flex items-center">
             <div className="flex-1 border-t border-border" />
-            <span className="px-4 text-sm text-muted-foreground">أو</span>
+            <span className="px-4 text-sm text-muted-foreground">{t("common.or")}</span>
             <div className="flex-1 border-t border-border" />
           </div>
 
           {/* Register Link */}
           <p className="text-center text-muted-foreground">
-            ليس لديك حساب؟{" "}
+            {t("auth.noAccount")}{" "}
             <Link to="/register" className="text-primary font-semibold hover:underline">
-              أنشئ حساب جديد
+              {t("auth.createNewAccount")}
             </Link>
           </p>
         </div>

@@ -162,7 +162,7 @@ export const useCreateCategory = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (category: { name: string; icon?: string }) => {
+    mutationFn: async (category: { name: string; name_en?: string; icon?: string }) => {
       const { data, error } = await supabase
         .from("categories")
         .insert(category)
@@ -188,7 +188,7 @@ export const useUpdateCategory = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...category }: { id: string; name?: string; icon?: string }) => {
+    mutationFn: async ({ id, ...category }: { id: string; name?: string; name_en?: string | null; icon?: string | null }) => {
       const { data, error } = await supabase
         .from("categories")
         .update(category)
