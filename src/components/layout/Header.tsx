@@ -47,8 +47,8 @@ const Header = () => {
               className="h-10 w-10 rounded-xl object-contain"
             />
           ) : (
-            <div className="grid h-10 w-10 place-items-center rounded-xl gradient-primary">
-              <span className="relative -top-px grid h-full w-full place-items-center text-xl font-bold leading-none text-primary-foreground">B</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
+              <span className="text-xl font-bold text-primary-foreground leading-none">B</span>
             </div>
           )}
           <span className="text-xl font-bold text-foreground">BFOOD</span>

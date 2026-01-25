@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = async (userId: string): Promise<boolean> => {
     try {
       // جلب الدور
       const { data: roleData } = await supabaseUntyped
@@ -53,11 +53,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq("user_id", userId)
         .maybeSingle();
 
+      let approved = false;
+      
       if (roleData) {
         setUserRole(roleData.role as UserRole);
         // المدير يعتبر معتمداً تلقائياً
         if (roleData.role === "admin") {
-          setIsApproved(true);
+          approved = true;
         }
       }
 
@@ -75,45 +77,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           phone: profileData.phone,
           avatar_url: profileData.avatar_url,
         });
-        setIsApproved(profileData.is_approved || roleData?.role === "admin");
+        approved = profileData.is_approved || roleData?.role === "admin";
       }
+      
+      setIsApproved(approved);
+      return approved;
     } catch (error) {
       console.error("Error fetching user data:", error);
+      return false;
     }
   };
 
   useEffect(() => {
+    let isMounted = true;
+    
     // إعداد مستمع حالة المصادقة أولاً
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // استخدام setTimeout لتجنب deadlock
-          setTimeout(() => {
-            fetchUserData(session.user.id);
-          }, 0);
+          // انتظار جلب بيانات المستخدم قبل إنهاء التحميل
+          await fetchUserData(session.user.id);
         } else {
           setUserRole(null);
           setProfile(null);
           setIsApproved(false);
         }
-        setLoading(false);
+        
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     );
 
     // ثم جلب الجلسة الحالية
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
-        fetchUserData(session.user.id);
+        await fetchUserData(session.user.id);
       }
-      setLoading(false);
-    });
+      
+      if (isMounted) {
+        setLoading(false);
+      }
+    };
+    
+    initSession();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (
