@@ -295,17 +295,33 @@ const Cart = () => {
                   />
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("cart.subtotal")}</span>
-                    <span>{subtotal.toFixed(2)} {t("common.sar")}</span>
+                <div className="space-y-3">
+                  {/* المجموع الفرعي لكل مورد */}
+                  {Object.entries(groupedBySupplier).map(([supplierId, group]) => {
+                    const supplierSubtotal = group.items.reduce(
+                      (sum, item) => sum + item.product.price * item.quantity,
+                      0
+                    );
+                    return (
+                      <div key={supplierId} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{group.supplierName}</span>
+                        <span>{supplierSubtotal.toFixed(2)} {t("common.sar")}</span>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* رسوم التوصيل */}
+                  <div className="flex justify-between text-sm pt-2 border-t border-dashed">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Truck className="h-4 w-4" />
+                      {t("cart.deliveryFee")}
+                    </span>
+                    <span className={totalDeliveryFee > 0 ? "text-amber-600" : ""}>
+                      {totalDeliveryFee.toFixed(2)} {t("common.sar")}
+                    </span>
                   </div>
-                  {totalDeliveryFee > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("cart.deliveryFee")}</span>
-                      <span>{totalDeliveryFee.toFixed(2)} {t("common.sar")}</span>
-                    </div>
-                  )}
+                  
+                  {/* الإجمالي */}
                   <div className="border-t border-border pt-4 flex justify-between">
                     <span className="font-bold">{t("cart.total")}</span>
                     <span className="font-bold text-xl text-primary">{total.toFixed(2)} {t("common.sar")}</span>
