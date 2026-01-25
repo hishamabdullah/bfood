@@ -196,7 +196,13 @@
     "orderSplitNote": "سيتم تقسيم الطلب تلقائياً حسب الموردين",
     "processingOrder": "جاري إنشاء الطلب...",
     "belowMinimum": "أقل من الحد الأدنى ({{amount}} ر.س)",
-    "freeDelivery": "توصيل مجاني!"
+    "freeDelivery": "توصيل مجاني!",
+    "deliveryBranch": "فرع التوصيل",
+    "selectBranch": "اختر فرع التوصيل",
+    "addNewBranch": "إضافة فرع جديد",
+    "noBranches": "لا توجد فروع محفوظة",
+    "viewOnMap": "عرض على الخريطة",
+    "enterAddressOrLink": "أدخل رابط قوقل ماب أو العنوان"
   },
   "orders": {
     "title": "طلباتي",
