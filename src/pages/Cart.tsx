@@ -67,7 +67,7 @@ const Cart = () => {
   
   // Calculate delivery fees per supplier
   const supplierDeliveryFees = useMemo(() => {
-    const fees: Record<string, { fee: number; reason: string }> = {};
+    const fees: Record<string, { fee: number; reason: string; isFree: boolean }> = {};
     Object.entries(groupedBySupplier).forEach(([supplierId, group]) => {
       const supplierProfile = group.supplierProfile;
       const minimumOrderAmount = supplierProfile?.minimum_order_amount || 0;
@@ -81,14 +81,21 @@ const Cart = () => {
       if (minimumOrderAmount > 0 && supplierSubtotal < minimumOrderAmount) {
         fees[supplierId] = {
           fee: defaultDeliveryFee,
-          reason: `أقل من الحد الأدنى (${minimumOrderAmount} ر.س)`,
+          reason: t("cart.belowMinimum", { amount: minimumOrderAmount }) || `أقل من الحد الأدنى (${minimumOrderAmount} ر.س)`,
+          isFree: false,
+        };
+      } else if (minimumOrderAmount > 0 && supplierSubtotal >= minimumOrderAmount) {
+        fees[supplierId] = { 
+          fee: 0, 
+          reason: t("cart.freeDelivery") || "توصيل مجاني!",
+          isFree: true,
         };
       } else {
-        fees[supplierId] = { fee: 0, reason: "" };
+        fees[supplierId] = { fee: 0, reason: "", isFree: false };
       }
     });
     return fees;
-  }, [groupedBySupplier]);
+  }, [groupedBySupplier, t]);
   
   const totalDeliveryFee = Object.values(supplierDeliveryFees).reduce((sum, { fee }) => sum + fee, 0);
   const total = subtotal + totalDeliveryFee;
@@ -246,12 +253,14 @@ const Cart = () => {
 
                     {/* Supplier Footer with Delivery Fee */}
                     <div className="bg-muted/30 px-6 py-3 border-t border-border space-y-2">
-                      <div className={`flex justify-between text-sm ${supplierFeeInfo && supplierFeeInfo.fee > 0 ? "text-amber-600" : ""}`}>
+                      <div className={`flex justify-between text-sm ${supplierFeeInfo?.fee > 0 ? "text-amber-600" : supplierFeeInfo?.isFree ? "text-green-600" : ""}`}>
                         <span className="flex items-center gap-1">
                           <Truck className="h-4 w-4" />
                           {t("cart.deliveryFee")}
-                          {supplierFeeInfo && supplierFeeInfo.fee > 0 && (
-                            <span className="text-xs">({supplierFeeInfo.reason})</span>
+                          {supplierFeeInfo?.reason && (
+                            <span className={`text-xs ${supplierFeeInfo.isFree ? "bg-green-100 text-green-700 px-2 py-0.5 rounded-full" : ""}`}>
+                              ({supplierFeeInfo.reason})
+                            </span>
                           )}
                         </span>
                         <span>{(supplierFeeInfo?.fee || 0).toFixed(2)} {t("common.sar")}</span>
