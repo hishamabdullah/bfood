@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Loader2, Eye, ChevronDown, ChevronUp } from "lucide-react";
-import { useAdminOrders, AdminOrder } from "@/hooks/useAdminData";
+import { Loader2, Eye, Pencil } from "lucide-react";
+import { useAdminOrders, useAdminUpdateOrderStatus, AdminOrder } from "@/hooks/useAdminData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -36,9 +43,24 @@ const statusLabels: Record<string, string> = {
   cancelled: "ملغي",
 };
 
+const statusOptions = [
+  { value: "pending", label: "قيد الانتظار" },
+  { value: "preparing", label: "جاري التحضير" },
+  { value: "ready", label: "جاهز للتسليم" },
+  { value: "delivered", label: "تم التسليم" },
+  { value: "cancelled", label: "ملغي" },
+];
+
 const AdminOrdersTable = () => {
   const { data: orders, isLoading } = useAdminOrders();
+  const updateOrderStatus = useAdminUpdateOrderStatus();
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    await updateOrderStatus.mutateAsync({ orderId, status: newStatus, updateItems: true });
+    setEditingOrderId(null);
+  };
 
   if (isLoading) {
     return (
@@ -79,21 +101,52 @@ const AdminOrdersTable = () => {
                 <TableCell>{Number(order.total_amount).toFixed(2)} ر.س</TableCell>
                 <TableCell>{Number(order.delivery_fee).toFixed(2)} ر.س</TableCell>
                 <TableCell>
-                  <Badge className={statusColors[order.status] || "bg-gray-100"}>
-                    {statusLabels[order.status] || order.status}
-                  </Badge>
+                  {editingOrderId === order.id ? (
+                    <Select
+                      defaultValue={order.status}
+                      onValueChange={(value) => handleStatusChange(order.id, value)}
+                      disabled={updateOrderStatus.isPending}
+                    >
+                      <SelectTrigger className="w-32 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge className={statusColors[order.status] || "bg-gray-100"}>
+                      {statusLabels[order.status] || order.status}
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell>
                   {format(new Date(order.created_at), "dd MMM yyyy", { locale: ar })}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedOrder(order)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedOrder(order)}
+                      title="عرض التفاصيل"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingOrderId(editingOrderId === order.id ? null : order.id)}
+                      title="تغيير الحالة"
+                      className={editingOrderId === order.id ? "bg-muted" : ""}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -126,6 +179,30 @@ const AdminOrdersTable = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">الملاحظات</p>
                   <p className="font-medium">{selectedOrder.notes || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الحالة</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Select
+                      defaultValue={selectedOrder.status}
+                      onValueChange={(value) => handleStatusChange(selectedOrder.id, value)}
+                      disabled={updateOrderStatus.isPending}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {updateOrderStatus.isPending && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                  </div>
                 </div>
               </div>
 
