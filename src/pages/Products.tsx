@@ -6,10 +6,18 @@ import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, X, Store } from "lucide-react";
+import { Search, X, Store, MapPin } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { useSupplierProfile } from "@/hooks/useSuppliers";
 import ProductCard from "@/components/products/ProductCard";
+import { saudiRegions } from "@/data/saudiRegions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Products = () => {
   const { t } = useTranslation();
@@ -18,6 +26,7 @@ const Products = () => {
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedRegion, setSelectedRegion] = useState("all");
 
   const { data: products, isLoading: productsLoading } = useProducts(selectedCategory);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
@@ -25,6 +34,11 @@ const Products = () => {
 
   const filteredProducts = products?.filter((product) => {
     if (supplierId && product.supplier_id !== supplierId) {
+      return false;
+    }
+    
+    // Filter by region
+    if (selectedRegion !== "all" && product.supplier_profile?.region !== selectedRegion) {
       return false;
     }
     
@@ -89,36 +103,52 @@ const Products = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            
+            {/* Region Filter */}
+            <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
+                <SelectValue placeholder="جميع المناطق" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع المناطق</SelectItem>
+                {saudiRegions.map((region) => (
+                  <SelectItem key={region} value={region}>
+                    {region}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Categories */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              <Button
-                variant={selectedCategory === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory("all")}
-                className="whitespace-nowrap"
-              >
-                {t("common.all")}
-              </Button>
-              {categoriesLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-9 w-20" />
-                ))
-              ) : (
-                categories?.map((category) => (
-                  <Button
-                    key={category.id}
-                    variant={selectedCategory === category.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category.id)}
-                    className="whitespace-nowrap"
-                  >
-                    {category.icon && <span className="ml-1">{category.icon}</span>}
-                    {category.name}
-                  </Button>
-                ))
-              )}
-            </div>
+          {/* Categories */}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-8">
+            <Button
+              variant={selectedCategory === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedCategory("all")}
+              className="whitespace-nowrap"
+            >
+              {t("common.all")}
+            </Button>
+            {categoriesLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-9 w-20" />
+              ))
+            ) : (
+              categories?.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category.id)}
+                  className="whitespace-nowrap"
+                >
+                  {category.icon && <span className="ml-1">{category.icon}</span>}
+                  {category.name}
+                </Button>
+              ))
+            )}
           </div>
 
           {/* Products Grid */}
