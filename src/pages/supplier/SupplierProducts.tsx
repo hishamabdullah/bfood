@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -37,12 +38,15 @@ import { useSupplierProducts, useDeleteProduct } from "@/hooks/useSupplierProduc
 import ProductFormDialog from "@/components/supplier/ProductFormDialog";
 import type { SupplierProduct } from "@/hooks/useSupplierProducts";
 import { Link } from "react-router-dom";
+import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 
 export default function SupplierProducts() {
+  const { t } = useTranslation();
   const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const { data: products, isLoading } = useSupplierProducts();
   const deleteProduct = useDeleteProduct();
+  const { getCategoryName } = useCategoryTranslation();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -102,31 +106,31 @@ export default function SupplierProducts() {
                 to="/dashboard"
                 className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2"
               >
-                <ArrowRight className="h-4 w-4 ml-1" />
-                العودة للوحة التحكم
+                <ArrowRight className="h-4 w-4 ms-1 rtl:rotate-180" />
+                {t("supplier.backToDashboard")}
               </Link>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Package className="h-7 w-7 text-primary" />
-                إدارة المنتجات
+                {t("supplier.productsManagement")}
               </h1>
               <p className="text-muted-foreground">
-                {products?.length || 0} منتج
+                {products?.length || 0} {t("supplier.productCount")}
               </p>
             </div>
             <Button onClick={() => setIsFormOpen(true)}>
               <Plus className="h-5 w-5" />
-              إضافة منتج
+              {t("supplier.addProduct")}
             </Button>
           </div>
 
           {/* Search */}
           <div className="relative mb-6">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="ابحث عن منتج..."
+              placeholder={t("supplier.searchProduct")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-10"
+              className="ps-10"
             />
           </div>
 
@@ -134,13 +138,13 @@ export default function SupplierProducts() {
           {filteredProducts.length === 0 ? (
             <div className="text-center py-16 bg-card rounded-2xl border">
               <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">لا توجد منتجات</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("supplier.noProducts")}</h3>
               <p className="text-muted-foreground mb-4">
-                ابدأ بإضافة منتجاتك لعرضها للمطاعم
+                {t("supplier.startAddingProducts")}
               </p>
               <Button onClick={() => setIsFormOpen(true)}>
                 <Plus className="h-5 w-5" />
-                إضافة منتج
+                {t("supplier.addProduct")}
               </Button>
             </div>
           ) : (
@@ -148,12 +152,12 @@ export default function SupplierProducts() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">المنتج</TableHead>
-                    <TableHead className="text-right">التصنيف</TableHead>
-                    <TableHead className="text-right">السعر</TableHead>
-                    <TableHead className="text-right">المخزون</TableHead>
-                    <TableHead className="text-right">الحالة</TableHead>
-                    <TableHead className="text-right w-[100px]">إجراءات</TableHead>
+                    <TableHead className="text-start">{t("supplier.tableProduct")}</TableHead>
+                    <TableHead className="text-start">{t("supplier.tableCategory")}</TableHead>
+                    <TableHead className="text-start">{t("supplier.tablePrice")}</TableHead>
+                    <TableHead className="text-start">{t("supplier.tableStock")}</TableHead>
+                    <TableHead className="text-start">{t("supplier.tableStatus")}</TableHead>
+                    <TableHead className="text-start w-[100px]">{t("supplier.tableActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -181,10 +185,10 @@ export default function SupplierProducts() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {product.category?.name || "-"}
+                        {product.category ? getCategoryName(product.category) : "-"}
                       </TableCell>
                       <TableCell>
-                        {product.price.toFixed(2)} ر.س/{product.unit}
+                        {product.price.toFixed(2)} {t("common.sar")}/{product.unit}
                       </TableCell>
                       <TableCell>
                         {product.stock_quantity || 0}
@@ -193,7 +197,7 @@ export default function SupplierProducts() {
                         <Badge
                           variant={product.in_stock ? "default" : "secondary"}
                         >
-                          {product.in_stock ? "متوفر" : "غير متوفر"}
+                          {product.in_stock ? t("supplier.available") : t("supplier.unavailable")}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -238,18 +242,18 @@ export default function SupplierProducts() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
+            <AlertDialogTitle>{t("supplier.deleteConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              سيتم حذف هذا المنتج نهائياً ولن يمكن استرجاعه.
+              {t("supplier.deleteConfirmDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              حذف
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

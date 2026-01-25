@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -22,29 +23,9 @@ import {
   ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
-import { ar } from "date-fns/locale";
+import { ar, enUS } from "date-fns/locale";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-
-const getStatusConfig = (status: string) => {
-  switch (status) {
-    case "pending":
-      return { label: "قيد الانتظار", variant: "secondary" as const, icon: Clock };
-    case "confirmed":
-      return { label: "مؤكد", variant: "default" as const, icon: CheckCircle };
-    case "processing":
-    case "preparing":
-      return { label: "قيد التجهيز", variant: "default" as const, icon: Package };
-    case "shipped":
-      return { label: "تم الشحن", variant: "default" as const, icon: Truck };
-    case "delivered":
-      return { label: "تم التوصيل", variant: "default" as const, icon: CheckCircle };
-    case "cancelled":
-      return { label: "ملغي", variant: "destructive" as const, icon: XCircle };
-    default:
-      return { label: status, variant: "secondary" as const, icon: Clock };
-  }
-};
 
 // Group order items by supplier with status and delivery fee
 const groupItemsBySupplier = (orderItems: any[]) => {
@@ -81,10 +62,33 @@ const groupItemsBySupplier = (orderItems: any[]) => {
 };
 
 const Orders = () => {
+  const { t, i18n } = useTranslation();
   const { user, userRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { data: orders, isLoading } = useRestaurantOrders();
   const { addItem, clearCart } = useCart();
+
+  const currentLocale = i18n.language === "ar" ? ar : enUS;
+
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "pending":
+        return { label: t("orders.pending"), variant: "secondary" as const, icon: Clock };
+      case "confirmed":
+        return { label: t("orders.confirmed"), variant: "default" as const, icon: CheckCircle };
+      case "processing":
+      case "preparing":
+        return { label: t("orders.preparing"), variant: "default" as const, icon: Package };
+      case "shipped":
+        return { label: t("orders.shipped"), variant: "default" as const, icon: Truck };
+      case "delivered":
+        return { label: t("orders.delivered"), variant: "default" as const, icon: CheckCircle };
+      case "cancelled":
+        return { label: t("orders.cancelled"), variant: "destructive" as const, icon: XCircle };
+      default:
+        return { label: status, variant: "secondary" as const, icon: Clock };
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -127,7 +131,7 @@ const Orders = () => {
       }
     });
     
-    toast.success("تم إضافة المنتجات للسلة");
+    toast.success(t("orders.addedToCart"));
     navigate("/cart");
   };
 
@@ -144,13 +148,13 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1">
         <div className="container py-8">
           <div className="flex items-center gap-3 mb-8">
             <Package className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">طلباتي</h1>
+            <h1 className="text-3xl font-bold">{t("orders.title")}</h1>
           </div>
 
           {orders && orders.length > 0 ? (
@@ -164,13 +168,13 @@ const Orders = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                           <CardTitle className="text-lg">
-                            طلب #{order.id.slice(0, 8)}
+                            {t("orders.orderNumber")} #{order.id.slice(0, 8)}
                           </CardTitle>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <CalendarDays className="h-4 w-4" />
-                            {format(new Date(order.created_at), "PPP", { locale: ar })}
+                            {format(new Date(order.created_at), "PPP", { locale: currentLocale })}
                           </div>
                           <Button
                             variant="outline"
@@ -179,7 +183,7 @@ const Orders = () => {
                             className="gap-2"
                           >
                             <RotateCcw className="h-4 w-4" />
-                            تكرار الطلب
+                            {t("orders.repeatOrder")}
                           </Button>
                         </div>
                       </div>
@@ -199,11 +203,11 @@ const Orders = () => {
                                 <div className="flex items-center gap-2">
                                   <Store className="h-4 w-4 text-primary" />
                                   <span className="font-semibold">
-                                    {group.supplier?.business_name || "مورد غير معروف"}
+                                    {group.supplier?.business_name || t("orders.unknownSupplier")}
                                   </span>
-                                  <Badge variant="outline" className="gap-1 mr-2">
+                                  <Badge variant="outline" className="gap-1 ms-2">
                                     <Package className="h-3 w-3" />
-                                    {group.items.reduce((total, item) => total + item.quantity, 0)} منتج
+                                    {group.items.reduce((total, item) => total + item.quantity, 0)} {t("orders.product")}
                                   </Badge>
                                   <Badge variant={statusConfig.variant} className="gap-1">
                                     <StatusIcon className="h-3 w-3" />
@@ -214,7 +218,7 @@ const Orders = () => {
                                   <Link to={`/profile/${group.supplier.user_id}`}>
                                     <Button variant="ghost" size="sm" className="gap-1 text-xs">
                                       <User className="h-3 w-3" />
-                                      الملف الشخصي
+                                      {t("orders.viewProfile")}
                                     </Button>
                                   </Link>
                                 )}
@@ -238,14 +242,14 @@ const Orders = () => {
                                           </div>
                                         )}
                                         <div>
-                                          <p className="font-medium">{item.product?.name || "منتج محذوف"}</p>
+                                          <p className="font-medium">{item.product?.name || t("orders.deletedProduct")}</p>
                                           <p className="text-sm text-muted-foreground">
-                                            {item.quantity} × {item.unit_price} ر.س
+                                            {item.quantity} × {item.unit_price} {t("common.sar")}
                                           </p>
                                         </div>
                                       </div>
                                       <p className="font-medium">
-                                        {(item.quantity * item.unit_price).toFixed(2)} ر.س
+                                        {(item.quantity * item.unit_price).toFixed(2)} {t("common.sar")}
                                       </p>
                                     </div>
                                   );
@@ -257,15 +261,15 @@ const Orders = () => {
                                 <div className="flex justify-between">
                                   <span className="text-muted-foreground flex items-center gap-1">
                                     <Truck className="h-3 w-3" />
-                                    رسوم التوصيل
+                                    {t("orders.deliveryFee")}
                                   </span>
                                   <span className={group.deliveryFee > 0 ? "text-amber-600" : ""}>
-                                    {group.deliveryFee.toFixed(2)} ر.س
+                                    {group.deliveryFee.toFixed(2)} {t("common.sar")}
                                   </span>
                                 </div>
                                 <div className="flex justify-between font-semibold pt-1 border-t border-border">
-                                  <span>إجمالي المورد</span>
-                                  <span className="text-primary">{supplierTotal.toFixed(2)} ر.س</span>
+                                  <span>{t("orders.supplierTotal")}</span>
+                                  <span className="text-primary">{supplierTotal.toFixed(2)} {t("common.sar")}</span>
                                 </div>
                               </div>
                             </div>
@@ -279,19 +283,19 @@ const Orders = () => {
                             <div className="p-3 bg-primary/5 rounded-lg border border-primary/10 mb-3">
                               <p className="text-sm font-medium mb-1 flex items-center gap-1">
                                 <MapPin className="h-4 w-4 text-primary" />
-                                الفرع: {order.branch.name}
+                                {t("orders.branch")}: {order.branch.name}
                               </p>
                               {order.branch.address && (
-                                <p className="text-sm text-muted-foreground mr-5">{order.branch.address}</p>
+                                <p className="text-sm text-muted-foreground ms-5">{order.branch.address}</p>
                               )}
                               {order.branch.google_maps_url && (
                                 <a 
                                   href={order.branch.google_maps_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-sm text-primary hover:underline flex items-center gap-1 mr-5 mt-1"
+                                  className="text-sm text-primary hover:underline flex items-center gap-1 ms-5 mt-1"
                                 >
-                                  فتح في قوقل ماب
+                                  {t("orders.openInMaps")}
                                   <ExternalLink className="h-3 w-3" />
                                 </a>
                               )}
@@ -300,8 +304,8 @@ const Orders = () => {
                           
                           {order.delivery_address && !order.branch && (
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">عنوان التوصيل:</span>
-                              <span className="max-w-[300px] text-left truncate">
+                              <span className="text-muted-foreground">{t("orders.deliveryAddress")}:</span>
+                              <span className="max-w-[300px] text-start truncate">
                                 {order.delivery_address.startsWith("http") ? (
                                   <a 
                                     href={order.delivery_address} 
@@ -309,7 +313,7 @@ const Orders = () => {
                                     rel="noopener noreferrer"
                                     className="text-primary hover:underline"
                                   >
-                                    فتح في قوقل ماب
+                                    {t("orders.openInMaps")}
                                   </a>
                                 ) : (
                                   order.delivery_address
@@ -319,7 +323,7 @@ const Orders = () => {
                           )}
                           {order.notes && (
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">ملاحظات:</span>
+                              <span className="text-muted-foreground">{t("orders.notes")}:</span>
                               <span>{order.notes}</span>
                             </div>
                           )}
@@ -329,26 +333,26 @@ const Orders = () => {
                             <div className="space-y-1 pt-2 border-t">
                               <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                                 <Truck className="h-4 w-4" />
-                                رسوم التوصيل:
+                                {t("orders.deliveryFee")}:
                               </p>
                               {groupedItems.filter(g => g.deliveryFee > 0).map((group, idx) => (
-                                <div key={idx} className="flex justify-between text-sm mr-5">
+                                <div key={idx} className="flex justify-between text-sm ms-5">
                                   <span className="text-muted-foreground">{group.supplier?.business_name}</span>
-                                  <span className="text-amber-600">{group.deliveryFee.toFixed(2)} ر.س</span>
+                                  <span className="text-amber-600">{group.deliveryFee.toFixed(2)} {t("common.sar")}</span>
                                 </div>
                               ))}
                               {groupedItems.filter(g => g.deliveryFee > 0).length > 1 && (
-                                <div className="flex justify-between text-sm mr-5 font-medium pt-1 border-t border-dashed">
-                                  <span className="text-muted-foreground">إجمالي رسوم التوصيل</span>
-                                  <span className="text-amber-600">{Number(order.delivery_fee).toFixed(2)} ر.س</span>
+                                <div className="flex justify-between text-sm ms-5 font-medium pt-1 border-t border-dashed">
+                                  <span className="text-muted-foreground">{t("orders.totalDeliveryFees")}</span>
+                                  <span className="text-amber-600">{Number(order.delivery_fee).toFixed(2)} {t("common.sar")}</span>
                                 </div>
                               )}
                             </div>
                           )}
                           
                           <div className="flex justify-between font-bold text-lg border-t pt-2">
-                            <span>الإجمالي:</span>
-                            <span className="text-primary">{order.total_amount} ر.س</span>
+                            <span>{t("orders.total")}:</span>
+                            <span className="text-primary">{order.total_amount} {t("common.sar")}</span>
                           </div>
                         </div>
                       </div>
@@ -360,9 +364,9 @@ const Orders = () => {
           ) : (
             <div className="text-center py-16">
               <Package className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
-              <h2 className="text-xl font-semibold mb-2">لا توجد طلبات</h2>
+              <h2 className="text-xl font-semibold mb-2">{t("orders.noOrders")}</h2>
               <p className="text-muted-foreground">
-                لم تقم بإجراء أي طلبات بعد. ابدأ بتصفح المنتجات!
+                {t("orders.noOrdersMessage")}
               </p>
             </div>
           )}
