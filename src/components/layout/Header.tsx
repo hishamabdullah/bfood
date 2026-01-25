@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShoppingCart, User, LogOut, Package } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Package, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -112,12 +112,20 @@ const Header = () => {
                   </Link>
                 </DropdownMenuItem>
                 {isRestaurant && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/orders" className="cursor-pointer">
-                      <Package className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                      {t("nav.myOrders")}
-                    </Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/orders" className="cursor-pointer">
+                        <Package className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                        {t("nav.myOrders")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/favorites" className="cursor-pointer">
+                        <Heart className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                        المفضلة
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="cursor-pointer">
@@ -216,12 +224,20 @@ const Header = () => {
                     <Button variant="outline" className="w-full">{t("nav.dashboard")}</Button>
                   </Link>
                   {isRestaurant && (
-                    <Link to="/orders" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="outline" className="w-full gap-2">
-                        <Package className="h-4 w-4" />
-                        {t("nav.myOrders")}
-                      </Button>
-                    </Link>
+                    <>
+                      <Link to="/orders" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <Package className="h-4 w-4" />
+                          {t("nav.myOrders")}
+                        </Button>
+                      </Link>
+                      <Link to="/favorites" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <Heart className="h-4 w-4" />
+                          المفضلة
+                        </Button>
+                      </Link>
+                    </>
                   )}
                   <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="outline" className="w-full">{t("common.profile")}</Button>
