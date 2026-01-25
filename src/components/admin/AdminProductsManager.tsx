@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Pencil, Trash2, Search, Package } from "lucide-react";
+import { Loader2, Pencil, Trash2, Search, Package, Power } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import AdminProductFormDialog from "./AdminProductFormDialog";
@@ -93,9 +93,37 @@ const useDeleteProduct = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("تم حذف المنتج بنجاح");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error deleting product:", error);
-      toast.error("حدث خطأ أثناء حذف المنتج");
+      if (error?.message?.includes("foreign key constraint") || error?.code === "23503") {
+        toast.error("لا يمكن حذف هذا المنتج لأنه مرتبط بطلبات سابقة. يمكنك إلغاء تفعيله بدلاً من ذلك.");
+      } else {
+        toast.error("حدث خطأ أثناء حذف المنتج");
+      }
+    },
+  });
+};
+
+const useDeactivateProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      const { error } = await supabase
+        .from("products")
+        .update({ in_stock: false })
+        .eq("id", productId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("تم إلغاء تفعيل المنتج بنجاح");
+    },
+    onError: (error) => {
+      console.error("Error deactivating product:", error);
+      toast.error("حدث خطأ أثناء إلغاء تفعيل المنتج");
     },
   });
 };
@@ -103,10 +131,11 @@ const useDeleteProduct = () => {
 export default function AdminProductsManager() {
   const { data: products, isLoading } = useAdminProducts();
   const deleteProduct = useDeleteProduct();
+  const deactivateProduct = useDeactivateProduct();
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
-  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<AdminProduct | null>(null);
 
   const filteredProducts = products?.filter(
     (product) =>
@@ -120,9 +149,16 @@ export default function AdminProductsManager() {
   };
 
   const handleDelete = async () => {
-    if (deletingProductId) {
-      await deleteProduct.mutateAsync(deletingProductId);
-      setDeletingProductId(null);
+    if (deletingProduct) {
+      await deleteProduct.mutateAsync(deletingProduct.id);
+      setDeletingProduct(null);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (deletingProduct) {
+      await deactivateProduct.mutateAsync(deletingProduct.id);
+      setDeletingProduct(null);
     }
   };
 
@@ -236,11 +272,23 @@ export default function AdminProductsManager() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
+                      {product.in_stock && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-orange-500 hover:text-orange-600"
+                          onClick={() => deactivateProduct.mutate(product.id)}
+                          title="إلغاء تفعيل المنتج"
+                        >
+                          <Power className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         size="icon"
                         variant="ghost"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => setDeletingProductId(product.id)}
+                        onClick={() => setDeletingProduct(product)}
+                        title={product.order_count && product.order_count > 0 ? "هذا المنتج مرتبط بطلبات" : "حذف المنتج"}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -261,26 +309,45 @@ export default function AdminProductsManager() {
       />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingProductId} onOpenChange={() => setDeletingProductId(null)}>
+      <AlertDialog open={!!deletingProduct} onOpenChange={() => setDeletingProduct(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد من حذف هذا المنتج؟</AlertDialogTitle>
+            <AlertDialogTitle>
+              {deletingProduct?.order_count && deletingProduct.order_count > 0 
+                ? "لا يمكن حذف هذا المنتج" 
+                : "هل أنت متأكد من حذف هذا المنتج؟"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              هذا الإجراء لا يمكن التراجع عنه. سيتم حذف المنتج نهائياً.
+              {deletingProduct?.order_count && deletingProduct.order_count > 0 
+                ? `هذا المنتج مرتبط بـ ${deletingProduct.order_count} طلب(ات) سابقة. يمكنك إلغاء تفعيله بدلاً من ذلك ليصبح غير متوفر للطلبات الجديدة.`
+                : "هذا الإجراء لا يمكن التراجع عنه. سيتم حذف المنتج نهائياً."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteProduct.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "حذف"
-              )}
-            </AlertDialogAction>
+            {deletingProduct?.order_count && deletingProduct.order_count > 0 ? (
+              <AlertDialogAction
+                onClick={handleDeactivate}
+                className="bg-orange-500 text-white hover:bg-orange-600"
+              >
+                {deactivateProduct.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "إلغاء التفعيل"
+                )}
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteProduct.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "حذف"
+                )}
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
