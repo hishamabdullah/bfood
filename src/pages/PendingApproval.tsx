@@ -13,7 +13,11 @@ const PendingApproval = () => {
     if (!loading) {
       if (!user) {
         navigate("/login");
-      } else if (isApproved || userRole === "admin") {
+      } else if (userRole !== "restaurant") {
+        // الموردين والمدراء لا يحتاجون موافقة
+        navigate("/dashboard");
+      } else if (isApproved) {
+        // المطعم معتمد، يذهب للداشبورد
         navigate("/dashboard");
       }
     }
@@ -41,7 +45,7 @@ const PendingApproval = () => {
           </div>
           <CardTitle className="text-2xl">في انتظار الموافقة</CardTitle>
           <CardDescription className="text-base">
-            تم تسجيل حسابك بنجاح! يرجى الانتظار حتى يقوم المدير بمراجعة حسابك والموافقة عليه.
+            تم تسجيل حساب مطعمك بنجاح! يرجى الانتظار حتى يقوم المدير بمراجعة حسابك والموافقة عليه.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

@@ -105,7 +105,12 @@ const Register = () => {
         title: "تم إنشاء الحساب بنجاح",
         description: "مرحباً بك في BFOOD!",
       });
-      navigate("/dashboard");
+      // الموردين يذهبون للداشبورد مباشرة، المطاعم لصفحة انتظار الموافقة
+      if (userType === "supplier") {
+        navigate("/dashboard");
+      } else {
+        navigate("/pending-approval");
+      }
     }
 
     setIsLoading(false);

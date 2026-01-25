@@ -41,8 +41,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserData = useCallback(async (userId: string): Promise<void> => {
     try {
-      console.log("Fetching user data for:", userId);
-      
       // جلب الدور
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
@@ -59,9 +57,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (roleData) {
         fetchedRole = roleData.role as UserRole;
-        console.log("Fetched role:", fetchedRole);
-        // المدير يعتبر معتمداً تلقائياً
-        if (fetchedRole === "admin") {
+        // المدير والمورد يعتبران معتمدين تلقائياً
+        if (fetchedRole === "admin" || fetchedRole === "supplier") {
           approved = true;
         }
       }
@@ -78,12 +75,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (profileData) {
-        console.log("Fetched profile, is_approved:", profileData.is_approved);
-        // تعيين الموافقة بناءً على البيانات أو كون المستخدم مدير
-        approved = profileData.is_approved === true || fetchedRole === "admin";
+        // المطاعم فقط تحتاج موافقة - الموردين والمدراء معتمدون تلقائياً
+        if (fetchedRole === "restaurant") {
+          approved = profileData.is_approved === true;
+        } else {
+          // المورد والمدير معتمدون دائماً
+          approved = true;
+        }
       }
-      
-      console.log("Final approved status:", approved, "Role:", fetchedRole);
       
       // تحديث الحالة
       setUserRole(fetchedRole);
@@ -139,8 +138,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!isMounted) return;
-        
-        console.log("Auth state changed:", event);
         
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -221,7 +218,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           phone: userData.phone,
           avatar_url: null,
         });
-        setIsApproved(false); // المستخدم الجديد غير معتمد
+        // الموردين معتمدون تلقائياً، المطاعم تحتاج موافقة
+        setIsApproved(userData.role === "supplier");
       }
 
       return { error: null };
