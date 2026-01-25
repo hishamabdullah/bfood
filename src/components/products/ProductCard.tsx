@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, MapPin } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Product } from "@/hooks/useProducts";
@@ -70,6 +70,12 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
               <p className="text-sm text-muted-foreground truncate">
                 {product.supplier_profile?.business_name || t("products.supplier")}
               </p>
+              {product.supplier_profile?.region && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <MapPin className="h-3 w-3" />
+                  {product.supplier_profile.region}
+                </p>
+              )}
             </div>
             <Badge variant={product.in_stock ? "default" : "secondary"} className="shrink-0 ltr:ml-2 rtl:mr-2">
               {product.in_stock ? t("products.inStock") : t("products.outOfStock")}
