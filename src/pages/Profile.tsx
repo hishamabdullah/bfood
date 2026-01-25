@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -35,6 +36,7 @@ import { Link } from "react-router-dom";
 import { BranchesManager } from "@/components/branches/BranchesManager";
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { user, userRole, profile: authProfile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -96,7 +98,7 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
-      toast.error("حدث خطأ في جلب البيانات");
+      toast.error(t("profile.fetchError"));
     } finally {
       setIsLoading(false);
     }
@@ -142,10 +144,10 @@ const Profile = () => {
 
       if (error) throw error;
       
-      toast.success("تم حفظ البيانات بنجاح");
+      toast.success(t("profile.saveSuccess"));
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error("حدث خطأ في حفظ البيانات");
+      toast.error(t("profile.saveError"));
     } finally {
       setIsSaving(false);
     }
@@ -182,8 +184,8 @@ const Profile = () => {
               to="/suppliers"
               className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
             >
-              <ArrowRight className="h-4 w-4 ml-1" />
-              العودة للموردين
+              <ArrowRight className="h-4 w-4 ms-1 rtl:rotate-180" />
+              {t("profile.backToSuppliers")}
             </Link>
           )}
 
@@ -196,11 +198,11 @@ const Profile = () => {
                 <Store className="h-8 w-8 text-primary" />
               )}
               <h1 className="text-3xl font-bold">
-                {isOwnProfile ? "الملف الشخصي" : profileData.business_name}
+                {isOwnProfile ? t("profile.title") : profileData.business_name}
               </h1>
             </div>
             <p className="text-muted-foreground">
-              {isOwnProfile ? "تحديث بيانات حسابك" : `${isSupplier ? "مورد" : "مطعم"}`}
+              {isOwnProfile ? t("profile.updateInfo") : `${isSupplier ? t("auth.supplier") : t("auth.restaurant")}`}
             </p>
           </div>
 
@@ -208,13 +210,13 @@ const Profile = () => {
           <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="full_name">الاسم الكامل</Label>
+              <Label htmlFor="full_name">{t("profile.fullName")}</Label>
               <div className="relative">
-                <User className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <User className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="full_name"
-                  placeholder="الاسم الكامل"
-                  className="pr-10"
+                  placeholder={t("profile.fullName")}
+                  className="ps-10"
                   value={profileData.full_name}
                   onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
                   disabled={!isOwnProfile}
@@ -225,18 +227,18 @@ const Profile = () => {
             {/* Business Name */}
             <div className="space-y-2">
               <Label htmlFor="business_name">
-                {isSupplier ? "اسم الشركة/المتجر" : "اسم المطعم"}
+                {isSupplier ? t("profile.companyName") : t("profile.restaurantName")}
               </Label>
               <div className="relative">
                 {isSupplier ? (
-                  <Truck className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Truck className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 ) : (
-                  <Store className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Store className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 )}
                 <Input
                   id="business_name"
-                  placeholder={isSupplier ? "اسم الشركة" : "اسم المطعم"}
-                  className="pr-10"
+                  placeholder={isSupplier ? t("profile.companyName") : t("profile.restaurantName")}
+                  className="ps-10"
                   value={profileData.business_name}
                   onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
                   disabled={!isOwnProfile}
@@ -247,13 +249,14 @@ const Profile = () => {
             {/* Email - Read only from auth */}
             {isOwnProfile && user?.email && (
               <div className="space-y-2">
-                <Label>البريد الإلكتروني</Label>
+                <Label>{t("profile.email")}</Label>
                 <div className="relative">
-                  <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Mail className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     value={user.email}
-                    className="pr-10 bg-muted"
+                    className="ps-10 bg-muted"
                     disabled
+                    dir="ltr"
                   />
                 </div>
               </div>
@@ -261,16 +264,17 @@ const Profile = () => {
 
             {/* Phone */}
             <div className="space-y-2">
-              <Label htmlFor="phone">رقم التواصل</Label>
+              <Label htmlFor="phone">{t("profile.phone")}</Label>
               <div className="relative">
-                <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Phone className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="phone"
                   placeholder="05XXXXXXXX"
-                  className="pr-10"
+                  className="ps-10"
                   value={profileData.phone}
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   disabled={!isOwnProfile}
+                  dir="ltr"
                 />
               </div>
               {!isOwnProfile && profileData.phone && (
@@ -278,23 +282,24 @@ const Profile = () => {
                   href={`tel:${profileData.phone}`}
                   className="text-sm text-primary hover:underline"
                 >
-                  اتصل الآن
+                  {t("profile.callNow")}
                 </a>
               )}
             </div>
 
             {/* Google Maps URL */}
             <div className="space-y-2">
-              <Label htmlFor="google_maps_url">رابط قوقل ماب</Label>
+              <Label htmlFor="google_maps_url">{t("profile.googleMapsUrl")}</Label>
               <div className="relative">
-                <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <MapPin className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="google_maps_url"
                   placeholder="https://maps.google.com/..."
-                  className="pr-10"
+                  className="ps-10"
                   value={profileData.google_maps_url}
                   onChange={(e) => setProfileData({ ...profileData, google_maps_url: e.target.value })}
                   disabled={!isOwnProfile}
+                  dir="ltr"
                 />
               </div>
               {!isOwnProfile && profileData.google_maps_url && (
@@ -305,7 +310,7 @@ const Profile = () => {
                   className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                 >
                   <ExternalLink className="h-3 w-3" />
-                  فتح في قوقل ماب
+                  {t("profile.openInMaps")}
                 </a>
               )}
             </div>
@@ -313,14 +318,14 @@ const Profile = () => {
             {/* Region - For suppliers */}
             {isSupplier && (
               <div className="space-y-2">
-                <Label>المنطقة</Label>
+                <Label>{t("profile.region")}</Label>
                 {isOwnProfile ? (
                   <Select
                     value={profileData.region}
                     onValueChange={(value) => setProfileData({ ...profileData, region: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="اختر منطقتك" />
+                      <SelectValue placeholder={t("profile.selectRegion")} />
                     </SelectTrigger>
                     <SelectContent>
                       {saudiRegions.map((region) => (
@@ -333,7 +338,7 @@ const Profile = () => {
                 ) : (
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{profileData.region || "غير محدد"}</span>
+                    <span>{profileData.region || t("profile.notSpecified")}</span>
                   </div>
                 )}
               </div>
@@ -342,7 +347,7 @@ const Profile = () => {
             {/* Supply Categories - For suppliers */}
             {isSupplier && (
               <div className="space-y-2">
-                <Label>مجالات التوريد</Label>
+                <Label>{t("profile.supplyCategories")}</Label>
                 {isOwnProfile ? (
                   <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded-lg">
                     {supplyCategories.map((category) => (
@@ -368,7 +373,7 @@ const Profile = () => {
                         <Badge key={cat} variant="secondary">{cat}</Badge>
                       ))
                     ) : (
-                      <span className="text-muted-foreground">غير محدد</span>
+                      <span className="text-muted-foreground">{t("profile.notSpecified")}</span>
                     )}
                   </div>
                 )}
@@ -378,7 +383,7 @@ const Profile = () => {
             {/* Minimum Order Amount - For suppliers */}
             {isSupplier && (
               <div className="space-y-2">
-                <Label htmlFor="minimum_order_amount">الحد الأدنى للطلب (ر.س)</Label>
+                <Label htmlFor="minimum_order_amount">{t("profile.minimumOrderAmount")}</Label>
                 <Input
                   id="minimum_order_amount"
                   type="number"
@@ -388,9 +393,10 @@ const Profile = () => {
                   value={profileData.minimum_order_amount}
                   onChange={(e) => setProfileData({ ...profileData, minimum_order_amount: parseFloat(e.target.value) || 0 })}
                   disabled={!isOwnProfile}
+                  dir="ltr"
                 />
                 <p className="text-xs text-muted-foreground">
-                  إذا كان الطلب أقل من هذا المبلغ سيتم تطبيق رسوم التوصيل
+                  {t("profile.minimumOrderHint")}
                 </p>
               </div>
             )}
@@ -398,7 +404,7 @@ const Profile = () => {
             {/* Default Delivery Fee - For suppliers */}
             {isSupplier && (
               <div className="space-y-2">
-                <Label htmlFor="default_delivery_fee">رسوم التوصيل الافتراضية (ر.س)</Label>
+                <Label htmlFor="default_delivery_fee">{t("profile.defaultDeliveryFee")}</Label>
                 <Input
                   id="default_delivery_fee"
                   type="number"
@@ -408,19 +414,20 @@ const Profile = () => {
                   value={profileData.default_delivery_fee}
                   onChange={(e) => setProfileData({ ...profileData, default_delivery_fee: parseFloat(e.target.value) || 0 })}
                   disabled={!isOwnProfile}
+                  dir="ltr"
                 />
                 <p className="text-xs text-muted-foreground">
-                  رسوم توصيل تطبق إذا كان الطلب أقل من الحد الأدنى
+                  {t("profile.deliveryFeeHint")}
                 </p>
               </div>
             )}
 
             {/* Bio */}
             <div className="space-y-2">
-              <Label htmlFor="bio">نبذة مختصرة</Label>
+              <Label htmlFor="bio">{t("profile.bio")}</Label>
               <Textarea
                 id="bio"
-                placeholder="اكتب نبذة مختصرة عن نشاطك..."
+                placeholder={t("profile.bioPlaceholder")}
                 value={profileData.bio}
                 onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                 disabled={!isOwnProfile}
@@ -439,12 +446,12 @@ const Profile = () => {
                 {isSaving ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    جاري الحفظ...
+                    {t("profile.saving")}
                   </>
                 ) : (
                   <>
                     <Save className="h-5 w-5" />
-                    حفظ التغييرات
+                    {t("profile.saveChanges")}
                   </>
                 )}
               </Button>

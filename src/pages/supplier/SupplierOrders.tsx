@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -30,7 +31,7 @@ import {
 } from "lucide-react";
 import { useSupplierOrders, useUpdateOrderStatus } from "@/hooks/useSupplierOrders";
 import { format } from "date-fns";
-import { ar } from "date-fns/locale";
+import { ar, enUS } from "date-fns/locale";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -39,15 +40,6 @@ const statusColors: Record<string, string> = {
   shipped: "bg-indigo-100 text-indigo-800",
   delivered: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
-};
-
-const statusLabels: Record<string, string> = {
-  pending: "في الانتظار",
-  confirmed: "مؤكد",
-  preparing: "قيد التحضير",
-  shipped: "تم الشحن",
-  delivered: "تم التوصيل",
-  cancelled: "ملغي",
 };
 
 const getStatusIcon = (status: string) => {
@@ -82,10 +74,22 @@ interface GroupedOrder {
 }
 
 export default function SupplierOrders() {
+  const { t, i18n } = useTranslation();
   const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const { data: orderItems, isLoading } = useSupplierOrders();
   const updateStatus = useUpdateOrderStatus();
+
+  const currentLocale = i18n.language === "ar" ? ar : enUS;
+
+  const statusLabels: Record<string, string> = {
+    pending: t("orders.pending"),
+    confirmed: t("orders.confirmed"),
+    preparing: t("orders.preparing"),
+    shipped: t("orders.shipped"),
+    delivered: t("orders.delivered"),
+    cancelled: t("orders.cancelled"),
+  };
 
   // Group items by order
   const groupedOrders = useMemo(() => {
@@ -156,7 +160,7 @@ export default function SupplierOrders() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1">
         <div className="container py-8">
@@ -166,15 +170,15 @@ export default function SupplierOrders() {
               to="/dashboard"
               className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2"
             >
-              <ArrowRight className="h-4 w-4 ml-1" />
-              العودة للوحة التحكم
+              <ArrowRight className="h-4 w-4 ms-1 rtl:rotate-180" />
+              {t("supplier.backToDashboard")}
             </Link>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <ShoppingBag className="h-7 w-7 text-primary" />
-              الطلبات الواردة
+              {t("orders.incomingOrders")}
             </h1>
             <p className="text-muted-foreground">
-              {groupedOrders.length} طلب
+              {groupedOrders.length} {t("supplier.ordersCount")}
             </p>
           </div>
 
@@ -182,9 +186,9 @@ export default function SupplierOrders() {
           {groupedOrders.length === 0 ? (
             <div className="text-center py-16 bg-card rounded-2xl border">
               <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">لا توجد طلبات</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("supplier.noOrders")}</h3>
               <p className="text-muted-foreground">
-                ستظهر الطلبات هنا عندما يطلب المطاعم منتجاتك
+                {t("supplier.ordersWillAppear")}
               </p>
             </div>
           ) : (
@@ -195,7 +199,7 @@ export default function SupplierOrders() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
                         <CardTitle className="text-lg">
-                          طلب #{order.orderId.slice(0, 8)}
+                          {t("orders.orderNumber")} #{order.orderId.slice(0, 8)}
                         </CardTitle>
                         {/* Order Status Selector */}
                         <Select
@@ -224,7 +228,7 @@ export default function SupplierOrders() {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CalendarDays className="h-4 w-4" />
-                        {format(new Date(order.createdAt), "PPP", { locale: ar })}
+                        {format(new Date(order.createdAt), "PPP", { locale: currentLocale })}
                       </div>
                     </div>
                   </CardHeader>
@@ -239,7 +243,7 @@ export default function SupplierOrders() {
                             </div>
                             <div>
                               <h3 className="font-semibold">
-                                {order.restaurant?.business_name || "مطعم غير معروف"}
+                                {order.restaurant?.business_name || t("supplier.unknownRestaurant")}
                               </h3>
                               <p className="text-sm text-muted-foreground">
                                 {order.restaurant?.full_name}
@@ -250,7 +254,7 @@ export default function SupplierOrders() {
                             <Link to={`/profile/${order.restaurant.user_id}`}>
                               <Button variant="outline" size="sm" className="gap-1">
                                 <User className="h-4 w-4" />
-                                الملف الشخصي
+                                {t("orders.viewProfile")}
                               </Button>
                             </Link>
                           )}
@@ -275,8 +279,8 @@ export default function SupplierOrders() {
                               className="flex items-center gap-2 p-3 bg-background rounded-lg hover:bg-muted transition-colors"
                             >
                               <MapPin className="h-4 w-4 text-primary" />
-                              <span className="text-primary">فتح في قوقل ماب</span>
-                              <ExternalLink className="h-3 w-3 mr-auto" />
+                              <span className="text-primary">{t("orders.openInMaps")}</span>
+                              <ExternalLink className="h-3 w-3 ms-auto" />
                             </a>
                           )}
                         </div>
@@ -286,19 +290,19 @@ export default function SupplierOrders() {
                           <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
                             <p className="text-sm font-medium mb-1 flex items-center gap-1">
                               <MapPin className="h-4 w-4 text-primary" />
-                              الفرع: {order.branch.name}
+                              {t("orders.branch")}: {order.branch.name}
                             </p>
                             {order.branch.address && (
-                              <p className="text-sm text-muted-foreground mr-5">{order.branch.address}</p>
+                              <p className="text-sm text-muted-foreground ms-5">{order.branch.address}</p>
                             )}
                             {order.branch.google_maps_url && (
                               <a 
                                 href={order.branch.google_maps_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm text-primary hover:underline flex items-center gap-1 mr-5 mt-1"
+                                className="text-sm text-primary hover:underline flex items-center gap-1 ms-5 mt-1"
                               >
-                                فتح موقع الفرع في قوقل ماب
+                                {t("supplier.openBranchLocation")}
                                 <ExternalLink className="h-3 w-3" />
                               </a>
                             )}
@@ -307,7 +311,7 @@ export default function SupplierOrders() {
 
                         {order.deliveryAddress && !order.branch && (
                           <div className="mt-3 p-3 bg-background rounded-lg">
-                            <p className="text-sm font-medium mb-1">عنوان التوصيل:</p>
+                            <p className="text-sm font-medium mb-1">{t("orders.deliveryAddress")}:</p>
                             {order.deliveryAddress.startsWith("http") ? (
                               <a 
                                 href={order.deliveryAddress}
@@ -315,7 +319,7 @@ export default function SupplierOrders() {
                                 rel="noopener noreferrer"
                                 className="text-sm text-primary hover:underline flex items-center gap-1"
                               >
-                                فتح رابط الموقع
+                                {t("orders.openLocationLink")}
                                 <ExternalLink className="h-3 w-3" />
                               </a>
                             ) : (
@@ -326,7 +330,7 @@ export default function SupplierOrders() {
 
                         {order.notes && (
                           <div className="mt-3 p-3 bg-background rounded-lg">
-                            <p className="text-sm font-medium mb-1">ملاحظات:</p>
+                            <p className="text-sm font-medium mb-1">{t("orders.notes")}:</p>
                             <p className="text-sm text-muted-foreground">{order.notes}</p>
                           </div>
                         )}
@@ -335,10 +339,10 @@ export default function SupplierOrders() {
                       {/* Order Items */}
                       <div className="border rounded-xl overflow-hidden">
                         <div className="bg-muted/30 px-4 py-2 border-b flex items-center justify-between">
-                          <h4 className="font-medium text-sm">المنتجات المطلوبة</h4>
+                          <h4 className="font-medium text-sm">{t("supplier.requestedProducts")}</h4>
                           <Badge variant="outline" className="gap-1">
                             <Package className="h-3 w-3" />
-                            {order.items.reduce((total, item) => total + item.quantity, 0)} منتج
+                            {order.items.reduce((total, item) => total + item.quantity, 0)} {t("orders.product")}
                           </Badge>
                         </div>
                         <div className="divide-y">
@@ -358,14 +362,14 @@ export default function SupplierOrders() {
                                     </div>
                                   )}
                                   <div>
-                                    <p className="font-medium">{item.product?.name || "منتج"}</p>
+                                    <p className="font-medium">{item.product?.name || t("orders.deletedProduct")}</p>
                                     <p className="text-sm text-muted-foreground">
-                                      {item.quantity} × {item.unit_price} ر.س
+                                      {item.quantity} × {item.unit_price} {t("common.sar")}
                                     </p>
                                   </div>
                                 </div>
                                 <p className="font-medium">
-                                  {(item.quantity * item.unit_price).toFixed(2)} ر.س
+                                  {(item.quantity * item.unit_price).toFixed(2)} {t("common.sar")}
                                 </p>
                               </div>
                             );
@@ -376,22 +380,22 @@ export default function SupplierOrders() {
                       {/* Order Total */}
                       <div className="pt-4 border-t space-y-2">
                         <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">مجموع المنتجات:</span>
-                          <span>{(calculateOrderTotal(order.items, 0)).toFixed(2)} ر.س</span>
+                          <span className="text-muted-foreground">{t("supplier.productsTotal")}:</span>
+                          <span>{(calculateOrderTotal(order.items, 0)).toFixed(2)} {t("common.sar")}</span>
                         </div>
                         {order.deliveryFee > 0 && (
                           <div className="flex justify-between items-center text-sm text-amber-600">
                             <span className="flex items-center gap-1">
                               <Truck className="h-4 w-4" />
-                              رسوم التوصيل:
+                              {t("orders.deliveryFee")}:
                             </span>
-                            <span>{order.deliveryFee.toFixed(2)} ر.س</span>
+                            <span>{order.deliveryFee.toFixed(2)} {t("common.sar")}</span>
                           </div>
                         )}
                         <div className="flex justify-between items-center pt-2 border-t">
-                          <span className="font-bold text-lg">إجمالي الطلب:</span>
+                          <span className="font-bold text-lg">{t("supplier.orderTotal")}:</span>
                           <span className="font-bold text-xl text-primary">
-                            {calculateOrderTotal(order.items, order.deliveryFee).toFixed(2)} ر.س
+                            {calculateOrderTotal(order.items, order.deliveryFee).toFixed(2)} {t("common.sar")}
                           </span>
                         </div>
                       </div>
