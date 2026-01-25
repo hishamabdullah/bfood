@@ -90,12 +90,11 @@ const Login = () => {
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground rtl:right-3 ltr:left-3" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="ps-10 pe-10"
+                  className="pe-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -104,7 +103,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground rtl:left-3 ltr:right-3"
+                  className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
