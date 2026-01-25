@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -6,10 +6,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useBranches, type Branch } from "@/hooks/useBranches";
+import { useBranches } from "@/hooks/useBranches";
 import { BranchFormDialog } from "@/components/branches/BranchFormDialog";
 import { Building2, Plus, MapPin, Edit } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -30,9 +29,14 @@ export const BranchSelector = ({
   const { t } = useTranslation();
   const { data: branches = [], isLoading } = useBranches();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [mode, setMode] = useState<"branch" | "custom">(
-    branches.length > 0 ? "branch" : "custom"
-  );
+  const [mode, setMode] = useState<"branch" | "custom">("branch");
+
+  // Update mode when branches load
+  useEffect(() => {
+    if (!isLoading && branches.length === 0) {
+      setMode("custom");
+    }
+  }, [branches, isLoading]);
 
   // Find the default branch
   const defaultBranch = branches.find((b) => b.is_default);
