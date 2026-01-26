@@ -31,6 +31,8 @@ const Header = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+    // Force page reload to clear all state
+    window.location.href = "/";
   };
 
   const headerLogoUrl = siteSettings?.header_logo_url;
