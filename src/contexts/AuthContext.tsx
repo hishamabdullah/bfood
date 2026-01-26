@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback,
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { withTimeout } from "@/lib/withTimeout";
+import { firstOrNull } from "@/contexts/auth/normalize";
 
 // مفاتيح التخزين المؤقت
 const CACHE_KEYS = {
@@ -20,7 +21,11 @@ const saveToCache = (userId: string, role: string | null, profile: any, isApprov
   try {
     sessionStorage.setItem(CACHE_KEYS.USER_ID, userId);
     if (role) sessionStorage.setItem(CACHE_KEYS.ROLE, role);
+    else sessionStorage.removeItem(CACHE_KEYS.ROLE);
+
     if (profile) sessionStorage.setItem(CACHE_KEYS.PROFILE, JSON.stringify(profile));
+    else sessionStorage.removeItem(CACHE_KEYS.PROFILE);
+
     sessionStorage.setItem(CACHE_KEYS.IS_APPROVED, String(isApproved));
     sessionStorage.setItem(CACHE_KEYS.CACHED_AT, String(Date.now()));
   } catch {
@@ -162,13 +167,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (roleResult.error) throw roleResult.error;
       if (profileResult.error) throw profileResult.error;
 
-      const { data: roleData } = roleResult;
-      const { data: profileData } = profileResult;
+      // بعض بيئات PostgREST قد تُرجع data كمصفوفة حتى مع maybeSingle.
+      // نطبّعها هنا لضمان أن role/profile لا تبقى null بعد Refresh.
+      const roleData = firstOrNull<any>((roleResult as any).data);
+      const profileData = firstOrNull<any>((profileResult as any).data);
 
       let approved = false;
       let fetchedRole: UserRole | null = null;
       
-      if (roleData) {
+      if (roleData?.role) {
         fetchedRole = roleData.role as UserRole;
         if (fetchedRole === "admin" || fetchedRole === "supplier") {
           approved = true;
@@ -188,16 +195,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // لا نُثبّت الكاش إلا إذا نجحت الاستعلامات
       lastFetchedUserIdRef.current = userId;
       
-      const newProfile = profileData ? {
-        full_name: profileData.full_name,
-        business_name: profileData.business_name,
-        phone: profileData.phone,
-        avatar_url: profileData.avatar_url,
-      } : null;
+      const newProfile = profileData
+        ? {
+            full_name: profileData.full_name ?? "",
+            business_name: profileData.business_name ?? "",
+            phone: profileData.phone ?? null,
+            avatar_url: profileData.avatar_url ?? null,
+          }
+        : null;
 
-      if (newProfile) {
-        setProfile(newProfile);
-      }
+      // حدّث الحالة حتى لو null لضمان عدم بقاء بيانات قديمة/ناقصة.
+      setProfile(newProfile);
 
       // حفظ البيانات في الكاش للاستخدام عند التحديث
       saveToCache(userId, fetchedRole, newProfile, approved);
