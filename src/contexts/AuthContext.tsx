@@ -95,8 +95,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (initialized) return;
     
     let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
     
     const initializeAuth = async () => {
+      // حماية: إنهاء التحميل بعد 10 ثوان كحد أقصى
+      timeoutId = setTimeout(() => {
+        if (isMounted && !initialized) {
+          console.warn("Auth initialization timeout - forcing completion");
+          setLoading(false);
+          setInitialized(true);
+        }
+      }, 10000);
+
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
@@ -105,16 +115,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (initialSession?.user) {
           setSession(initialSession);
           setUser(initialSession.user);
-          await fetchUserData(initialSession.user.id);
-        }
-        
-        if (isMounted) {
-          setLoading(false);
-          setInitialized(true);
+          try {
+            await fetchUserData(initialSession.user.id);
+          } catch (fetchError) {
+            console.error("Error fetching user data:", fetchError);
+          }
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
+      } finally {
+        // دائماً أنهي التحميل حتى لو حدث خطأ
         if (isMounted) {
+          clearTimeout(timeoutId);
           setLoading(false);
           setInitialized(true);
         }
@@ -134,14 +146,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
-          await fetchUserData(newSession.user.id);
+          try {
+            await fetchUserData(newSession.user.id);
+          } catch (fetchError) {
+            console.error("Error fetching user data on auth change:", fetchError);
+          }
         } else {
           setUserRole(null);
           setProfile(null);
           setIsApproved(false);
         }
         
-        if (isMounted && initialized) {
+        // دائماً أنهي التحميل
+        if (isMounted) {
           setLoading(false);
         }
       }
@@ -149,6 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [initialized, fetchUserData, isSigningIn]);
