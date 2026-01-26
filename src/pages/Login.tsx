@@ -33,15 +33,18 @@ const Login = () => {
           : error.message,
         variant: "destructive",
       });
+      setIsLoading(false);
     } else {
       toast({
         title: t("auth.loginSuccess"),
         description: t("auth.welcomeBackMessage"),
       });
-      navigate("/dashboard");
+      // التأخير البسيط يسمح بتحديث AuthContext بالكامل قبل التنقل
+      setTimeout(() => {
+        navigate("/dashboard");
+        setIsLoading(false);
+      }, 100);
     }
-
-    setIsLoading(false);
   };
 
   return (
