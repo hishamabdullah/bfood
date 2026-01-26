@@ -9,7 +9,11 @@ const CACHE_KEYS = {
   ROLE: "lovable_user_role",
   USER_ID: "lovable_user_id",
   IS_APPROVED: "lovable_is_approved",
+  CACHED_AT: "lovable_user_cached_at",
 } as const;
+
+// مدة صلاحية الكاش لتقليل استدعاءات الـ API (مع إبقاء عرض البيانات فوراً)
+const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
 
 // حفظ البيانات في sessionStorage
 const saveToCache = (userId: string, role: string | null, profile: any, isApproved: boolean) => {
@@ -18,6 +22,7 @@ const saveToCache = (userId: string, role: string | null, profile: any, isApprov
     if (role) sessionStorage.setItem(CACHE_KEYS.ROLE, role);
     if (profile) sessionStorage.setItem(CACHE_KEYS.PROFILE, JSON.stringify(profile));
     sessionStorage.setItem(CACHE_KEYS.IS_APPROVED, String(isApproved));
+    sessionStorage.setItem(CACHE_KEYS.CACHED_AT, String(Date.now()));
   } catch {
     // تجاهل أخطاء التخزين
   }
@@ -34,7 +39,11 @@ const loadFromCache = (userId: string) => {
     const isApproved = sessionStorage.getItem(CACHE_KEYS.IS_APPROVED) === "true";
     const profile = profileStr ? JSON.parse(profileStr) : null;
 
-    return { role, profile, isApproved };
+    const cachedAtRaw = sessionStorage.getItem(CACHE_KEYS.CACHED_AT);
+    const cachedAt = cachedAtRaw ? Number(cachedAtRaw) : 0;
+    const isStale = !cachedAt || Date.now() - cachedAt > CACHE_TTL_MS;
+
+    return { role, profile, isApproved, cachedAt, isStale };
   } catch {
     return null;
   }
@@ -109,7 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const lastFetchedUserIdRef = useRef<string | null>(null);
 
   const SESSION_TIMEOUT_MS = 3000;
-  const USERDATA_TIMEOUT_MS = 3500;
+  const USERDATA_TIMEOUT_MS = 10000;
 
   const fetchUserData = useCallback(async (userId: string, force = false): Promise<void> => {
     // تخطي إذا كانت البيانات موجودة مسبقاً (ما لم يكن force)
@@ -117,16 +126,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // جلب البيانات من الكاش أولاً للعرض الفوري
+    // جلب البيانات من الكاش أولاً للعرض الفوري (حتى لو force=true)
     const cachedData = loadFromCache(userId);
-    if (cachedData && !force) {
-      setUserRole(cachedData.role as UserRole);
-      setIsApproved(cachedData.isApproved);
-      if (cachedData.profile) {
-        setProfile(cachedData.profile);
-      }
+    if (cachedData) {
+      if (cachedData.role) setUserRole(cachedData.role as UserRole);
+      setIsApproved(Boolean(cachedData.isApproved));
+      if (cachedData.profile) setProfile(cachedData.profile);
       lastFetchedUserIdRef.current = userId;
-      // استمر في جلب البيانات الحديثة في الخلفية
+
+      // إذا الكاش حديث وما فيه force، لا داعي لطلب API الآن
+      if (!force && cachedData.isStale === false) {
+        return;
+      }
+      // وإلا نكمل طلب بيانات حديثة من الخادم (قد تكون بطيئة بعد Refresh)
     }
 
     try {
@@ -246,8 +258,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // ★ جلب البيانات من الكاش فوراً للعرض السريع
           const cachedData = loadFromCache(initialSession.user.id);
           if (cachedData) {
-            setUserRole(cachedData.role as UserRole);
-            setIsApproved(cachedData.isApproved);
+            if (cachedData.role) setUserRole(cachedData.role as UserRole);
+            setIsApproved(Boolean(cachedData.isApproved));
             if (cachedData.profile) {
               setProfile(cachedData.profile);
             }
@@ -367,14 +379,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // تحديث الحالة مباشرة بعد التسجيل
         setUserRole(userData.role);
-        setProfile({
+        const newProfile = {
           full_name: userData.fullName,
           business_name: userData.businessName,
           phone: userData.phone,
           avatar_url: null,
-        });
+        };
+        setProfile(newProfile);
         // الموردين معتمدون تلقائياً، المطاعم تحتاج موافقة
-        setIsApproved(userData.role === "supplier");
+        const approved = userData.role === "supplier";
+        setIsApproved(approved);
+
+        // احفظ في الكاش لتظهر البيانات فوراً بعد أي Refresh
+        lastFetchedUserIdRef.current = data.user.id;
+        saveToCache(data.user.id, userData.role, newProfile, approved);
       }
 
       return { error: null };
@@ -401,7 +419,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // جلب البيانات مع timeout للحماية من التعليق
         const fetchWithTimeout = Promise.race([
           fetchUserData(data.user.id),
-          new Promise<void>((resolve) => setTimeout(resolve, 3000))
+          new Promise<void>((resolve) => setTimeout(resolve, 8000))
         ]);
         
         await fetchWithTimeout;
