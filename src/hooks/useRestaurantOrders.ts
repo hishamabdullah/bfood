@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
+import { withTimeout } from "@/lib/withTimeout";
 
 export type OrderItem = Tables<"order_items"> & {
   product?: Tables<"products"> | null;
@@ -21,24 +22,28 @@ export const useRestaurantOrders = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          branch:branches(*),
-          order_items (
+      const { data, error } = await withTimeout(
+        supabase
+          .from("orders")
+          .select(`
             *,
-            product:products (
-              id,
-              name,
-              image_url,
-              unit,
-              delivery_fee
+            branch:branches(*),
+            order_items (
+              *,
+              product:products (
+                id,
+                name,
+                image_url,
+                unit,
+                delivery_fee
+              )
             )
-          )
-        `)
-        .eq("restaurant_id", user.id)
-        .order("created_at", { ascending: false });
+          `)
+          .eq("restaurant_id", user.id)
+          .order("created_at", { ascending: false }),
+        8000,
+        "restaurant-orders timeout"
+      );
 
       if (error) throw error;
 
@@ -55,10 +60,15 @@ export const useRestaurantOrders = () => {
       // Fetch supplier profiles
       let supplierProfiles: Tables<"profiles">[] = [];
       if (supplierIds.size > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("*")
-          .in("user_id", Array.from(supplierIds));
+        const { data: profiles, error: profilesError } = await withTimeout(
+          supabase
+            .from("profiles")
+            .select("*")
+            .in("user_id", Array.from(supplierIds)),
+          8000,
+          "supplier-profiles timeout"
+        );
+        if (profilesError) throw profilesError;
         supplierProfiles = profiles || [];
       }
 
@@ -74,5 +84,6 @@ export const useRestaurantOrders = () => {
       return ordersWithSuppliers as Order[];
     },
     enabled: !!user,
+    retry: 1,
   });
 };

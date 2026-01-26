@@ -34,6 +34,7 @@ import { saudiRegions, supplyCategories } from "@/data/saudiRegions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { BranchesManager } from "@/components/branches/BranchesManager";
+import { withTimeout } from "@/lib/withTimeout";
 
 const Profile = () => {
   const { t } = useTranslation();
@@ -75,11 +76,15 @@ const Profile = () => {
     if (!targetUserId) return;
     
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", targetUserId)
-        .maybeSingle();
+      const { data, error } = await withTimeout(
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", targetUserId)
+          .maybeSingle(),
+        8000,
+        "profile fetch timeout"
+      );
 
       if (error) throw error;
       
@@ -108,11 +113,15 @@ const Profile = () => {
     if (!targetUserId) return;
     
     try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", targetUserId)
-        .maybeSingle();
+      const { data, error } = await withTimeout(
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", targetUserId)
+          .maybeSingle(),
+        8000,
+        "role fetch timeout"
+      );
 
       if (error) throw error;
       setTargetRole(data?.role || null);

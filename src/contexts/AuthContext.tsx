@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { withTimeout } from "@/lib/withTimeout";
 
 const clearAuthStorage = () => {
   // Ensure persisted sessions are cleared even if the network sign-out hangs.
@@ -59,6 +60,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Cache لمنع جلب البيانات المكررة - استخدام useRef لتجنب إعادة إنشاء الدالة
   const lastFetchedUserIdRef = useRef<string | null>(null);
 
+  const SESSION_TIMEOUT_MS = 3000;
+  const USERDATA_TIMEOUT_MS = 3500;
+
   const fetchUserData = useCallback(async (userId: string, force = false): Promise<void> => {
     // تخطي إذا كانت البيانات موجودة مسبقاً (ما لم يكن force)
     if (!force && lastFetchedUserIdRef.current === userId) {
@@ -66,18 +70,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const [roleResult, profileResult] = await Promise.all([
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId)
-          .maybeSingle(),
-        supabase
-          .from("profiles")
-          .select("full_name, business_name, phone, avatar_url, is_approved")
-          .eq("user_id", userId)
-          .maybeSingle()
-      ]);
+      const [roleResult, profileResult] = await withTimeout(
+        Promise.all([
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId)
+            .maybeSingle(),
+          supabase
+            .from("profiles")
+            .select("full_name, business_name, phone, avatar_url, is_approved")
+            .eq("user_id", userId)
+            .maybeSingle(),
+        ]),
+        USERDATA_TIMEOUT_MS,
+        "fetchUserData timeout"
+      );
+
+      if (roleResult.error) throw roleResult.error;
+      if (profileResult.error) throw profileResult.error;
 
       const { data: roleData } = roleResult;
       const { data: profileData } = profileResult;
@@ -102,6 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setUserRole(fetchedRole);
       setIsApproved(approved);
+      // لا نُثبّت الكاش إلا إذا نجحت الاستعلامات
       lastFetchedUserIdRef.current = userId;
       
       if (profileData) {
@@ -113,6 +125,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     } catch (error) {
+      // لا نثبت الكاش عند الفشل حتى نسمح بإعادة المحاولة
+      lastFetchedUserIdRef.current = null;
       console.error("Error fetching user data:", error);
     }
   }, []);
@@ -130,11 +144,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.warn("Auth initialization timeout - forcing completion");
           setLoading(false);
           setInitialized(true);
+
+          // محاولة خلفية سريعة لمزامنة بيانات المستخدم (بدون تعليق الواجهة)
+          withTimeout(supabase.auth.getSession(), 2000, "getSession (fallback) timeout")
+            .then(({ data }) => {
+              const fallbackUser = data.session?.user;
+              if (fallbackUser) {
+                fetchUserData(fallbackUser.id, true);
+              }
+            })
+            .catch(() => {
+              // ignore
+            });
         }
       }, 5000);
 
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        let initialSession: Session | null = null;
+        try {
+          const sessionResult = await withTimeout(
+            supabase.auth.getSession(),
+            SESSION_TIMEOUT_MS,
+            "getSession timeout"
+          );
+          initialSession = sessionResult.data.session ?? null;
+        } catch (sessionError) {
+          console.warn("Auth getSession timed out:", sessionError);
+        }
         
         if (!isMounted) return;
         
