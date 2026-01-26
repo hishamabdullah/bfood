@@ -7,7 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { useRestaurantOrders } from "@/hooks/useRestaurantOrders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
   Loader2, 
   Package, 
@@ -65,7 +65,7 @@ const Orders = () => {
   const { t, i18n } = useTranslation();
   const { user, userRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { data: orders, isLoading } = useRestaurantOrders();
+  const { data: orders, isLoading, error, refetch, isFetching } = useRestaurantOrders();
   const { addItem, clearCart } = useCart();
 
   const currentLocale = i18n.language === "ar" ? ar : enUS;
@@ -139,6 +139,38 @@ const Orders = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1">
+          <div className="container py-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("common.error", "حدث خطأ")}</CardTitle>
+                <CardDescription>
+                  {t("orders.fetchError", "تعذر جلب الطلبات. جرّب مرة أخرى.")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="hero"
+                  onClick={() => refetch()}
+                  disabled={isFetching}
+                  className="gap-2"
+                >
+                  {isFetching && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {t("common.retry", "إعادة المحاولة")}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
