@@ -29,10 +29,14 @@ const Header = () => {
   const isRestaurant = userRole === "restaurant";
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
-    // Force page reload to clear all state
-    window.location.href = "/";
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Sign out error:", error);
+    } finally {
+      // Force page reload to clear all state - this always runs
+      window.location.href = "/";
+    }
   };
 
   const headerLogoUrl = siteSettings?.header_logo_url;
