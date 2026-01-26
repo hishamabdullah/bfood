@@ -37,7 +37,9 @@
     "products": "Products",
     "suppliers": "Suppliers",
     "dashboard": "Dashboard",
-    "myOrders": "My Orders"
+    "myOrders": "My Orders",
+    "branches": "Manage Branches",
+    "favorites": "Favorites"
   },
   "auth": {
     "email": "Email",
