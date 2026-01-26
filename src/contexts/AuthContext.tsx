@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { withTimeout } from "@/lib/withTimeout";
 import { firstOrNull } from "@/contexts/auth/normalize";
+import { waitForAuthReady } from "@/contexts/auth/waitForAuthReady";
 
 // مفاتيح التخزين المؤقت
 const CACHE_KEYS = {
@@ -119,6 +120,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [initialized, setInitialized] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
+  // Allow a single auto-retry per user (helps transient refresh auth hydration issues)
+  const hasAutoRetriedRef = useRef<Record<string, boolean>>({});
+
   // Cache لمنع جلب البيانات المكررة - استخدام useRef لتجنب إعادة إنشاء الدالة
   const lastFetchedUserIdRef = useRef<string | null>(null);
 
@@ -147,6 +151,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      // ✅ Fix: after Refresh, wait briefly for the persisted session to be fully ready
+      // before running PostgREST queries that depend on the auth header.
+      await waitForAuthReady(userId);
+
       const [roleResult, profileResult] = await withTimeout(
         Promise.all([
           supabase
@@ -213,6 +221,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // لا نثبت الكاش عند الفشل حتى نسمح بإعادة المحاولة
       lastFetchedUserIdRef.current = null;
       console.error("Error fetching user data:", error);
+
+      // ✅ Auto-retry once (covers transient 401/permission issues during refresh hydration)
+      if (!hasAutoRetriedRef.current[userId]) {
+        hasAutoRetriedRef.current[userId] = true;
+        setTimeout(() => {
+          fetchUserData(userId, true).catch(() => {
+            // ignore
+          });
+        }, 700);
+      }
     }
   }, []);
 
