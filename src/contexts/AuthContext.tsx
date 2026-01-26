@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -56,12 +56,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [initialized, setInitialized] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  // Cache لمنع جلب البيانات المكررة
-  const [lastFetchedUserId, setLastFetchedUserId] = useState<string | null>(null);
+  // Cache لمنع جلب البيانات المكررة - استخدام useRef لتجنب إعادة إنشاء الدالة
+  const lastFetchedUserIdRef = useRef<string | null>(null);
 
   const fetchUserData = useCallback(async (userId: string, force = false): Promise<void> => {
     // تخطي إذا كانت البيانات موجودة مسبقاً (ما لم يكن force)
-    if (!force && lastFetchedUserId === userId && userRole !== null) {
+    if (!force && lastFetchedUserIdRef.current === userId) {
       return;
     }
 
@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setUserRole(fetchedRole);
       setIsApproved(approved);
-      setLastFetchedUserId(userId);
+      lastFetchedUserIdRef.current = userId;
       
       if (profileData) {
         setProfile({
@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
-  }, [lastFetchedUserId, userRole]);
+  }, []);
 
   useEffect(() => {
     if (initialized) return;
@@ -187,7 +187,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserRole(null);
           setProfile(null);
           setIsApproved(false);
-          setLastFetchedUserId(null);
+          lastFetchedUserIdRef.current = null;
         }
         
         // دائماً أنهي التحميل
