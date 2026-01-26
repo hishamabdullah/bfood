@@ -3,6 +3,52 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { withTimeout } from "@/lib/withTimeout";
 
+// مفاتيح التخزين المؤقت
+const CACHE_KEYS = {
+  PROFILE: "lovable_user_profile",
+  ROLE: "lovable_user_role",
+  USER_ID: "lovable_user_id",
+  IS_APPROVED: "lovable_is_approved",
+} as const;
+
+// حفظ البيانات في sessionStorage
+const saveToCache = (userId: string, role: string | null, profile: any, isApproved: boolean) => {
+  try {
+    sessionStorage.setItem(CACHE_KEYS.USER_ID, userId);
+    if (role) sessionStorage.setItem(CACHE_KEYS.ROLE, role);
+    if (profile) sessionStorage.setItem(CACHE_KEYS.PROFILE, JSON.stringify(profile));
+    sessionStorage.setItem(CACHE_KEYS.IS_APPROVED, String(isApproved));
+  } catch {
+    // تجاهل أخطاء التخزين
+  }
+};
+
+// قراءة البيانات من sessionStorage
+const loadFromCache = (userId: string) => {
+  try {
+    const cachedUserId = sessionStorage.getItem(CACHE_KEYS.USER_ID);
+    if (cachedUserId !== userId) return null;
+
+    const role = sessionStorage.getItem(CACHE_KEYS.ROLE);
+    const profileStr = sessionStorage.getItem(CACHE_KEYS.PROFILE);
+    const isApproved = sessionStorage.getItem(CACHE_KEYS.IS_APPROVED) === "true";
+    const profile = profileStr ? JSON.parse(profileStr) : null;
+
+    return { role, profile, isApproved };
+  } catch {
+    return null;
+  }
+};
+
+// مسح التخزين المؤقت
+const clearCache = () => {
+  try {
+    Object.values(CACHE_KEYS).forEach((key) => sessionStorage.removeItem(key));
+  } catch {
+    // تجاهل
+  }
+};
+
 const clearAuthStorage = () => {
   // Ensure persisted sessions are cleared even if the network sign-out hangs.
   try {
@@ -17,6 +63,8 @@ const clearAuthStorage = () => {
   } catch {
     // Ignore storage errors (e.g., in private mode)
   }
+  // مسح الكاش أيضاً
+  clearCache();
 };
 
 type UserRole = "admin" | "restaurant" | "supplier";
@@ -69,6 +117,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    // جلب البيانات من الكاش أولاً للعرض الفوري
+    const cachedData = loadFromCache(userId);
+    if (cachedData && !force) {
+      setUserRole(cachedData.role as UserRole);
+      setIsApproved(cachedData.isApproved);
+      if (cachedData.profile) {
+        setProfile(cachedData.profile);
+      }
+      lastFetchedUserIdRef.current = userId;
+      // استمر في جلب البيانات الحديثة في الخلفية
+    }
+
     try {
       const [roleResult, profileResult] = await withTimeout(
         Promise.all([
@@ -116,14 +176,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // لا نُثبّت الكاش إلا إذا نجحت الاستعلامات
       lastFetchedUserIdRef.current = userId;
       
-      if (profileData) {
-        setProfile({
-          full_name: profileData.full_name,
-          business_name: profileData.business_name,
-          phone: profileData.phone,
-          avatar_url: profileData.avatar_url,
-        });
+      const newProfile = profileData ? {
+        full_name: profileData.full_name,
+        business_name: profileData.business_name,
+        phone: profileData.phone,
+        avatar_url: profileData.avatar_url,
+      } : null;
+
+      if (newProfile) {
+        setProfile(newProfile);
       }
+
+      // حفظ البيانات في الكاش للاستخدام عند التحديث
+      saveToCache(userId, fetchedRole, newProfile, approved);
     } catch (error) {
       // لا نثبت الكاش عند الفشل حتى نسمح بإعادة المحاولة
       lastFetchedUserIdRef.current = null;
@@ -138,7 +203,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let timeoutId: NodeJS.Timeout;
     
     const initializeAuth = async () => {
-      // حماية: إنهاء التحميل بعد 5 ثوان كحد أقصى (بدلاً من 10)
+      // حماية: إنهاء التحميل بعد 5 ثوان كحد أقصى
       timeoutId = setTimeout(() => {
         if (isMounted && !initialized) {
           console.warn("Auth initialization timeout - forcing completion");
@@ -177,7 +242,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (initialSession?.user) {
           setSession(initialSession);
           setUser(initialSession.user);
+          
+          // ★ جلب البيانات من الكاش فوراً للعرض السريع
+          const cachedData = loadFromCache(initialSession.user.id);
+          if (cachedData) {
+            setUserRole(cachedData.role as UserRole);
+            setIsApproved(cachedData.isApproved);
+            if (cachedData.profile) {
+              setProfile(cachedData.profile);
+            }
+          }
+          
           try {
+            // جلب البيانات الحديثة من الخادم
             await fetchUserData(initialSession.user.id, true);
           } catch (fetchError) {
             console.error("Error fetching user data:", fetchError);
