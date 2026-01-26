@@ -56,7 +56,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [initialized, setInitialized] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  const fetchUserData = useCallback(async (userId: string): Promise<void> => {
+  // Cache لمنع جلب البيانات المكررة
+  const [lastFetchedUserId, setLastFetchedUserId] = useState<string | null>(null);
+
+  const fetchUserData = useCallback(async (userId: string, force = false): Promise<void> => {
+    // تخطي إذا كانت البيانات موجودة مسبقاً (ما لم يكن force)
+    if (!force && lastFetchedUserId === userId && userRole !== null) {
+      return;
+    }
+
     try {
       const [roleResult, profileResult] = await Promise.all([
         supabase
@@ -94,6 +102,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setUserRole(fetchedRole);
       setIsApproved(approved);
+      setLastFetchedUserId(userId);
+      
       if (profileData) {
         setProfile({
           full_name: profileData.full_name,
@@ -105,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
-  }, []);
+  }, [lastFetchedUserId, userRole]);
 
   useEffect(() => {
     if (initialized) return;
@@ -114,14 +124,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let timeoutId: NodeJS.Timeout;
     
     const initializeAuth = async () => {
-      // حماية: إنهاء التحميل بعد 10 ثوان كحد أقصى
+      // حماية: إنهاء التحميل بعد 5 ثوان كحد أقصى (بدلاً من 10)
       timeoutId = setTimeout(() => {
         if (isMounted && !initialized) {
           console.warn("Auth initialization timeout - forcing completion");
           setLoading(false);
           setInitialized(true);
         }
-      }, 10000);
+      }, 5000);
 
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
@@ -132,7 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(initialSession);
           setUser(initialSession.user);
           try {
-            await fetchUserData(initialSession.user.id);
+            await fetchUserData(initialSession.user.id, true);
           } catch (fetchError) {
             console.error("Error fetching user data:", fetchError);
           }
@@ -158,12 +168,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // تخطي إذا كنا في منتصف عملية تسجيل الدخول
         if (isSigningIn) return;
         
+        // تخطي إذا كان نفس المستخدم (لمنع التكرار)
+        if (newSession?.user?.id === user?.id && event !== 'SIGNED_OUT') {
+          return;
+        }
+        
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
           try {
-            await fetchUserData(newSession.user.id);
+            // استخدم force=true فقط إذا تغير المستخدم
+            await fetchUserData(newSession.user.id, true);
           } catch (fetchError) {
             console.error("Error fetching user data on auth change:", fetchError);
           }
@@ -171,6 +187,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserRole(null);
           setProfile(null);
           setIsApproved(false);
+          setLastFetchedUserId(null);
         }
         
         // دائماً أنهي التحميل
