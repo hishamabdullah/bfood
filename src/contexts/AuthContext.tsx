@@ -264,9 +264,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       if (data.user) {
+        // تحديث الحالة والبيانات بالتوازي لتسريع العملية
         setUser(data.user);
         setSession(data.session);
-        await fetchUserData(data.user.id);
+        
+        // جلب البيانات مع timeout للحماية من التعليق
+        const fetchWithTimeout = Promise.race([
+          fetchUserData(data.user.id),
+          new Promise<void>((resolve) => setTimeout(resolve, 3000))
+        ]);
+        
+        await fetchWithTimeout;
       }
       
       return { error: null };

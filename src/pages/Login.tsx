@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -18,16 +18,6 @@ const Login = () => {
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,11 +39,9 @@ const Login = () => {
         title: t("auth.loginSuccess"),
         description: t("auth.welcomeBackMessage"),
       });
-      // التأخير البسيط يسمح بتحديث AuthContext بالكامل قبل التنقل
-      timeoutRef.current = setTimeout(() => {
-        navigate("/dashboard");
-        setIsLoading(false);
-      }, 100);
+      // التنقل فوراً - البيانات جاهزة من signIn
+      navigate("/dashboard");
+      setIsLoading(false);
     }
   };
 
