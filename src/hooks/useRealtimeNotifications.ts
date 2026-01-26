@@ -12,16 +12,28 @@ export const useRealtimeNotifications = () => {
 
   useEffect(() => {
     // Initialize audio elements
-    bellAudioRef.current = new Audio("/sounds/notification-bell.mp3");
-    toneAudioRef.current = new Audio("/sounds/notification-tone.mp3");
+    const bellAudio = new Audio("/sounds/notification-bell.mp3");
+    const toneAudio = new Audio("/sounds/notification-tone.mp3");
     
     // Preload audio
-    bellAudioRef.current.load();
-    toneAudioRef.current.load();
+    bellAudio.load();
+    toneAudio.load();
+    
+    bellAudioRef.current = bellAudio;
+    toneAudioRef.current = toneAudio;
 
     return () => {
-      bellAudioRef.current = null;
-      toneAudioRef.current = null;
+      // Properly cleanup audio elements
+      if (bellAudioRef.current) {
+        bellAudioRef.current.pause();
+        bellAudioRef.current.src = "";
+        bellAudioRef.current = null;
+      }
+      if (toneAudioRef.current) {
+        toneAudioRef.current.pause();
+        toneAudioRef.current.src = "";
+        toneAudioRef.current = null;
+      }
     };
   }, []);
 
