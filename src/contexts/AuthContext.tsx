@@ -2,6 +2,22 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+const clearAuthStorage = () => {
+  // Ensure persisted sessions are cleared even if the network sign-out hangs.
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      const isSupabaseAuthTokenKey = key.startsWith("sb-") && key.endsWith("-auth-token");
+      if (isSupabaseAuthTokenKey || key === "supabase.auth.token") {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Ignore storage errors (e.g., in private mode)
+  }
+};
+
 type UserRole = "admin" | "restaurant" | "supplier";
 
 interface AuthContextType {
@@ -263,10 +279,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const signOutPromise = supabase.auth.signOut();
+      signOutPromise.catch((error) => {
+        console.error("Sign out error:", error);
+      });
+
+      // Never let UI hang on sign-out; proceed even if request stalls.
+      await Promise.race([
+        signOutPromise,
+        new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+      ]);
     } catch (error) {
       console.error("Sign out error:", error);
     } finally {
+      // Force-clear persisted session locally as a safety net.
+      clearAuthStorage();
       setUser(null);
       setSession(null);
       setUserRole(null);
