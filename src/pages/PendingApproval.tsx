@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Clock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,14 +11,23 @@ const PendingApproval = () => {
   const { user, signOut, loading, isApproved, userRole } = useAuth();
   const navigate = useNavigate();
   const bellAudioRef = useRef<HTMLAudioElement | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize audio
   useEffect(() => {
-    bellAudioRef.current = new Audio("/sounds/notification-bell.mp3");
-    bellAudioRef.current.load();
+    const bellAudio = new Audio("/sounds/notification-bell.mp3");
+    bellAudio.load();
+    bellAudioRef.current = bellAudio;
 
     return () => {
-      bellAudioRef.current = null;
+      if (bellAudioRef.current) {
+        bellAudioRef.current.pause();
+        bellAudioRef.current.src = "";
+        bellAudioRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, []);
 
@@ -63,7 +72,7 @@ const PendingApproval = () => {
             });
             
             // Navigate to dashboard after a short delay
-            setTimeout(() => {
+            timeoutRef.current = setTimeout(() => {
               navigate("/dashboard");
               // Force reload to update auth context
               window.location.reload();
