@@ -4,9 +4,10 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Mail, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import LoginLoadingOverlay from "@/components/auth/LoginLoadingOverlay";
 
 const Login = () => {
   const { t } = useTranslation();
@@ -46,7 +47,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+    <>
+      <LoginLoadingOverlay isVisible={isLoading} />
+      <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
@@ -143,6 +146,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
