@@ -89,7 +89,8 @@ const PendingApproval = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/");
+    // Match the global sign-out behavior (hard reload) to avoid stuck state.
+    window.location.href = "/";
   };
 
   if (loading) {
