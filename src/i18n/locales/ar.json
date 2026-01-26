@@ -37,7 +37,9 @@
     "products": "المنتجات",
     "suppliers": "الموردين",
     "dashboard": "لوحة التحكم",
-    "myOrders": "طلباتي"
+    "myOrders": "طلباتي",
+    "branches": "إدارة الفروع",
+    "favorites": "المفضلة"
   },
   "auth": {
     "email": "البريد الإلكتروني",

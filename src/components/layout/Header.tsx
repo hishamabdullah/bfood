@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShoppingCart, User, LogOut, Package, Heart } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -56,7 +56,7 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          {/* المطعم فقط يرى المنتجات والموردين */}
+          {/* المطعم فقط يرى المنتجات والموردين وطلباتي وإدارة الفروع */}
           {isRestaurant && (
             <>
               <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -64,6 +64,12 @@ const Header = () => {
               </Link>
               <Link to="/suppliers" className="text-muted-foreground hover:text-foreground transition-colors">
                 {t("nav.suppliers")}
+              </Link>
+              <Link to="/orders" className="text-muted-foreground hover:text-foreground transition-colors">
+                {t("nav.myOrders")}
+              </Link>
+              <Link to="/branches" className="text-muted-foreground hover:text-foreground transition-colors">
+                {t("nav.branches")}
               </Link>
             </>
           )}
@@ -187,7 +193,7 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden border-t border-border bg-background animate-fade-in">
           <nav className="container py-4 flex flex-col gap-4">
-            {/* المطعم فقط يرى المنتجات والموردين */}
+            {/* المطعم فقط يرى المنتجات والموردين وطلباتي وإدارة الفروع */}
             {isRestaurant && (
               <>
                 <Link 
@@ -203,6 +209,20 @@ const Header = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {t("nav.suppliers")}
+                </Link>
+                <Link 
+                  to="/orders" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t("nav.myOrders")}
+                </Link>
+                <Link 
+                  to="/branches" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t("nav.branches")}
                 </Link>
               </>
             )}

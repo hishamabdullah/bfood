@@ -27,6 +27,7 @@ import ContactUs from "./pages/ContactUs";
 import Admin from "./pages/Admin";
 import PendingApproval from "./pages/PendingApproval";
 import Favorites from "./pages/Favorites";
+import Branches from "./pages/Branches";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/favorites" element={<Favorites />} />
+                <Route path="/branches" element={<Branches />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:id" element={<Profile />} />
                 <Route path="/supplier/products" element={<SupplierProducts />} />
