@@ -94,7 +94,7 @@ export const useRestaurantsForSupplier = () => {
 
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("user_id, business_name, full_name, is_approved")
+        .select("user_id, business_name, full_name, is_approved, customer_code")
         .in("user_id", restaurantIds)
         .eq("is_approved", true);
 
