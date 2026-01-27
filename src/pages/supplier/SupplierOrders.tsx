@@ -242,9 +242,16 @@ export default function SupplierOrders() {
                               <User className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                              <h3 className="font-semibold">
-                                {order.restaurant?.business_name || t("supplier.unknownRestaurant")}
-                              </h3>
+                              <div className="flex items-center gap-2">
+                                {order.restaurant?.customer_code && (
+                                  <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">
+                                    {order.restaurant.customer_code}
+                                  </span>
+                                )}
+                                <h3 className="font-semibold">
+                                  {order.restaurant?.business_name || t("supplier.unknownRestaurant")}
+                                </h3>
+                              </div>
                               <p className="text-sm text-muted-foreground">
                                 {order.restaurant?.full_name}
                               </p>

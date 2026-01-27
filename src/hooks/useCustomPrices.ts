@@ -14,6 +14,7 @@ export interface CustomPrice {
   restaurant_profile?: {
     business_name: string;
     full_name: string;
+    customer_code?: string;
   } | null;
   product?: {
     name: string;
@@ -50,7 +51,7 @@ export const useSupplierCustomPrices = (productId?: string) => {
       if (restaurantIds.length > 0) {
         const { data: profilesData } = await supabase
           .from("profiles")
-          .select("user_id, business_name, full_name")
+          .select("user_id, business_name, full_name, customer_code")
           .in("user_id", restaurantIds);
         profiles = profilesData || [];
       }

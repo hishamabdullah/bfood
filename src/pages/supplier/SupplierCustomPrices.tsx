@@ -72,7 +72,8 @@ export default function SupplierCustomPrices() {
     return (
       cp.product?.name?.toLowerCase().includes(searchLower) ||
       cp.restaurant_profile?.business_name?.toLowerCase().includes(searchLower) ||
-      cp.restaurant_profile?.full_name?.toLowerCase().includes(searchLower)
+      cp.restaurant_profile?.full_name?.toLowerCase().includes(searchLower) ||
+      cp.restaurant_profile?.customer_code?.includes(searchQuery)
     );
   }) || [];
 
@@ -185,9 +186,18 @@ export default function SupplierCustomPrices() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {cp.restaurant_profile?.business_name ||
-                          cp.restaurant_profile?.full_name ||
-                          "مطعم غير معروف"}
+                        <div className="flex items-center gap-2">
+                          {cp.restaurant_profile?.customer_code && (
+                            <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">
+                              {cp.restaurant_profile.customer_code}
+                            </span>
+                          )}
+                          <span>
+                            {cp.restaurant_profile?.business_name ||
+                              cp.restaurant_profile?.full_name ||
+                              "مطعم غير معروف"}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {cp.product?.price?.toFixed(2) || "-"} {t("common.sar")}
