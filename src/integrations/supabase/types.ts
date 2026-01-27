@@ -384,6 +384,7 @@ export type Database = {
           bio: string | null
           business_name: string
           created_at: string
+          customer_code: string | null
           default_delivery_fee: number | null
           full_name: string
           google_maps_url: string | null
@@ -401,6 +402,7 @@ export type Database = {
           bio?: string | null
           business_name: string
           created_at?: string
+          customer_code?: string | null
           default_delivery_fee?: number | null
           full_name: string
           google_maps_url?: string | null
@@ -418,6 +420,7 @@ export type Database = {
           bio?: string | null
           business_name?: string
           created_at?: string
+          customer_code?: string | null
           default_delivery_fee?: number | null
           full_name?: string
           google_maps_url?: string | null
