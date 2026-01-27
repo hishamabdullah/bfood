@@ -26,6 +26,8 @@ import {
   Loader2,
   Save,
   ExternalLink,
+  Copy,
+  Check,
   ArrowRight
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +50,8 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [targetRole, setTargetRole] = useState<string | null>(null);
+  const [customerCode, setCustomerCode] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [profileData, setProfileData] = useState({
     full_name: "",
     business_name: "",
@@ -100,6 +104,7 @@ const Profile = () => {
           minimum_order_amount: data.minimum_order_amount || 0,
           default_delivery_fee: data.default_delivery_fee || 0,
         });
+        setCustomerCode(data.customer_code || null);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -169,6 +174,18 @@ const Profile = () => {
         ? prev.supply_categories.filter(c => c !== category)
         : [...prev.supply_categories, category]
     }));
+  };
+
+  const copyCustomerCode = async () => {
+    if (!customerCode) return;
+    try {
+      await navigator.clipboard.writeText(customerCode);
+      setCodeCopied(true);
+      toast.success(t("profile.codeCopied"));
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      toast.error(t("profile.copyError"));
+    }
   };
 
   if (authLoading || isLoading) {
@@ -254,6 +271,36 @@ const Profile = () => {
                 />
               </div>
             </div>
+
+            {/* Customer Code - For restaurants only */}
+            {isOwnProfile && isRestaurant && customerCode && (
+              <div className="space-y-2">
+                <Label>{t("profile.customerCode")}</Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <span className="text-2xl font-mono font-bold text-primary tracking-widest">
+                      {customerCode}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={copyCustomerCode}
+                      className="h-8 px-2"
+                    >
+                      {codeCopied ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("profile.customerCodeHint")}
+                </p>
+              </div>
+            )}
 
             {/* Email - Read only from auth */}
             {isOwnProfile && user?.email && (
