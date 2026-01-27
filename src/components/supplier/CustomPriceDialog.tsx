@@ -95,13 +95,18 @@ export default function CustomPriceDialog({
   const selectedProduct = products?.find(p => p.id === selectedProductId);
   const selectedRestaurant = restaurants?.find(r => r.user_id === selectedRestaurantId);
   
-  // فلترة المطاعم حسب البحث - عرض الكل إذا لم يكن هناك بحث
+  // فلترة المطاعم حسب البحث - عرض 3 الأحدث إذا لم يكن هناك بحث
   const filteredRestaurants = useMemo(() => {
     if (!restaurants || restaurants.length === 0) return [];
     
     const query = restaurantSearch.trim().toLowerCase();
-    if (!query) return restaurants;
     
+    // إذا لم يكن هناك بحث، عرض 3 مطاعم الأحدث فقط
+    if (!query) {
+      return restaurants.slice(0, 3);
+    }
+    
+    // عند البحث، فلترة جميع المطاعم
     return restaurants.filter(r => {
       const businessName = (r.business_name || "").toLowerCase();
       const fullName = (r.full_name || "").toLowerCase();
