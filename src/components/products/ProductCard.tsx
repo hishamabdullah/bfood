@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, MapPin, Heart } from "lucide-react";
+import { Plus, Package, MapPin, Heart, Tag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Product } from "@/hooks/useProducts";
@@ -14,9 +14,10 @@ import { useFavoriteProducts, useToggleFavoriteProduct } from "@/hooks/useFavori
 interface ProductCardProps {
   product: Product;
   index?: number;
+  customPrice?: number | null;
 }
 
-const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
+const ProductCard = ({ product, index = 0, customPrice }: ProductCardProps) => {
   const { addItem } = useCart();
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
   const toggleFavorite = useToggleFavoriteProduct();
   
   const isFavorite = favoriteProducts.includes(product.id);
+  const hasCustomPrice = customPrice !== null && customPrice !== undefined && customPrice !== product.price;
+  const displayPrice = hasCustomPrice ? customPrice : product.price;
   
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -57,7 +60,12 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
       return;
     }
     
-    addItem(product, 1);
+    // إضافة المنتج بالسعر المخصص إن وجد
+    const productWithCustomPrice = hasCustomPrice 
+      ? { ...product, price: customPrice! }
+      : product;
+    
+    addItem(productWithCustomPrice, 1);
     toast.success(`تم إضافة ${getProductName(product)} للسلة`);
   };
 
@@ -93,6 +101,13 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
               />
             </button>
           )}
+          {/* Custom Price Badge */}
+          {hasCustomPrice && (
+            <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-green-500 text-white text-xs font-medium flex items-center gap-1">
+              <Tag className="h-3 w-3" />
+              سعر خاص
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
@@ -117,8 +132,13 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
 
           <div className="flex items-center justify-between mt-4">
             <div>
-              <span className="text-xl font-bold text-primary">{product.price}</span>
+              <span className="text-xl font-bold text-primary">{displayPrice}</span>
               <span className="text-sm text-muted-foreground ltr:ml-1 rtl:mr-1">{t("common.sar")}/{product.unit}</span>
+              {hasCustomPrice && (
+                <span className="block text-xs text-muted-foreground line-through">
+                  {product.price} {t("common.sar")}
+                </span>
+              )}
             </div>
             <Button size="sm" disabled={!product.in_stock} onClick={handleAddToCart}>
               <Plus className="h-4 w-4" />
