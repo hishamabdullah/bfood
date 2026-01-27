@@ -23,7 +23,8 @@ import {
   Truck,
   Loader2,
   MapPin,
-  User as UserIcon
+  User as UserIcon,
+  Tag
 } from "lucide-react";
 import { useSupplierStats } from "@/hooks/useSupplierStats";
 import { useRestaurantStats } from "@/hooks/useRestaurantStats";
@@ -162,7 +163,7 @@ const Dashboard = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isSupplier ? (
               <>
                 <div className="bg-card rounded-2xl border border-border p-6">
@@ -186,6 +187,22 @@ const Dashboard = () => {
                   <Link to="/supplier/orders">
                     <Button variant="outline">
                       {t("dashboard.viewOrders")}
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="bg-card rounded-2xl border border-border p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Tag className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">الأسعار المخصصة</h3>
+                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    خصص أسعار معينة لمطاعم محددة
+                  </p>
+                  <Link to="/supplier/custom-prices">
+                    <Button variant="outline">
+                      إدارة الأسعار
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
                   </Link>

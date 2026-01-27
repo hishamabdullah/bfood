@@ -260,6 +260,44 @@ export type Database = {
           },
         ]
       }
+      product_custom_prices: {
+        Row: {
+          created_at: string
+          custom_price: number
+          id: string
+          product_id: string
+          restaurant_id: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_price: number
+          id?: string
+          product_id: string
+          restaurant_id: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_price?: number
+          id?: string
+          product_id?: string
+          restaurant_id?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_custom_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category_id: string | null

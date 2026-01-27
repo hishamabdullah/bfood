@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, X, Store, MapPin } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { useSupplierProfile } from "@/hooks/useSuppliers";
+import { useRestaurantAllCustomPrices } from "@/hooks/useCustomPrices";
+import { useAuth } from "@/contexts/AuthContext";
 import ProductCard from "@/components/products/ProductCard";
 import { saudiRegions } from "@/data/saudiRegions";
 import {
@@ -21,6 +23,7 @@ import {
 
 const Products = () => {
   const { t } = useTranslation();
+  const { userRole } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const supplierId = searchParams.get("supplier");
   
@@ -31,6 +34,7 @@ const Products = () => {
   const { data: products, isLoading: productsLoading } = useProducts(selectedCategory);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: supplierProfile } = useSupplierProfile(supplierId || "");
+  const { data: customPrices } = useRestaurantAllCustomPrices();
 
   const filteredProducts = products?.filter((product) => {
     if (supplierId && product.supplier_id !== supplierId) {
@@ -171,7 +175,12 @@ const Products = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  index={index}
+                  customPrice={userRole === "restaurant" ? customPrices?.[product.id] : undefined}
+                />
               ))}
             </div>
           )}

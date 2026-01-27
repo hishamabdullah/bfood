@@ -10,7 +10,8 @@ import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
-import { ArrowRight, Minus, Plus, ShoppingCart, Package, MapPin, Scale, Store } from "lucide-react";
+import { useRestaurantCustomPrice } from "@/hooks/useCustomPrices";
+import { ArrowRight, Minus, Plus, ShoppingCart, Package, MapPin, Scale, Store, Tag } from "lucide-react";
 import { toast } from "sonner";
 
 const ProductDetails = () => {
@@ -22,6 +23,10 @@ const ProductDetails = () => {
   const { addItem } = useCart();
   const { user, userRole } = useAuth();
   const [quantity, setQuantity] = useState(1);
+  const { data: customPrice } = useRestaurantCustomPrice(id || "");
+
+  const hasCustomPrice = userRole === "restaurant" && customPrice !== null && customPrice !== undefined && customPrice !== product?.price;
+  const displayPrice = hasCustomPrice ? customPrice! : (product?.price || 0);
 
   const handleAddToCart = () => {
     if (!user) {
@@ -36,7 +41,11 @@ const ProductDetails = () => {
     }
     
     if (product) {
-      addItem(product, quantity);
+      // إضافة المنتج بالسعر المخصص إن وجد
+      const productWithPrice = hasCustomPrice 
+        ? { ...product, price: customPrice! }
+        : product;
+      addItem(productWithPrice, quantity);
       toast.success(`تم إضافة ${getProductName(product)} للسلة`);
     }
   };
@@ -110,7 +119,7 @@ const ProductDetails = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Product Image */}
-            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+            <div className="bg-card rounded-2xl border border-border overflow-hidden relative">
               {product.image_url ? (
                 <img
                   src={product.image_url}
@@ -120,6 +129,13 @@ const ProductDetails = () => {
               ) : (
                 <div className="w-full h-96 bg-muted flex items-center justify-center">
                   <Package className="h-24 w-24 text-muted-foreground" />
+                </div>
+              )}
+              {/* Custom Price Badge */}
+              {hasCustomPrice && (
+                <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-green-500 text-white text-sm font-medium flex items-center gap-1.5">
+                  <Tag className="h-4 w-4" />
+                  سعر خاص لك
                 </div>
               )}
             </div>
@@ -149,8 +165,15 @@ const ProductDetails = () => {
 
               {/* Price */}
               <div className="bg-accent/50 rounded-xl p-4">
-                <span className="text-3xl font-bold text-primary">{product.price}</span>
+                <span className="text-3xl font-bold text-primary">{displayPrice}</span>
                 <span className="text-lg text-muted-foreground ltr:ml-2 rtl:mr-2">{t("common.sar")} / {product.unit}</span>
+                {hasCustomPrice && (
+                  <div className="mt-1">
+                    <span className="text-sm text-muted-foreground line-through">
+                      السعر الأصلي: {product.price} {t("common.sar")}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -211,7 +234,7 @@ const ProductDetails = () => {
                 
                 <div className="flex items-center justify-between text-lg">
                   <span className="font-medium">{t("cart.total")}</span>
-                  <span className="font-bold text-primary">{(product.price * quantity).toFixed(2)} {t("common.sar")}</span>
+                  <span className="font-bold text-primary">{(displayPrice * quantity).toFixed(2)} {t("common.sar")}</span>
                 </div>
 
                 <Button
