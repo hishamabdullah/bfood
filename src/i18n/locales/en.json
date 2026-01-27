@@ -455,6 +455,10 @@
     "saving": "Saving...",
     "saveSuccess": "Data saved successfully",
     "saveError": "Error saving data",
-    "fetchError": "Error fetching data"
+    "fetchError": "Error fetching data",
+    "customerCode": "Customer Code",
+    "customerCodeHint": "Share this code with suppliers to help them find you when setting custom prices",
+    "codeCopied": "Customer code copied",
+    "copyError": "Failed to copy code"
   }
 }
