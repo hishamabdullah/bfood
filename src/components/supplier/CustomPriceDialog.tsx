@@ -95,17 +95,22 @@ export default function CustomPriceDialog({
   const selectedProduct = products?.find(p => p.id === selectedProductId);
   const selectedRestaurant = restaurants?.find(r => r.user_id === selectedRestaurantId);
   
-  // فلترة المطاعم حسب البحث
+  // فلترة المطاعم حسب البحث - عرض الكل إذا لم يكن هناك بحث
   const filteredRestaurants = useMemo(() => {
-    if (!restaurants) return [];
-    if (!restaurantSearch.trim()) return restaurants;
+    if (!restaurants || restaurants.length === 0) return [];
     
-    const query = restaurantSearch.toLowerCase();
-    return restaurants.filter(r => 
-      r.business_name?.toLowerCase().includes(query) ||
-      r.full_name?.toLowerCase().includes(query) ||
-      r.customer_code?.includes(query)
-    );
+    const query = restaurantSearch.trim().toLowerCase();
+    if (!query) return restaurants;
+    
+    return restaurants.filter(r => {
+      const businessName = (r.business_name || "").toLowerCase();
+      const fullName = (r.full_name || "").toLowerCase();
+      const customerCode = r.customer_code || "";
+      
+      return businessName.includes(query) ||
+             fullName.includes(query) ||
+             customerCode.includes(restaurantSearch.trim());
+    });
   }, [restaurants, restaurantSearch]);
 
   useEffect(() => {
