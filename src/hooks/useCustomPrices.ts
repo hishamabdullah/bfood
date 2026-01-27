@@ -77,32 +77,17 @@ export const useSupplierCustomPrices = (productId?: string) => {
   });
 };
 
-// جلب المطاعم المتاحة للمورد - مرتبة بالأحدث
+// جلب المطاعم المتاحة للمورد - باستخدام دالة آمنة
 export const useRestaurantsForSupplier = () => {
   return useQuery({
     queryKey: ["restaurants-for-supplier"],
     queryFn: async () => {
-      // جلب جميع المطاعم المعتمدين
-      const { data: restaurantRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "restaurant");
+      // استخدام الدالة الآمنة التي تتجاوز RLS
+      const { data, error } = await supabase.rpc("get_approved_restaurants");
 
-      if (rolesError) throw rolesError;
+      if (error) throw error;
 
-      const restaurantIds = restaurantRoles?.map(r => r.user_id) || [];
-      if (restaurantIds.length === 0) return [];
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("user_id, business_name, full_name, is_approved, customer_code, created_at")
-        .in("user_id", restaurantIds)
-        .eq("is_approved", true)
-        .order("created_at", { ascending: false });
-
-      if (profilesError) throw profilesError;
-
-      return profiles || [];
+      return data || [];
     },
   });
 };

@@ -482,6 +482,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_approved_restaurants: {
+        Args: never
+        Returns: {
+          business_name: string
+          created_at: string
+          customer_code: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       get_order_restaurant_id: { Args: { _order_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
