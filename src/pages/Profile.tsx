@@ -28,7 +28,9 @@ import {
   ExternalLink,
   Copy,
   Check,
-  ArrowRight
+  ArrowRight,
+  CreditCard,
+  Building,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -62,6 +64,9 @@ const Profile = () => {
     supply_categories: [] as string[],
     minimum_order_amount: 0,
     default_delivery_fee: 0,
+    bank_name: "",
+    bank_account_name: "",
+    bank_iban: "",
   });
 
   useEffect(() => {
@@ -103,6 +108,9 @@ const Profile = () => {
           supply_categories: data.supply_categories || [],
           minimum_order_amount: data.minimum_order_amount || 0,
           default_delivery_fee: data.default_delivery_fee || 0,
+          bank_name: (data as any).bank_name || "",
+          bank_account_name: (data as any).bank_account_name || "",
+          bank_iban: (data as any).bank_iban || "",
         });
         setCustomerCode(data.customer_code || null);
       }
@@ -153,7 +161,10 @@ const Profile = () => {
           supply_categories: profileData.supply_categories.length > 0 ? profileData.supply_categories : null,
           minimum_order_amount: profileData.minimum_order_amount || 0,
           default_delivery_fee: profileData.default_delivery_fee || 0,
-        })
+          bank_name: profileData.bank_name || null,
+          bank_account_name: profileData.bank_account_name || null,
+          bank_iban: profileData.bank_iban || null,
+        } as any)
         .eq("user_id", user.id);
 
       if (error) throw error;
@@ -490,6 +501,65 @@ const Profile = () => {
                 rows={4}
               />
             </div>
+
+            {/* Bank Details - For suppliers */}
+            {isSupplier && isOwnProfile && (
+              <div className="space-y-4 pt-6 border-t">
+                <div className="flex items-center gap-2 mb-4">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">{t("profile.bankDetails")}</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t("profile.bankDetailsHint")}
+                </p>
+                
+                {/* Bank Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="bank_name">{t("profile.bankName")}</Label>
+                  <div className="relative">
+                    <Building className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="bank_name"
+                      placeholder={t("profile.bankName")}
+                      className="ps-10"
+                      value={profileData.bank_name}
+                      onChange={(e) => setProfileData({ ...profileData, bank_name: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Account Holder Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="bank_account_name">{t("profile.bankAccountName")}</Label>
+                  <div className="relative">
+                    <User className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="bank_account_name"
+                      placeholder={t("profile.bankAccountName")}
+                      className="ps-10"
+                      value={profileData.bank_account_name}
+                      onChange={(e) => setProfileData({ ...profileData, bank_account_name: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* IBAN */}
+                <div className="space-y-2">
+                  <Label htmlFor="bank_iban">{t("profile.bankIban")}</Label>
+                  <div className="relative">
+                    <CreditCard className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="bank_iban"
+                      placeholder="SA..."
+                      className="ps-10 font-mono"
+                      value={profileData.bank_iban}
+                      onChange={(e) => setProfileData({ ...profileData, bank_iban: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Save Button */}
             {isOwnProfile && (

@@ -6,6 +6,7 @@ import { Minus, Plus, Trash2, Package, Truck, Warehouse, MapPin, ExternalLink } 
 import { Link } from "react-router-dom";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
 import type { SupplierGroup } from "@/contexts/CartContext";
+import { PaymentDetailsDialog } from "./PaymentDetailsDialog";
 
 interface SupplierCartSectionProps {
   supplierId: string;
@@ -39,8 +40,14 @@ export const SupplierCartSection = ({
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden">
       {/* Supplier Header */}
-      <div className="bg-muted/50 px-6 py-3 border-b border-border">
+      <div className="bg-muted/50 px-6 py-3 border-b border-border flex items-center justify-between">
         <h3 className="font-semibold">{group.supplierName}</h3>
+        <PaymentDetailsDialog
+          supplierId={supplierId}
+          supplierName={group.supplierName}
+          supplierProfile={group.supplierProfile}
+          amountToPay={supplierSubtotal + (isPickup ? 0 : deliveryFeeInfo?.fee || 0)}
+        />
       </div>
 
       {/* Items */}

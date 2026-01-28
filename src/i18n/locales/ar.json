@@ -1,6 +1,19 @@
 {
-  "cart": {
+"cart": {
     "title": "سلة المشتريات",
+    "paymentDetails": "تفاصيل الدفع",
+    "bankDetails": "البيانات البنكية",
+    "bankName": "اسم البنك",
+    "bankAccountName": "اسم صاحب الحساب",
+    "bankIban": "رقم الآيبان",
+    "amountToPay": "المبلغ المستحق",
+    "notifyPayment": "إبلاغ المورد بالتحويل",
+    "notifyingPayment": "جاري الإرسال...",
+    "paymentNotified": "تم إبلاغ المورد بنجاح",
+    "paymentNotifyError": "حدث خطأ في إرسال الإشعار",
+    "noBankDetails": "لم يضف المورد بياناته البنكية بعد",
+    "copyIban": "نسخ الآيبان",
+    "ibanCopied": "تم نسخ رقم الآيبان",
     "empty": "سلة المشتريات فارغة",
     "emptyMessage": "لم تقم بإضافة أي منتجات إلى السلة بعد",
     "browseProducts": "تصفح المنتجات",
@@ -277,7 +290,9 @@
     "noNotifications": "لا توجد إشعارات",
     "markAllRead": "قراءة الكل",
     "newOrder": "طلب جديد",
-    "newOrderMessage": "لديك طلب جديد من {{name}}"
+    "newOrderMessage": "لديك طلب جديد من {{name}}",
+    "paymentReceived": "إشعار دفع",
+    "paymentReceivedMessage": "قام {{name}} بإبلاغك بتحويل مبلغ {{amount}} ر.س"
   },
   "footer": {
     "description": "منصة BFOOD تربط المطاعم بأفضل الموردين للمنتجات الغذائية. نسهّل عملية الطلب ونضمن جودة المنتجات وسرعة التوصيل.",
@@ -498,6 +513,11 @@
     "customerCode": "رقم العميل",
     "customerCodeHint": "شارك هذا الرقم مع الموردين لتسهيل البحث عنك عند تخصيص الأسعار",
     "codeCopied": "تم نسخ رقم العميل",
-    "copyError": "فشل نسخ الرقم"
+    "copyError": "فشل نسخ الرقم",
+    "bankDetails": "البيانات البنكية",
+    "bankName": "اسم البنك",
+    "bankAccountName": "اسم صاحب الحساب",
+    "bankIban": "رقم الآيبان (IBAN)",
+    "bankDetailsHint": "هذه البيانات ستظهر للمطاعم لتحويل المبالغ"
   }
 }
