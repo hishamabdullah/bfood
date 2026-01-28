@@ -43,7 +43,13 @@
     "selectBranch": "اختر فرع التوصيل",
     "addNewBranch": "إضافة فرع جديد",
     "viewOnMap": "عرض على الخريطة",
-    "enterAddressOrLink": "أدخل رابط قوقل ماب أو العنوان"
+    "enterAddressOrLink": "أدخل رابط قوقل ماب أو العنوان",
+    "uploadReceipt": "رفع صورة إيصال التحويل",
+    "selectReceiptImage": "اختر صورة الإيصال",
+    "receiptOptional": "رفع الإيصال اختياري لكنه يساعد المورد على تأكيد الدفع",
+    "uploadingReceipt": "جاري رفع الإيصال...",
+    "onlyImages": "يُسمح فقط بالصور",
+    "fileTooLarge": "حجم الملف يجب أن يكون أقل من 5 ميجابايت"
   },
   "common": {
     "login": "تسجيل الدخول",
@@ -458,7 +464,11 @@
     "productsTotal": "مجموع المنتجات",
     "orderTotal": "إجمالي الطلب",
     "requestedProducts": "المنتجات المطلوبة",
-    "warehousePickup": "استلام من المستودع"
+    "warehousePickup": "استلام من المستودع",
+    "bankTransferCompleted": "تم التحويل البنكي",
+    "viewReceipt": "عرض الإيصال",
+    "receiptImage": "صورة إيصال التحويل",
+    "openFullImage": "فتح الصورة بالحجم الكامل"
   },
   "profile": {
     "title": "الملف الشخصي",

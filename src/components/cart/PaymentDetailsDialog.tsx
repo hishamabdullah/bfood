@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Copy, Check, Loader2, Banknote, Building, User } from "lucide-react";
+import { CreditCard, Copy, Check, Loader2, Banknote, Building, User, Upload, Image } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +24,7 @@ interface PaymentDetailsDialogProps {
   supplierName: string;
   supplierProfile: SupplierBankDetails | null;
   amountToPay: number;
+  orderId?: string;
 }
 
 export const PaymentDetailsDialog = ({
@@ -31,12 +32,17 @@ export const PaymentDetailsDialog = ({
   supplierName,
   supplierProfile,
   amountToPay,
+  orderId,
 }: PaymentDetailsDialogProps) => {
   const { t } = useTranslation();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [open, setOpen] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const bankName = (supplierProfile as any)?.bank_name;
   const bankAccountName = (supplierProfile as any)?.bank_account_name;
@@ -56,11 +62,71 @@ export const PaymentDetailsDialog = ({
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(t("cart.onlyImages"));
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t("cart.fileTooLarge"));
+        return;
+      }
+      setReceiptFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const notifySupplier = async () => {
+    if (!user) return;
+    
     setIsNotifying(true);
     try {
+      let receiptUrl: string | null = null;
+
+      // رفع الإيصال إذا كان موجوداً
+      if (receiptFile) {
+        setIsUploading(true);
+        const fileExt = receiptFile.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("payment-receipts")
+          .upload(fileName, receiptFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("payment-receipts")
+          .getPublicUrl(fileName);
+
+        receiptUrl = urlData.publicUrl;
+        setIsUploading(false);
+      }
+
+      // إنشاء سجل الدفع
+      const { error: paymentError } = await supabase
+        .from("order_payments")
+        .upsert({
+          order_id: orderId || `temp_${Date.now()}`,
+          supplier_id: supplierId,
+          restaurant_id: user.id,
+          is_paid: true,
+          receipt_url: receiptUrl,
+        }, {
+          onConflict: "order_id,supplier_id"
+        });
+
+      if (paymentError) throw paymentError;
+
       const restaurantName = profile?.business_name || "مطعم";
       
+      // إرسال إشعار للمورد
       const { error } = await supabase
         .from("notifications")
         .insert({
@@ -77,11 +143,14 @@ export const PaymentDetailsDialog = ({
 
       toast.success(t("cart.paymentNotified"));
       setOpen(false);
+      setReceiptFile(null);
+      setReceiptPreview(null);
     } catch (error) {
       console.error("Error notifying supplier:", error);
       toast.error(t("cart.paymentNotifyError"));
     } finally {
       setIsNotifying(false);
+      setIsUploading(false);
     }
   };
 
@@ -161,6 +230,51 @@ export const PaymentDetailsDialog = ({
                 )}
               </div>
 
+              {/* Upload Receipt */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t("cart.uploadReceipt")}</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                
+                {receiptPreview ? (
+                  <div className="relative">
+                    <img
+                      src={receiptPreview}
+                      alt="Receipt preview"
+                      className="w-full h-40 object-contain rounded-lg border bg-muted"
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="absolute top-2 end-2"
+                      onClick={() => {
+                        setReceiptFile(null);
+                        setReceiptPreview(null);
+                      }}
+                    >
+                      {t("common.delete")}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full h-24 border-dashed gap-2"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-5 w-5" />
+                    {t("cart.selectReceiptImage")}
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground text-center">
+                  {t("cart.receiptOptional")}
+                </p>
+              </div>
+
               {/* Action Buttons */}
               <div className="flex gap-2 pt-4">
                 <Button
@@ -174,12 +288,12 @@ export const PaymentDetailsDialog = ({
                   variant="hero"
                   className="flex-1 gap-2"
                   onClick={notifySupplier}
-                  disabled={isNotifying}
+                  disabled={isNotifying || isUploading}
                 >
-                  {isNotifying ? (
+                  {isNotifying || isUploading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      {t("cart.notifyingPayment")}
+                      {isUploading ? t("cart.uploadingReceipt") : t("cart.notifyingPayment")}
                     </>
                   ) : (
                     <>
