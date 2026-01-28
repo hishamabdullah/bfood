@@ -113,13 +113,13 @@ export const PaymentDetailsDialog = ({
       const { error: paymentError } = await supabase
         .from("order_payments")
         .upsert({
-          order_id: orderId || `temp_${Date.now()}`,
+          order_id: orderId || null,
           supplier_id: supplierId,
           restaurant_id: user.id,
           is_paid: true,
           receipt_url: receiptUrl,
         }, {
-          onConflict: "order_id,supplier_id"
+          onConflict: "supplier_id,restaurant_id"
         });
 
       if (paymentError) throw paymentError;

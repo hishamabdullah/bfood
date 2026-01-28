@@ -218,7 +218,7 @@ export type Database = {
           created_at: string
           id: string
           is_paid: boolean
-          order_id: string
+          order_id: string | null
           receipt_url: string | null
           restaurant_id: string
           supplier_id: string
@@ -228,7 +228,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_paid?: boolean
-          order_id: string
+          order_id?: string | null
           receipt_url?: string | null
           restaurant_id: string
           supplier_id: string
@@ -238,7 +238,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_paid?: boolean
-          order_id?: string
+          order_id?: string | null
           receipt_url?: string | null
           restaurant_id?: string
           supplier_id?: string
