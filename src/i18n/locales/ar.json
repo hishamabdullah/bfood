@@ -38,7 +38,12 @@
     "loginRequired": "يجب تسجيل الدخول أولاً",
     "restaurantOnly": "فقط المطاعم يمكنها إنشاء طلبات",
     "orderSplitNote": "سيتم تقسيم الطلب حسب المورد وإرسال كل جزء للمورد المختص",
-    "warehousePickup": "استلام من المستودع"
+    "warehousePickup": "استلام من المستودع",
+    "deliveryBranch": "فرع التوصيل",
+    "selectBranch": "اختر فرع التوصيل",
+    "addNewBranch": "إضافة فرع جديد",
+    "viewOnMap": "عرض على الخريطة",
+    "enterAddressOrLink": "أدخل رابط قوقل ماب أو العنوان"
   },
   "common": {
     "login": "تسجيل الدخول",
