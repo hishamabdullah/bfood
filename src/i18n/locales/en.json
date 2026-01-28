@@ -202,7 +202,11 @@
     "deliveryMethod": "Delivery Method",
     "deliveryToAddress": "Delivery to Address",
     "pickupFromWarehouse": "Pickup from Warehouse",
-    "pickupFromWarehouseDesc": "I will pickup the order myself from supplier's warehouse"
+    "pickupFromWarehouseDesc": "Pick up the order directly from supplier's warehouse",
+    "warehouseLocation": "Warehouse location on map",
+    "noWarehouseLocation": "Supplier hasn't set warehouse location",
+    "supplierTotal": "{name} Total",
+    "warehousePickup": "Warehouse Pickup"
   },
   "orders": {
     "title": "My Orders",
