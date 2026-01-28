@@ -35,7 +35,9 @@ import {
 } from "@/components/ui/accordion";
 import { useCategories } from "@/hooks/useProducts";
 import { useCreateProduct, useUpdateProduct, SupplierProduct } from "@/hooks/useSupplierProducts";
-import { Loader2, Globe } from "lucide-react";
+import { useProductPriceTiers, useSavePriceTiers, PriceTierInput } from "@/hooks/useProductPriceTiers";
+import PriceTiersEditor from "./PriceTiersEditor";
+import { Loader2, Globe, Layers } from "lucide-react";
 
 const productSchema = z.object({
   name: z.string().min(2, "اسم المنتج مطلوب").max(100),
@@ -72,6 +74,9 @@ export default function ProductFormDialog({
   const { data: categories } = useCategories();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const savePriceTiers = useSavePriceTiers();
+  const { data: existingTiers } = useProductPriceTiers(product?.id);
+  const [priceTiers, setPriceTiers] = useState<PriceTierInput[]>([]);
   const isEditing = !!product;
 
   const form = useForm<ProductFormValues>({
@@ -94,6 +99,20 @@ export default function ProductFormDialog({
   });
 
   const watchUnlimitedStock = form.watch("unlimited_stock");
+
+  // Load existing price tiers when editing
+  useEffect(() => {
+    if (existingTiers && existingTiers.length > 0) {
+      setPriceTiers(
+        existingTiers.map((t) => ({
+          min_quantity: t.min_quantity,
+          price_per_unit: t.price_per_unit,
+        }))
+      );
+    } else {
+      setPriceTiers([]);
+    }
+  }, [existingTiers]);
 
   useEffect(() => {
     if (product) {
@@ -128,6 +147,7 @@ export default function ProductFormDialog({
         name_en: "",
         description_en: "",
       });
+      setPriceTiers([]);
     }
   }, [product, form]);
 
@@ -149,21 +169,37 @@ export default function ProductFormDialog({
         description_en: values.description_en || null,
       };
 
+      let productId: string;
+
       if (isEditing && product) {
         await updateProduct.mutateAsync({
           id: product.id,
           ...productData,
         });
+        productId = product.id;
       } else {
-        await createProduct.mutateAsync(productData as any);
+        const newProduct = await createProduct.mutateAsync(productData as any);
+        productId = newProduct.id;
       }
+
+      // Save price tiers
+      if (priceTiers.length > 0 || (existingTiers && existingTiers.length > 0)) {
+        await savePriceTiers.mutateAsync({
+          productId,
+          tiers: priceTiers,
+        });
+      }
+
       onOpenChange(false);
     } catch (error) {
       // Error handled in mutation
     }
   };
 
-  const isLoading = createProduct.isPending || updateProduct.isPending;
+  const isLoading = createProduct.isPending || updateProduct.isPending || savePriceTiers.isPending;
+
+  const watchPrice = form.watch("price");
+  const watchUnit = form.watch("unit");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -423,6 +459,32 @@ export default function ProductFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* Price Tiers Section */}
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="price-tiers" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Layers className="h-4 w-4" />
+                    <span>شرائح الأسعار (خصومات الكميات)</span>
+                    {priceTiers.length > 0 && (
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        {priceTiers.length} شرائح
+                      </span>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4">
+                  <PriceTiersEditor
+                    tiers={priceTiers}
+                    onChange={setPriceTiers}
+                    basePrice={watchPrice || 0}
+                    unit={watchUnit || "كيلو"}
+                    maxTiers={10}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             <div className="flex gap-3 pt-4">
               <Button
