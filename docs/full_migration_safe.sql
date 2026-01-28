@@ -198,9 +198,14 @@ CREATE TABLE IF NOT EXISTS public.order_payments (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- إضافة قيد فريد للمدفوعات
+-- إضافة قيد فريد للمدفوعات (إذا لم يكن موجوداً)
 DO $$ BEGIN
-  ALTER TABLE public.order_payments ADD CONSTRAINT order_payments_supplier_restaurant_unique UNIQUE (supplier_id, restaurant_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'order_payments_supplier_restaurant_unique'
+  ) THEN
+    ALTER TABLE public.order_payments ADD CONSTRAINT order_payments_supplier_restaurant_unique UNIQUE (supplier_id, restaurant_id);
+  END IF;
 EXCEPTION
   WHEN duplicate_object THEN null;
 END $$;
