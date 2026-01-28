@@ -95,9 +95,9 @@ export default function SupplierOrders() {
   const updateStatus = useUpdateOrderStatus();
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
 
-  // Helper function to get payment info for an order
-  const getPaymentForOrder = (orderId: string) => {
-    return payments?.find(p => p.order_id === orderId);
+  // Helper function to get payment info for a restaurant
+  const getPaymentForRestaurant = (restaurantId: string) => {
+    return payments?.find(p => p.restaurant_id === restaurantId);
   };
 
   const currentLocale = i18n.language === "ar" ? ar : enUS;
@@ -432,7 +432,7 @@ export default function SupplierOrders() {
 
                         {/* Payment Status */}
                         {(() => {
-                          const payment = getPaymentForOrder(order.orderId);
+                          const payment = getPaymentForRestaurant(order.restaurant?.user_id);
                           if (payment?.is_paid) {
                             return (
                               <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
