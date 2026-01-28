@@ -28,6 +28,7 @@ import {
   CheckCircle,
   XCircle,
   Truck,
+  Warehouse,
 } from "lucide-react";
 import { useSupplierOrders, useUpdateOrderStatus } from "@/hooks/useSupplierOrders";
 import { format } from "date-fns";
@@ -71,6 +72,7 @@ interface GroupedOrder {
   status: string; // Overall status based on items
   branch?: any; // Branch info
   deliveryFee: number; // Supplier-specific delivery fee
+  isPickup: boolean; // Is warehouse pickup
 }
 
 export default function SupplierOrders() {
@@ -111,6 +113,7 @@ export default function SupplierOrders() {
           status: item.status, // Initialize with first item status
           branch: item.order?.branch || undefined,
           deliveryFee: 0,
+          isPickup: (item.order as any)?.is_pickup || false,
         };
       }
       grouped[orderId].items.push(item);
@@ -390,7 +393,16 @@ export default function SupplierOrders() {
                           <span className="text-muted-foreground">{t("supplier.productsTotal")}:</span>
                           <span>{(calculateOrderTotal(order.items, 0)).toFixed(2)} {t("common.sar")}</span>
                         </div>
-                        {order.deliveryFee > 0 && (
+                        
+                        {/* استلام من المستودع أو رسوم التوصيل */}
+                        {order.isPickup ? (
+                          <div className="flex justify-between items-center text-sm bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
+                            <span className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-medium">
+                              <Warehouse className="h-5 w-5" />
+                              {t("supplier.warehousePickup")}
+                            </span>
+                          </div>
+                        ) : order.deliveryFee > 0 ? (
                           <div className="flex justify-between items-center text-sm text-amber-600">
                             <span className="flex items-center gap-1">
                               <Truck className="h-4 w-4" />
@@ -398,11 +410,12 @@ export default function SupplierOrders() {
                             </span>
                             <span>{order.deliveryFee.toFixed(2)} {t("common.sar")}</span>
                           </div>
-                        )}
+                        ) : null}
+                        
                         <div className="flex justify-between items-center pt-2 border-t">
                           <span className="font-bold text-lg">{t("supplier.orderTotal")}:</span>
                           <span className="font-bold text-xl text-primary">
-                            {calculateOrderTotal(order.items, order.deliveryFee).toFixed(2)} {t("common.sar")}
+                            {calculateOrderTotal(order.items, order.isPickup ? 0 : order.deliveryFee).toFixed(2)} {t("common.sar")}
                           </span>
                         </div>
                       </div>

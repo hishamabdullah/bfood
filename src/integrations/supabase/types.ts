@@ -220,6 +220,7 @@ export type Database = {
           delivery_address: string | null
           delivery_fee: number
           id: string
+          is_pickup: boolean | null
           notes: string | null
           restaurant_id: string
           status: string
@@ -232,6 +233,7 @@ export type Database = {
           delivery_address?: string | null
           delivery_fee?: number
           id?: string
+          is_pickup?: boolean | null
           notes?: string | null
           restaurant_id: string
           status?: string
@@ -244,6 +246,7 @@ export type Database = {
           delivery_address?: string | null
           delivery_fee?: number
           id?: string
+          is_pickup?: boolean | null
           notes?: string | null
           restaurant_id?: string
           status?: string
