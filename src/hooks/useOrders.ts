@@ -9,6 +9,7 @@ interface CreateOrderParams {
   notes?: string;
   branchId?: string;
   supplierDeliveryFees?: Record<string, { fee: number; reason: string }>;
+  isPickup?: boolean;
 }
 
 export const useCreateOrder = () => {
@@ -16,7 +17,7 @@ export const useCreateOrder = () => {
   const { user, profile } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ items, deliveryAddress, notes, branchId, supplierDeliveryFees = {} }: CreateOrderParams) => {
+    mutationFn: async ({ items, deliveryAddress, notes, branchId, supplierDeliveryFees = {}, isPickup = false }: CreateOrderParams) => {
       if (!user) throw new Error("يجب تسجيل الدخول أولاً");
 
       // Calculate total
@@ -25,8 +26,8 @@ export const useCreateOrder = () => {
         0
       );
       
-      // حساب رسوم التوصيل من الحد الأدنى للموردين
-      const totalDeliveryFee = Object.values(supplierDeliveryFees).reduce(
+      // حساب رسوم التوصيل من الحد الأدنى للموردين (فقط إذا لم يكن استلام من المستودع)
+      const totalDeliveryFee = isPickup ? 0 : Object.values(supplierDeliveryFees).reduce(
         (total, { fee }) => total + fee,
         0
       );
@@ -39,10 +40,11 @@ export const useCreateOrder = () => {
           restaurant_id: user.id,
           total_amount: totalAmount,
           delivery_fee: totalDeliveryFee,
-          delivery_address: deliveryAddress,
+          delivery_address: isPickup ? null : deliveryAddress,
           notes,
           status: "pending",
-          branch_id: branchId || null,
+          branch_id: isPickup ? null : (branchId || null),
+          is_pickup: isPickup,
         })
         .select()
         .single();
@@ -59,12 +61,12 @@ export const useCreateOrder = () => {
         itemsBySupplier[supplierId].push(item);
       });
 
-      // Create order items with supplier-specific delivery fee
+      // Create order items with supplier-specific delivery fee (0 if pickup)
       const orderItems = items.map((item) => {
         const supplierId = item.product.supplier_id;
         // Calculate per-item delivery fee proportionally
         const supplierItems = itemsBySupplier[supplierId];
-        const supplierTotalFee = supplierDeliveryFees[supplierId]?.fee || 0;
+        const supplierTotalFee = isPickup ? 0 : (supplierDeliveryFees[supplierId]?.fee || 0);
         // Distribute delivery fee across first item of each supplier for simplicity
         const isFirstItem = supplierItems[0].product.id === item.product.id;
         

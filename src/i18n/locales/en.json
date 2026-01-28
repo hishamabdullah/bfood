@@ -198,7 +198,11 @@
     "orderSplitNote": "Order will be automatically split by suppliers",
     "processingOrder": "Processing order...",
     "belowMinimum": "Below minimum ({{amount}} SAR)",
-    "freeDelivery": "Free delivery!"
+    "freeDelivery": "Free delivery!",
+    "deliveryMethod": "Delivery Method",
+    "deliveryToAddress": "Delivery to Address",
+    "pickupFromWarehouse": "Pickup from Warehouse",
+    "pickupFromWarehouseDesc": "I will pickup the order myself from supplier's warehouse"
   },
   "orders": {
     "title": "My Orders",
@@ -427,7 +431,8 @@
     "openBranchLocation": "Open branch location in Google Maps",
     "productsTotal": "Products Total",
     "orderTotal": "Order Total",
-    "requestedProducts": "Requested Products"
+    "requestedProducts": "Requested Products",
+    "warehousePickup": "Warehouse Pickup"
   },
   "profile": {
     "title": "Profile",

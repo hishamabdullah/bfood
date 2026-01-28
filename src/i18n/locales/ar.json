@@ -204,7 +204,11 @@
     "addNewBranch": "إضافة فرع جديد",
     "noBranches": "لا توجد فروع محفوظة",
     "viewOnMap": "عرض على الخريطة",
-    "enterAddressOrLink": "أدخل رابط قوقل ماب أو العنوان"
+    "enterAddressOrLink": "أدخل رابط قوقل ماب أو العنوان",
+    "deliveryMethod": "طريقة الاستلام",
+    "deliveryToAddress": "توصيل للعنوان",
+    "pickupFromWarehouse": "استلام من المستودع",
+    "pickupFromWarehouseDesc": "سأستلم الطلب بنفسي من مستودع المورد"
   },
   "orders": {
     "title": "طلباتي",
@@ -433,7 +437,8 @@
     "openBranchLocation": "فتح موقع الفرع في قوقل ماب",
     "productsTotal": "مجموع المنتجات",
     "orderTotal": "إجمالي الطلب",
-    "requestedProducts": "المنتجات المطلوبة"
+    "requestedProducts": "المنتجات المطلوبة",
+    "warehousePickup": "استلام من المستودع"
   },
   "profile": {
     "title": "الملف الشخصي",

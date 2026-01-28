@@ -4,7 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Package, Truck } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Package, Truck, Warehouse } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart, type SupplierGroup } from "@/contexts/CartContext";
 import { useCreateOrder } from "@/hooks/useOrders";
@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
 import { BranchSelector } from "@/components/cart/BranchSelector";
 import { useBranches } from "@/hooks/useBranches";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 // Helper to calculate supplier delivery fee
 const calculateSupplierDeliveryFee = (group: SupplierGroup) => {
@@ -45,6 +47,7 @@ const Cart = () => {
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [isPickup, setIsPickup] = useState(false);
 
   // Auto-select default branch when branches load
   useEffect(() => {
@@ -65,9 +68,18 @@ const Cart = () => {
   const subtotal = getSubtotal();
   const groupedBySupplier = getItemsBySupplier();
   
-  // Calculate delivery fees per supplier
+  // Calculate delivery fees per supplier (only if not pickup)
   const supplierDeliveryFees = useMemo(() => {
     const fees: Record<string, { fee: number; reason: string; isFree: boolean }> = {};
+    
+    // If pickup, no delivery fees
+    if (isPickup) {
+      Object.keys(groupedBySupplier).forEach((supplierId) => {
+        fees[supplierId] = { fee: 0, reason: "", isFree: false };
+      });
+      return fees;
+    }
+    
     Object.entries(groupedBySupplier).forEach(([supplierId, group]) => {
       const supplierProfile = group.supplierProfile;
       const minimumOrderAmount = supplierProfile?.minimum_order_amount || 0;
@@ -95,7 +107,7 @@ const Cart = () => {
       }
     });
     return fees;
-  }, [groupedBySupplier, t]);
+  }, [groupedBySupplier, t, isPickup]);
   
   const totalDeliveryFee = Object.values(supplierDeliveryFees).reduce((sum, { fee }) => sum + fee, 0);
   const total = subtotal + totalDeliveryFee;
@@ -120,10 +132,11 @@ const Cart = () => {
     try {
       await createOrder.mutateAsync({
         items,
-        deliveryAddress: deliveryAddress || undefined,
+        deliveryAddress: isPickup ? undefined : (deliveryAddress || undefined),
         notes: notes || undefined,
-        branchId: selectedBranchId || undefined,
+        branchId: isPickup ? undefined : (selectedBranchId || undefined),
         supplierDeliveryFees,
+        isPickup,
       });
       
       clearCart();
@@ -282,13 +295,45 @@ const Cart = () => {
               <div className="bg-card rounded-2xl border border-border p-6 sticky top-24 space-y-6">
                 <h3 className="font-bold text-xl">{t("cart.orderSummary")}</h3>
 
-                {/* Branch Selector */}
-                <BranchSelector
-                  selectedBranchId={selectedBranchId}
-                  onBranchChange={handleBranchChange}
-                  customAddress={deliveryAddress}
-                  onCustomAddressChange={setDeliveryAddress}
-                />
+                {/* Delivery Method Selection */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">{t("cart.deliveryMethod")}</label>
+                  <RadioGroup
+                    value={isPickup ? "pickup" : "delivery"}
+                    onValueChange={(value) => setIsPickup(value === "pickup")}
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                      <RadioGroupItem value="delivery" id="delivery" />
+                      <Label htmlFor="delivery" className="flex items-center gap-2 cursor-pointer flex-1">
+                        <Truck className="h-4 w-4 text-primary" />
+                        {t("cart.deliveryToAddress")}
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                      <RadioGroupItem value="pickup" id="pickup" />
+                      <Label htmlFor="pickup" className="flex flex-col cursor-pointer flex-1">
+                        <span className="flex items-center gap-2">
+                          <Warehouse className="h-4 w-4 text-primary" />
+                          {t("cart.pickupFromWarehouse")}
+                        </span>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          {t("cart.pickupFromWarehouseDesc")}
+                        </span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Branch Selector - Only show if delivery */}
+                {!isPickup && (
+                  <BranchSelector
+                    selectedBranchId={selectedBranchId}
+                    onBranchChange={handleBranchChange}
+                    customAddress={deliveryAddress}
+                    onCustomAddressChange={setDeliveryAddress}
+                  />
+                )}
 
                 {/* Notes */}
                 <div>
@@ -316,16 +361,31 @@ const Cart = () => {
                     );
                   })}
                   
-                  {/* رسوم التوصيل */}
-                  <div className="flex justify-between text-sm pt-2 border-t border-dashed">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Truck className="h-4 w-4" />
-                      {t("cart.deliveryFee")}
-                    </span>
-                    <span className={totalDeliveryFee > 0 ? "text-amber-600" : ""}>
-                      {totalDeliveryFee.toFixed(2)} {t("common.sar")}
-                    </span>
-                  </div>
+                  {/* رسوم التوصيل - فقط إذا لم يكن استلام من المستودع */}
+                  {!isPickup && (
+                    <div className="flex justify-between text-sm pt-2 border-t border-dashed">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Truck className="h-4 w-4" />
+                        {t("cart.deliveryFee")}
+                      </span>
+                      <span className={totalDeliveryFee > 0 ? "text-amber-600" : ""}>
+                        {totalDeliveryFee.toFixed(2)} {t("common.sar")}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* إشارة استلام من المستودع */}
+                  {isPickup && (
+                    <div className="flex justify-between text-sm pt-2 border-t border-dashed">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Warehouse className="h-4 w-4" />
+                        {t("cart.pickupFromWarehouse")}
+                      </span>
+                      <span className="text-green-600 font-medium">
+                        {t("cart.freeDelivery")}
+                      </span>
+                    </div>
+                  )}
                   
                   {/* الإجمالي */}
                   <div className="border-t border-border pt-4 flex justify-between">
