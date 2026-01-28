@@ -213,6 +213,47 @@ export type Database = {
           },
         ]
       }
+      order_payments: {
+        Row: {
+          created_at: string
+          id: string
+          is_paid: boolean
+          order_id: string
+          receipt_url: string | null
+          restaurant_id: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_paid?: boolean
+          order_id: string
+          receipt_url?: string | null
+          restaurant_id: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_paid?: boolean
+          order_id?: string
+          receipt_url?: string | null
+          restaurant_id?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           branch_id: string | null

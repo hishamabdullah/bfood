@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +15,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   ShoppingBag,
   Loader2,
   ArrowRight,
@@ -29,8 +36,12 @@ import {
   XCircle,
   Truck,
   Warehouse,
+  Banknote,
+  Receipt,
+  Image,
 } from "lucide-react";
 import { useSupplierOrders, useUpdateOrderStatus } from "@/hooks/useSupplierOrders";
+import { useSupplierPayments } from "@/hooks/useOrderPayments";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 
@@ -80,7 +91,14 @@ export default function SupplierOrders() {
   const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const { data: orderItems, isLoading } = useSupplierOrders();
+  const { data: payments } = useSupplierPayments();
   const updateStatus = useUpdateOrderStatus();
+  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
+
+  // Helper function to get payment info for an order
+  const getPaymentForOrder = (orderId: string) => {
+    return payments?.find(p => p.order_id === orderId);
+  };
 
   const currentLocale = i18n.language === "ar" ? ar : enUS;
 
@@ -411,6 +429,35 @@ export default function SupplierOrders() {
                             <span>{order.deliveryFee.toFixed(2)} {t("common.sar")}</span>
                           </div>
                         ) : null}
+
+                        {/* Payment Status */}
+                        {(() => {
+                          const payment = getPaymentForOrder(order.orderId);
+                          if (payment?.is_paid) {
+                            return (
+                              <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                                <div className="flex items-center justify-between">
+                                  <span className="flex items-center gap-2 text-green-700 dark:text-green-400 font-medium">
+                                    <Banknote className="h-5 w-5" />
+                                    {t("supplier.bankTransferCompleted")}
+                                  </span>
+                                  {payment.receipt_url && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="gap-1 text-green-700 border-green-300 hover:bg-green-100"
+                                      onClick={() => setSelectedReceipt(payment.receipt_url)}
+                                    >
+                                      <Receipt className="h-4 w-4" />
+                                      {t("supplier.viewReceipt")}
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                         
                         <div className="flex justify-between items-center pt-2 border-t">
                           <span className="font-bold text-lg">{t("supplier.orderTotal")}:</span>
@@ -428,6 +475,35 @@ export default function SupplierOrders() {
         </div>
       </main>
       <Footer />
+      
+      {/* Receipt Image Dialog */}
+      <Dialog open={!!selectedReceipt} onOpenChange={(open) => !open && setSelectedReceipt(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-primary" />
+              {t("supplier.receiptImage")}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedReceipt && (
+            <div className="py-4">
+              <img
+                src={selectedReceipt}
+                alt="Transfer Receipt"
+                className="w-full rounded-lg border"
+              />
+              <Button
+                variant="outline"
+                className="w-full mt-4 gap-2"
+                onClick={() => window.open(selectedReceipt, "_blank")}
+              >
+                <ExternalLink className="h-4 w-4" />
+                {t("supplier.openFullImage")}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

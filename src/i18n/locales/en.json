@@ -219,7 +219,18 @@
     "warehouseLocation": "Warehouse location on map",
     "noWarehouseLocation": "Supplier hasn't set warehouse location",
     "supplierTotal": "{name} Total",
-    "warehousePickup": "Warehouse Pickup"
+    "warehousePickup": "Warehouse Pickup",
+    "deliveryBranch": "Delivery Branch",
+    "selectBranch": "Select delivery branch",
+    "addNewBranch": "Add new branch",
+    "viewOnMap": "View on Map",
+    "enterAddressOrLink": "Enter Google Maps link or address",
+    "uploadReceipt": "Upload Transfer Receipt",
+    "selectReceiptImage": "Select receipt image",
+    "receiptOptional": "Receipt upload is optional but helps the supplier confirm payment",
+    "uploadingReceipt": "Uploading receipt...",
+    "onlyImages": "Only images are allowed",
+    "fileTooLarge": "File size must be less than 5MB"
   },
   "orders": {
     "title": "My Orders",
@@ -451,7 +462,11 @@
     "productsTotal": "Products Total",
     "orderTotal": "Order Total",
     "requestedProducts": "Requested Products",
-    "warehousePickup": "Warehouse Pickup"
+    "warehousePickup": "Warehouse Pickup",
+    "bankTransferCompleted": "Bank Transfer Completed",
+    "viewReceipt": "View Receipt",
+    "receiptImage": "Transfer Receipt Image",
+    "openFullImage": "Open Full Image"
   },
   "profile": {
     "title": "Profile",
