@@ -384,6 +384,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bank_account_name: string | null
+          bank_iban: string | null
+          bank_name: string | null
           bio: string | null
           business_name: string
           created_at: string
@@ -402,6 +405,9 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bank_account_name?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
           bio?: string | null
           business_name: string
           created_at?: string
@@ -420,6 +426,9 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bank_account_name?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
           bio?: string | null
           business_name?: string
           created_at?: string
