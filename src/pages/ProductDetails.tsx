@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/layout/Header";
@@ -11,6 +11,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
 import { useRestaurantCustomPrice } from "@/hooks/useCustomPrices";
+import { useProductPriceTiers, calculateTieredPrice } from "@/hooks/useProductPriceTiers";
+import PriceTiersDisplay from "@/components/products/PriceTiersDisplay";
 import { ArrowRight, Minus, Plus, ShoppingCart, Package, MapPin, Scale, Store, Tag } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,9 +26,25 @@ const ProductDetails = () => {
   const { user, userRole } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const { data: customPrice } = useRestaurantCustomPrice(id || "");
+  const { data: priceTiers } = useProductPriceTiers(id || "");
+
+  // Calculate the effective price based on custom price, tiers, and quantity
+  const displayPrice = useMemo(() => {
+    // Custom price takes priority over everything
+    if (userRole === "restaurant" && customPrice !== null && customPrice !== undefined && customPrice !== product?.price) {
+      return customPrice;
+    }
+    
+    // Check for tiered pricing
+    if (priceTiers && priceTiers.length > 0 && product) {
+      return calculateTieredPrice(quantity, product.price, priceTiers);
+    }
+    
+    return product?.price || 0;
+  }, [customPrice, priceTiers, quantity, product, userRole]);
 
   const hasCustomPrice = userRole === "restaurant" && customPrice !== null && customPrice !== undefined && customPrice !== product?.price;
-  const displayPrice = hasCustomPrice ? customPrice! : (product?.price || 0);
+  const hasTieredPrice = !hasCustomPrice && priceTiers && priceTiers.length > 0 && displayPrice !== product?.price;
 
   const handleAddToCart = () => {
     if (!user) {
@@ -41,10 +59,8 @@ const ProductDetails = () => {
     }
     
     if (product) {
-      // إضافة المنتج بالسعر المخصص إن وجد
-      const productWithPrice = hasCustomPrice 
-        ? { ...product, price: customPrice! }
-        : product;
+      // إضافة المنتج بالسعر المناسب (مخصص أو شريحة أو أساسي)
+      const productWithPrice = { ...product, price: displayPrice };
       addItem(productWithPrice, quantity);
       toast.success(`تم إضافة ${getProductName(product)} للسلة`);
     }
@@ -165,7 +181,7 @@ const ProductDetails = () => {
 
               {/* Price */}
               <div className="bg-accent/50 rounded-xl p-4">
-                <span className="text-3xl font-bold text-primary">{displayPrice}</span>
+                <span className="text-3xl font-bold text-primary">{displayPrice.toFixed(2)}</span>
                 <span className="text-lg text-muted-foreground ltr:ml-2 rtl:mr-2">{t("common.sar")} / {product.unit}</span>
                 {hasCustomPrice && (
                   <div className="mt-1">
@@ -174,7 +190,24 @@ const ProductDetails = () => {
                     </span>
                   </div>
                 )}
+                {hasTieredPrice && (
+                  <div className="mt-1">
+                    <span className="text-sm text-green-600 font-medium">
+                      سعر الكمية! (الأصلي: {product.price} {t("common.sar")})
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {/* Price Tiers Display */}
+              {!hasCustomPrice && id && (
+                <PriceTiersDisplay
+                  productId={id}
+                  basePrice={product.price}
+                  unit={product.unit}
+                  currentQuantity={quantity}
+                />
+              )}
 
               {/* Description */}
               {productDescription && (
