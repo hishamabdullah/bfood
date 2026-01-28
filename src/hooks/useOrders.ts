@@ -9,7 +9,7 @@ interface CreateOrderParams {
   notes?: string;
   branchId?: string;
   supplierDeliveryFees?: Record<string, { fee: number; reason: string }>;
-  isPickup?: boolean;
+  supplierPickupStatus?: Record<string, boolean>; // per-supplier pickup status
 }
 
 export const useCreateOrder = () => {
@@ -17,8 +17,15 @@ export const useCreateOrder = () => {
   const { user, profile } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ items, deliveryAddress, notes, branchId, supplierDeliveryFees = {}, isPickup = false }: CreateOrderParams) => {
+    mutationFn: async ({ items, deliveryAddress, notes, branchId, supplierDeliveryFees = {}, supplierPickupStatus = {} }: CreateOrderParams) => {
       if (!user) throw new Error("يجب تسجيل الدخول أولاً");
+
+      // Check if ALL suppliers are pickup
+      const allPickup = Object.values(supplierPickupStatus).length > 0 && 
+        Object.values(supplierPickupStatus).every(isPickup => isPickup);
+      
+      // Check if ANY supplier is pickup
+      const anyPickup = Object.values(supplierPickupStatus).some(isPickup => isPickup);
 
       // Calculate total
       const subtotal = items.reduce(
@@ -26,9 +33,12 @@ export const useCreateOrder = () => {
         0
       );
       
-      // حساب رسوم التوصيل من الحد الأدنى للموردين (فقط إذا لم يكن استلام من المستودع)
-      const totalDeliveryFee = isPickup ? 0 : Object.values(supplierDeliveryFees).reduce(
-        (total, { fee }) => total + fee,
+      // حساب رسوم التوصيل من الحد الأدنى للموردين (فقط للموردين الذين ليسوا استلام)
+      const totalDeliveryFee = Object.entries(supplierDeliveryFees).reduce(
+        (total, [supplierId, { fee }]) => {
+          const isSupplierPickup = supplierPickupStatus[supplierId] || false;
+          return total + (isSupplierPickup ? 0 : fee);
+        },
         0
       );
       const totalAmount = subtotal + totalDeliveryFee;
@@ -40,11 +50,11 @@ export const useCreateOrder = () => {
           restaurant_id: user.id,
           total_amount: totalAmount,
           delivery_fee: totalDeliveryFee,
-          delivery_address: isPickup ? null : deliveryAddress,
+          delivery_address: allPickup ? null : deliveryAddress,
           notes,
           status: "pending",
-          branch_id: isPickup ? null : (branchId || null),
-          is_pickup: isPickup,
+          branch_id: allPickup ? null : (branchId || null),
+          is_pickup: allPickup,
         })
         .select()
         .single();
@@ -61,12 +71,13 @@ export const useCreateOrder = () => {
         itemsBySupplier[supplierId].push(item);
       });
 
-      // Create order items with supplier-specific delivery fee (0 if pickup)
+      // Create order items with supplier-specific delivery fee (0 if pickup for that supplier)
       const orderItems = items.map((item) => {
         const supplierId = item.product.supplier_id;
+        const isSupplierPickup = supplierPickupStatus[supplierId] || false;
         // Calculate per-item delivery fee proportionally
         const supplierItems = itemsBySupplier[supplierId];
-        const supplierTotalFee = isPickup ? 0 : (supplierDeliveryFees[supplierId]?.fee || 0);
+        const supplierTotalFee = isSupplierPickup ? 0 : (supplierDeliveryFees[supplierId]?.fee || 0);
         // Distribute delivery fee across first item of each supplier for simplicity
         const isFirstItem = supplierItems[0].product.id === item.product.id;
         

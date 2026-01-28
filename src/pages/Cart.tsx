@@ -4,50 +4,64 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Package, Truck, Warehouse } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Truck, Warehouse } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCart, type SupplierGroup } from "@/contexts/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { useProductTranslation } from "@/hooks/useProductTranslation";
 import { BranchSelector } from "@/components/cart/BranchSelector";
 import { useBranches } from "@/hooks/useBranches";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-
-// Helper to calculate supplier delivery fee
-const calculateSupplierDeliveryFee = (group: SupplierGroup) => {
-  const supplierProfile = group.supplierProfile;
-  const minimumOrderAmount = supplierProfile?.minimum_order_amount || 0;
-  const defaultDeliveryFee = supplierProfile?.default_delivery_fee || 0;
-  
-  // Calculate supplier subtotal
-  const supplierSubtotal = group.items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
-  
-  // If below minimum, apply delivery fee
-  if (supplierSubtotal < minimumOrderAmount) {
-    return defaultDeliveryFee;
-  }
-  return 0;
-};
+import { SupplierCartSection } from "@/components/cart/SupplierCartSection";
 
 const Cart = () => {
   const { t } = useTranslation();
-  const { getProductName } = useProductTranslation();
   const { items, updateQuantity, removeItem, clearCart, getSubtotal, getItemsBySupplier } = useCart();
   const { user, userRole } = useAuth();
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
   const { data: branches = [] } = useBranches();
-  
+
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [isPickup, setIsPickup] = useState(false);
+  // Per-supplier pickup status
+  const [supplierPickupStatus, setSupplierPickupStatus] = useState<Record<string, boolean>>({});
+
+  const groupedBySupplier = getItemsBySupplier();
+
+  // Initialize pickup status for new suppliers
+  useEffect(() => {
+    const newStatus = { ...supplierPickupStatus };
+    let changed = false;
+    Object.keys(groupedBySupplier).forEach((supplierId) => {
+      if (!(supplierId in newStatus)) {
+        newStatus[supplierId] = false;
+        changed = true;
+      }
+    });
+    // Clean up suppliers no longer in cart
+    Object.keys(newStatus).forEach((supplierId) => {
+      if (!(supplierId in groupedBySupplier)) {
+        delete newStatus[supplierId];
+        changed = true;
+      }
+    });
+    if (changed) {
+      setSupplierPickupStatus(newStatus);
+    }
+  }, [groupedBySupplier, supplierPickupStatus]);
+
+  // Check if all suppliers are pickup (to hide branch selector)
+  const allSuppliersPickup = useMemo(() => {
+    const supplierIds = Object.keys(groupedBySupplier);
+    return supplierIds.length > 0 && supplierIds.every((id) => supplierPickupStatus[id] === true);
+  }, [groupedBySupplier, supplierPickupStatus]);
+
+  // Check if any supplier has delivery
+  const anySupplierDelivery = useMemo(() => {
+    return Object.values(supplierPickupStatus).some((isPickup) => !isPickup);
+  }, [supplierPickupStatus]);
 
   // Auto-select default branch when branches load
   useEffect(() => {
@@ -65,31 +79,34 @@ const Cart = () => {
     setDeliveryAddress(address);
   };
 
+  const handleSupplierPickupChange = (supplierId: string, isPickup: boolean) => {
+    setSupplierPickupStatus((prev) => ({
+      ...prev,
+      [supplierId]: isPickup,
+    }));
+  };
+
   const subtotal = getSubtotal();
-  const groupedBySupplier = getItemsBySupplier();
-  
-  // Calculate delivery fees per supplier (only if not pickup)
+
+  // Calculate delivery fees per supplier (only if not pickup for that supplier)
   const supplierDeliveryFees = useMemo(() => {
     const fees: Record<string, { fee: number; reason: string; isFree: boolean }> = {};
-    
-    // If pickup, no delivery fees
-    if (isPickup) {
-      Object.keys(groupedBySupplier).forEach((supplierId) => {
-        fees[supplierId] = { fee: 0, reason: "", isFree: false };
-      });
-      return fees;
-    }
-    
+
     Object.entries(groupedBySupplier).forEach(([supplierId, group]) => {
+      const isSupplierPickup = supplierPickupStatus[supplierId] || false;
+
+      // If pickup for this supplier, no delivery fee
+      if (isSupplierPickup) {
+        fees[supplierId] = { fee: 0, reason: "", isFree: false };
+        return;
+      }
+
       const supplierProfile = group.supplierProfile;
       const minimumOrderAmount = supplierProfile?.minimum_order_amount || 0;
       const defaultDeliveryFee = supplierProfile?.default_delivery_fee || 0;
-      
-      const supplierSubtotal = group.items.reduce(
-        (sum, item) => sum + item.product.price * item.quantity,
-        0
-      );
-      
+
+      const supplierSubtotal = group.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+
       if (minimumOrderAmount > 0 && supplierSubtotal < minimumOrderAmount) {
         fees[supplierId] = {
           fee: defaultDeliveryFee,
@@ -97,8 +114,8 @@ const Cart = () => {
           isFree: false,
         };
       } else if (minimumOrderAmount > 0 && supplierSubtotal >= minimumOrderAmount) {
-        fees[supplierId] = { 
-          fee: 0, 
+        fees[supplierId] = {
+          fee: 0,
           reason: t("cart.freeDelivery") || "توصيل مجاني!",
           isFree: true,
         };
@@ -107,8 +124,8 @@ const Cart = () => {
       }
     });
     return fees;
-  }, [groupedBySupplier, t, isPickup]);
-  
+  }, [groupedBySupplier, t, supplierPickupStatus]);
+
   const totalDeliveryFee = Object.values(supplierDeliveryFees).reduce((sum, { fee }) => sum + fee, 0);
   const total = subtotal + totalDeliveryFee;
 
@@ -132,13 +149,13 @@ const Cart = () => {
     try {
       await createOrder.mutateAsync({
         items,
-        deliveryAddress: isPickup ? undefined : (deliveryAddress || undefined),
+        deliveryAddress: allSuppliersPickup ? undefined : deliveryAddress || undefined,
         notes: notes || undefined,
-        branchId: isPickup ? undefined : (selectedBranchId || undefined),
+        branchId: allSuppliersPickup ? undefined : selectedBranchId || undefined,
         supplierDeliveryFees,
-        isPickup,
+        supplierPickupStatus,
       });
-      
+
       clearCart();
       toast.success(t("cart.orderSuccess") || "تم إنشاء الطلب بنجاح!");
       navigate("/dashboard");
@@ -182,112 +199,18 @@ const Cart = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {Object.entries(groupedBySupplier).map(([supplierId, group]) => {
-                const supplierFeeInfo = supplierDeliveryFees[supplierId];
-                const supplierSubtotal = group.items.reduce(
-                  (sum, item) => sum + item.product.price * item.quantity,
-                  0
-                );
-                
-                return (
-                  <div key={supplierId} className="bg-card rounded-2xl border border-border overflow-hidden">
-                    {/* Supplier Header */}
-                    <div className="bg-muted/50 px-6 py-3 border-b border-border">
-                      <h3 className="font-semibold">{group.supplierName}</h3>
-                    </div>
-
-                    {/* Items */}
-                    <div className="divide-y divide-border">
-                      {group.items.map((item) => (
-                        <div key={item.id} className="p-4 flex gap-4">
-                          {/* Image */}
-                          <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                            {item.product.image_url ? (
-                              <img 
-                                src={item.product.image_url} 
-                                alt={getProductName(item.product)}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Package className="h-8 w-8 text-muted-foreground" />
-                            )}
-                          </div>
-
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <Link to={`/products/${item.product.id}`}>
-                              <h4 className="font-semibold mb-1 hover:text-primary transition-colors">
-                                {getProductName(item.product)}
-                              </h4>
-                            </Link>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {item.product.price} {t("common.sar")} / {item.product.unit}
-                            </p>
-
-                            {/* Quantity Controls */}
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <span className="w-12 text-center font-medium">{item.quantity}</span>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Price & Remove */}
-                          <div className="text-left">
-                            <p className="font-bold text-lg text-primary">
-                              {(item.product.price * item.quantity).toFixed(2)} {t("common.sar")}
-                            </p>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive mt-2"
-                              onClick={() => removeItem(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Supplier Footer with Delivery Fee */}
-                    <div className="bg-muted/30 px-6 py-3 border-t border-border space-y-2">
-                      <div className={`flex justify-between text-sm ${supplierFeeInfo?.fee > 0 ? "text-amber-600" : supplierFeeInfo?.isFree ? "text-green-600" : ""}`}>
-                        <span className="flex items-center gap-1">
-                          <Truck className="h-4 w-4" />
-                          {t("cart.deliveryFee")}
-                          {supplierFeeInfo?.reason && (
-                            <span className={`text-xs ${supplierFeeInfo.isFree ? "bg-green-100 text-green-700 px-2 py-0.5 rounded-full" : ""}`}>
-                              ({supplierFeeInfo.reason})
-                            </span>
-                          )}
-                        </span>
-                        <span>{(supplierFeeInfo?.fee || 0).toFixed(2)} {t("common.sar")}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold pt-2 border-t border-border">
-                        <span>إجمالي {group.supplierName}</span>
-                        <span className="text-primary">
-                          {(supplierSubtotal + (supplierFeeInfo?.fee || 0)).toFixed(2)} {t("common.sar")}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {Object.entries(groupedBySupplier).map(([supplierId, group]) => (
+                <SupplierCartSection
+                  key={supplierId}
+                  supplierId={supplierId}
+                  group={group}
+                  isPickup={supplierPickupStatus[supplierId] || false}
+                  onPickupChange={(isPickup) => handleSupplierPickupChange(supplierId, isPickup)}
+                  deliveryFeeInfo={supplierDeliveryFees[supplierId] || { fee: 0, reason: "", isFree: false }}
+                  updateQuantity={updateQuantity}
+                  removeItem={removeItem}
+                />
+              ))}
             </div>
 
             {/* Order Summary */}
@@ -295,38 +218,8 @@ const Cart = () => {
               <div className="bg-card rounded-2xl border border-border p-6 sticky top-24 space-y-6">
                 <h3 className="font-bold text-xl">{t("cart.orderSummary")}</h3>
 
-                {/* Delivery Method Selection */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium">{t("cart.deliveryMethod")}</label>
-                  <RadioGroup
-                    value={isPickup ? "pickup" : "delivery"}
-                    onValueChange={(value) => setIsPickup(value === "pickup")}
-                    className="space-y-2"
-                  >
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
-                      <RadioGroupItem value="delivery" id="delivery" />
-                      <Label htmlFor="delivery" className="flex items-center gap-2 cursor-pointer flex-1">
-                        <Truck className="h-4 w-4 text-primary" />
-                        {t("cart.deliveryToAddress")}
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
-                      <RadioGroupItem value="pickup" id="pickup" />
-                      <Label htmlFor="pickup" className="flex flex-col cursor-pointer flex-1">
-                        <span className="flex items-center gap-2">
-                          <Warehouse className="h-4 w-4 text-primary" />
-                          {t("cart.pickupFromWarehouse")}
-                        </span>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {t("cart.pickupFromWarehouseDesc")}
-                        </span>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                {/* Branch Selector - Only show if delivery */}
-                {!isPickup && (
+                {/* Branch Selector - Only show if any supplier has delivery */}
+                {anySupplierDelivery && (
                   <BranchSelector
                     selectedBranchId={selectedBranchId}
                     onBranchChange={handleBranchChange}
@@ -347,67 +240,57 @@ const Cart = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {/* المجموع الفرعي لكل مورد */}
+                  {/* Supplier subtotals */}
                   {Object.entries(groupedBySupplier).map(([supplierId, group]) => {
-                    const supplierSubtotal = group.items.reduce(
-                      (sum, item) => sum + item.product.price * item.quantity,
-                      0
-                    );
+                    const supplierSubtotal = group.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+                    const isSupplierPickup = supplierPickupStatus[supplierId] || false;
+                    const supplierFee = isSupplierPickup ? 0 : supplierDeliveryFees[supplierId]?.fee || 0;
+
                     return (
-                      <div key={supplierId} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{group.supplierName}</span>
-                        <span>{supplierSubtotal.toFixed(2)} {t("common.sar")}</span>
+                      <div key={supplierId} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{group.supplierName}</span>
+                          <span>
+                            {supplierSubtotal.toFixed(2)} {t("common.sar")}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            {isSupplierPickup ? (
+                              <>
+                                <Warehouse className="h-3 w-3" />
+                                {t("cart.pickupFromWarehouse")}
+                              </>
+                            ) : (
+                              <>
+                                <Truck className="h-3 w-3" />
+                                {t("cart.deliveryFee")}
+                              </>
+                            )}
+                          </span>
+                          <span className={isSupplierPickup ? "text-green-600" : supplierFee > 0 ? "text-amber-600" : ""}>
+                            {isSupplierPickup ? t("cart.freeDelivery") : `${supplierFee.toFixed(2)} ${t("common.sar")}`}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
-                  
-                  {/* رسوم التوصيل - فقط إذا لم يكن استلام من المستودع */}
-                  {!isPickup && (
-                    <div className="flex justify-between text-sm pt-2 border-t border-dashed">
-                      <span className="text-muted-foreground flex items-center gap-1">
-                        <Truck className="h-4 w-4" />
-                        {t("cart.deliveryFee")}
-                      </span>
-                      <span className={totalDeliveryFee > 0 ? "text-amber-600" : ""}>
-                        {totalDeliveryFee.toFixed(2)} {t("common.sar")}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* إشارة استلام من المستودع */}
-                  {isPickup && (
-                    <div className="flex justify-between text-sm pt-2 border-t border-dashed">
-                      <span className="text-muted-foreground flex items-center gap-1">
-                        <Warehouse className="h-4 w-4" />
-                        {t("cart.pickupFromWarehouse")}
-                      </span>
-                      <span className="text-green-600 font-medium">
-                        {t("cart.freeDelivery")}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* الإجمالي */}
+
+                  {/* Total */}
                   <div className="border-t border-border pt-4 flex justify-between">
                     <span className="font-bold">{t("cart.total")}</span>
-                    <span className="font-bold text-xl text-primary">{total.toFixed(2)} {t("common.sar")}</span>
+                    <span className="font-bold text-xl text-primary">
+                      {total.toFixed(2)} {t("common.sar")}
+                    </span>
                   </div>
                 </div>
 
-                <Button 
-                  variant="hero" 
-                  className="w-full" 
-                  size="lg"
-                  onClick={handleCheckout}
-                  disabled={createOrder.isPending}
-                >
+                <Button variant="hero" className="w-full" size="lg" onClick={handleCheckout} disabled={createOrder.isPending}>
                   {createOrder.isPending ? t("cart.processingOrder") : t("cart.checkout")}
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
 
-                <p className="text-xs text-center text-muted-foreground">
-                  {t("cart.orderSplitNote")}
-                </p>
+                <p className="text-xs text-center text-muted-foreground">{t("cart.orderSplitNote")}</p>
               </div>
             </div>
           </div>
