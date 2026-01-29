@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { saudiRegions, supplyCategories, getSupplyCategoryName } from "@/data/saudiRegions";
+import { saudiRegions, supplyCategories, getSupplyCategoryName, getRegionName } from "@/data/saudiRegions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { BranchesManager } from "@/components/branches/BranchesManager";
@@ -517,8 +517,8 @@ const Profile = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {saudiRegions.map((region) => (
-                        <SelectItem key={region} value={region}>
-                          {region}
+                        <SelectItem key={region.name} value={region.name}>
+                          {getRegionName(region, i18n.language)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -526,7 +526,7 @@ const Profile = () => {
                 ) : (
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{profileData.region || t("profile.notSpecified")}</span>
+                    <span>{profileData.region ? getRegionName(profileData.region, i18n.language) : t("profile.notSpecified")}</span>
                   </div>
                 )}
               </div>

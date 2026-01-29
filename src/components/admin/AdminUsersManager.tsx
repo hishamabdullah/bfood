@@ -42,7 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { saudiRegions, supplyCategories, getSupplyCategoryName } from "@/data/saudiRegions";
+import { saudiRegions, supplyCategories, getSupplyCategoryName, getRegionName } from "@/data/saudiRegions";
 
 const AdminUsersManager = () => {
   const { data: users, isLoading } = useAdminUsers();
@@ -402,8 +402,8 @@ const AdminUsersManager = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {saudiRegions.map((region) => (
-                        <SelectItem key={region} value={region}>
-                          {region}
+                        <SelectItem key={region.name} value={region.name}>
+                          {getRegionName(region, i18n.language)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -493,8 +493,8 @@ const AdminUsersManager = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {saudiRegions.map((region) => (
-                        <SelectItem key={region} value={region}>
-                          {region}
+                        <SelectItem key={region.name} value={region.name}>
+                          {getRegionName(region, i18n.language)}
                         </SelectItem>
                       ))}
                     </SelectContent>

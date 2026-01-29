@@ -29,7 +29,8 @@ import {
 import { useSupplierStats } from "@/hooks/useSupplierStats";
 import { useRestaurantStats } from "@/hooks/useRestaurantStats";
 import { useSuppliers } from "@/hooks/useSuppliers";
-import { saudiRegions } from "@/data/saudiRegions";
+import { saudiRegions, getRegionName } from "@/data/saudiRegions";
+import i18n from "i18next";
 import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
@@ -256,8 +257,8 @@ const Dashboard = () => {
                     <SelectContent>
                       <SelectItem value="all">{t("suppliers.allRegions")}</SelectItem>
                       {saudiRegions.map((region) => (
-                        <SelectItem key={region} value={region}>
-                          {region}
+                        <SelectItem key={region.name} value={region.name}>
+                          {getRegionName(region, i18n.language)}
                         </SelectItem>
                       ))}
                     </SelectContent>

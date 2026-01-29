@@ -15,7 +15,8 @@ import { Search, MapPin, Package, User as UserIcon, Heart, Tags } from "lucide-r
 import { Link } from "react-router-dom";
 import { useSuppliers, useRegions } from "@/hooks/useSuppliers";
 import { Skeleton } from "@/components/ui/skeleton";
-import { saudiRegions } from "@/data/saudiRegions";
+import { saudiRegions, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
+import i18n from "i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFavoriteSuppliers, useToggleFavoriteSupplier } from "@/hooks/useFavorites";
 import { toast } from "sonner";
@@ -33,7 +34,10 @@ interface SupplierCategory {
 const Suppliers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [selectedCity, setSelectedCity] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  
+  const availableCities = selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [];
   
   const { user, userRole } = useAuth();
   const { getCategoryName } = useCategoryTranslation();
@@ -79,8 +83,13 @@ const Suppliers = () => {
     const matchesCategory = 
       selectedCategory === "all" || 
       supplier.supply_categories?.includes(selectedCategory);
+
+    // City filter
+    const matchesCity = 
+      selectedCity === "all" || 
+      supplier.city === selectedCity;
     
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesCity;
   }) || [];
 
   return (
@@ -108,29 +117,47 @@ const Suppliers = () => {
             </div>
 
             {/* Region Filter */}
-            <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+            <Select value={selectedRegion} onValueChange={(val) => { setSelectedRegion(val); setSelectedCity("all"); }}>
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
-                <SelectValue placeholder="جميع المناطق" />
+                <SelectValue placeholder={i18n.language === "en" ? "All Regions" : "جميع المناطق"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">جميع المناطق</SelectItem>
+                <SelectItem value="all">{i18n.language === "en" ? "All Regions" : "جميع المناطق"}</SelectItem>
                 {saudiRegions.map((region) => (
-                  <SelectItem key={region} value={region}>
-                    {region}
+                  <SelectItem key={region.name} value={region.name}>
+                    {getRegionName(region, i18n.language)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
+            {/* City Filter */}
+            {selectedRegion !== "all" && availableCities.length > 0 && (
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
+                  <SelectValue placeholder={i18n.language === "en" ? "All Cities" : "جميع المدن"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{i18n.language === "en" ? "All Cities" : "جميع المدن"}</SelectItem>
+                  {availableCities.map((city) => (
+                    <SelectItem key={city.name} value={city.name}>
+                      {getCityName(city, i18n.language)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             {/* Category Filter */}
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <Tags className="h-4 w-4 ml-2 text-muted-foreground" />
-                <SelectValue placeholder="جميع التصنيفات" />
+                <SelectValue placeholder={i18n.language === "en" ? "All Categories" : "جميع التصنيفات"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">جميع التصنيفات</SelectItem>
+                <SelectItem value="all">{i18n.language === "en" ? "All Categories" : "جميع التصنيفات"}</SelectItem>
                 {supplierCategories.map((category) => (
                   <SelectItem key={category.id} value={category.name}>
                     {getCategoryName(category)}

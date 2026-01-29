@@ -177,6 +177,7 @@
     "subtitle": "Meet our trusted supplier partners",
     "searchPlaceholder": "Search for supplier...",
     "allRegions": "All Regions",
+    "allCities": "All Cities",
     "productsCount": "{{count}} products",
     "viewProducts": "View Products",
     "noSuppliers": "No suppliers in this region",

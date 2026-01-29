@@ -16,7 +16,7 @@ import {
 import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck, Loader2, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { saudiRegions, supplyCategories, getSupplyCategoryName } from "@/data/saudiRegions";
+import { saudiRegions, supplyCategories, getSupplyCategoryName, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
 
 type UserType = "restaurant" | "supplier";
 
@@ -36,7 +36,10 @@ const Register = () => {
     businessName: "",
     password: "",
     region: "",
+    city: "",
   });
+
+  const availableCities = formData.region ? getCitiesByRegion(formData.region) : [];
 
   const { signUp } = useAuth();
   const { toast } = useToast();
@@ -92,6 +95,7 @@ const Register = () => {
       phone: formData.phone,
       role: userType,
       region: userType === "supplier" ? formData.region : undefined,
+      city: userType === "supplier" ? formData.city : undefined,
       supplyCategories: userType === "supplier" ? selectedCategories : undefined,
     });
 
@@ -212,26 +216,52 @@ const Register = () => {
 
             {/* Supplier Region */}
             {userType === "supplier" && (
-              <div className="space-y-2">
-                <Label>{t("auth.region")}</Label>
-                <Select
-                  value={formData.region}
-                  onValueChange={(value) => setFormData({ ...formData, region: value })}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className="w-full">
-                    <MapPin className="h-5 w-5 text-muted-foreground me-2" />
-                    <SelectValue placeholder={t("auth.chooseRegion")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {saudiRegions.map((region) => (
-                      <SelectItem key={region} value={region}>
-                        {region}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label>{t("auth.region")}</Label>
+                  <Select
+                    value={formData.region}
+                    onValueChange={(value) => setFormData({ ...formData, region: value, city: "" })}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="w-full">
+                      <MapPin className="h-5 w-5 text-muted-foreground me-2" />
+                      <SelectValue placeholder={t("auth.chooseRegion")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {saudiRegions.map((region) => (
+                        <SelectItem key={region.name} value={region.name}>
+                          {getRegionName(region, i18n.language)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* City Selector */}
+                {formData.region && availableCities.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>{i18n.language === "en" ? "City" : "المدينة"}</Label>
+                    <Select
+                      value={formData.city}
+                      onValueChange={(value) => setFormData({ ...formData, city: value })}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger className="w-full">
+                        <MapPin className="h-5 w-5 text-muted-foreground me-2" />
+                        <SelectValue placeholder={i18n.language === "en" ? "Choose your city" : "اختر مدينتك"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableCities.map((city) => (
+                          <SelectItem key={city.name} value={city.name}>
+                            {getCityName(city, i18n.language)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Supplier Categories */}
