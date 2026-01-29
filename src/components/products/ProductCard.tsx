@@ -115,9 +115,18 @@ const ProductCard = ({ product, index = 0, customPrice }: ProductCardProps) => {
           <div className="flex items-start justify-between mb-2">
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-lg truncate">{productName}</h3>
-              <p className="text-sm text-muted-foreground truncate">
-                {product.supplier_profile?.business_name || t("products.supplier")}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                {product.supplier_profile?.avatar_url ? (
+                  <img 
+                    src={product.supplier_profile.avatar_url} 
+                    alt={product.supplier_profile?.business_name || ""} 
+                    className="w-5 h-5 rounded-full object-cover shrink-0"
+                  />
+                ) : null}
+                <p className="text-sm text-muted-foreground truncate">
+                  {product.supplier_profile?.business_name || t("products.supplier")}
+                </p>
+              </div>
               {product.supplier_profile?.region && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                   <MapPin className="h-3 w-3" />
