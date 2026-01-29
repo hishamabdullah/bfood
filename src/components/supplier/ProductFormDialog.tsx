@@ -34,8 +34,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useCategories } from "@/hooks/useProducts";
-import { useCreateProduct, useUpdateProduct, SupplierProduct } from "@/hooks/useSupplierProducts";
-import { Loader2, Globe } from "lucide-react";
+import { useCreateProduct, useUpdateProduct, SupplierProduct, PriceTier } from "@/hooks/useSupplierProducts";
+import { Loader2, Globe, Tag } from "lucide-react";
+import PriceTiersEditor from "./PriceTiersEditor";
 
 const productSchema = z.object({
   name: z.string().min(2, "اسم المنتج مطلوب").max(100),
@@ -73,6 +74,9 @@ export default function ProductFormDialog({
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const isEditing = !!product;
+  
+  // State for price tiers (outside of react-hook-form)
+  const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -94,6 +98,8 @@ export default function ProductFormDialog({
   });
 
   const watchUnlimitedStock = form.watch("unlimited_stock");
+  const watchPrice = form.watch("price");
+  const watchUnit = form.watch("unit");
 
   useEffect(() => {
     if (product) {
@@ -112,6 +118,8 @@ export default function ProductFormDialog({
         name_en: (product as any).name_en || "",
         description_en: (product as any).description_en || "",
       });
+      // Load existing price tiers
+      setPriceTiers(product.price_tiers || []);
     } else {
       form.reset({
         name: "",
@@ -128,6 +136,7 @@ export default function ProductFormDialog({
         name_en: "",
         description_en: "",
       });
+      setPriceTiers([]);
     }
   }, [product, form]);
 
@@ -147,6 +156,7 @@ export default function ProductFormDialog({
         delivery_fee: values.delivery_fee,
         name_en: values.name_en || null,
         description_en: values.description_en || null,
+        price_tiers: priceTiers,
       };
 
       if (isEditing && product) {
@@ -423,6 +433,31 @@ export default function ProductFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* Price Tiers Section */}
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="price-tiers" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-primary" />
+                    <span>شرائح الأسعار (اختياري)</span>
+                    {priceTiers.length > 0 && (
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
+                        {priceTiers.length}
+                      </span>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4">
+                  <PriceTiersEditor
+                    tiers={priceTiers}
+                    onChange={setPriceTiers}
+                    basePrice={watchPrice}
+                    unit={watchUnit}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             <div className="flex gap-3 pt-4">
               <Button
