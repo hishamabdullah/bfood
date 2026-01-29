@@ -34,21 +34,27 @@ export const useRestaurantPayments = () => {
   });
 };
 
-// Check if payment was notified for a specific supplier
-export const usePaymentStatus = (supplierId: string) => {
+// Check if payment was notified for a specific supplier and order
+export const usePaymentStatus = (supplierId: string, orderId?: string) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["payment-status", user?.id, supplierId],
+    queryKey: ["payment-status", user?.id, supplierId, orderId],
     queryFn: async () => {
       if (!user || !supplierId) return null;
 
-      const { data, error } = await supabase
+      // If orderId is provided, check for payment linked to this specific order
+      let query = supabase
         .from("order_payments")
         .select("*")
         .eq("restaurant_id", user.id)
-        .eq("supplier_id", supplierId)
-        .maybeSingle();
+        .eq("supplier_id", supplierId);
+
+      if (orderId) {
+        query = query.eq("order_id", orderId);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
       return data as RestaurantPayment | null;
