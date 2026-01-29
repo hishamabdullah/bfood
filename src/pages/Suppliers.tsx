@@ -21,6 +21,7 @@ import { useFavoriteSuppliers, useToggleFavoriteSupplier } from "@/hooks/useFavo
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 
 interface SupplierCategory {
   id: string;
@@ -35,6 +36,7 @@ const Suppliers = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   
   const { user, userRole } = useAuth();
+  const { getCategoryName } = useCategoryTranslation();
   const { data: suppliers, isLoading } = useSuppliers(selectedRegion);
   const { data: favoriteSuppliers = [] } = useFavoriteSuppliers();
   const toggleFavorite = useToggleFavoriteSupplier();
@@ -131,7 +133,7 @@ const Suppliers = () => {
                 <SelectItem value="all">جميع التصنيفات</SelectItem>
                 {supplierCategories.map((category) => (
                   <SelectItem key={category.id} value={category.name}>
-                    {category.name}
+                    {getCategoryName(category)}
                   </SelectItem>
                 ))}
               </SelectContent>
