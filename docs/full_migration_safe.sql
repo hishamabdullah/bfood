@@ -1,6 +1,7 @@
 -- ============================================
 -- ملف Migration موحد وآمن لإعادة التشغيل
 -- يستخدم IF NOT EXISTS و IF EXISTS لتجنب الأخطاء
+-- آخر تحديث: يناير 2026
 -- ============================================
 
 -- إنشاء نوع أدوار المستخدمين
@@ -17,7 +18,7 @@ END $$;
 -- جدول الملفات الشخصية للمستخدمين
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL UNIQUE,
+  user_id UUID NOT NULL,
   full_name TEXT NOT NULL,
   business_name TEXT NOT NULL,
   phone TEXT,
@@ -27,7 +28,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   region TEXT,
   supply_categories TEXT[],
   is_approved boolean NOT NULL DEFAULT false,
-  customer_code TEXT UNIQUE,
+  customer_code TEXT,
   minimum_order_amount NUMERIC DEFAULT 0,
   default_delivery_fee NUMERIC DEFAULT 0,
   bank_name text,
@@ -37,28 +38,67 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+-- إضافة قيد unique لـ user_id إذا لم يكن موجوداً
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'profiles_user_id_key'
+  ) THEN
+    ALTER TABLE public.profiles ADD CONSTRAINT profiles_user_id_key UNIQUE (user_id);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+-- إضافة قيد unique لـ customer_code إذا لم يكن موجوداً
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'profiles_customer_code_key'
+  ) THEN
+    ALTER TABLE public.profiles ADD CONSTRAINT profiles_customer_code_key UNIQUE (customer_code);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
 -- جدول أدوار المستخدمين
 CREATE TABLE IF NOT EXISTS public.user_roles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
-  role app_role NOT NULL DEFAULT 'restaurant',
-  UNIQUE(user_id, role)
+  role app_role NOT NULL DEFAULT 'restaurant'
 );
+
+-- إضافة قيد unique لـ user_id و role إذا لم يكن موجوداً
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'user_roles_user_id_role_key'
+  ) THEN
+    ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_user_id_role_key UNIQUE (user_id, role);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- جدول التصنيفات
 CREATE TABLE IF NOT EXISTS public.categories (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
   name_en TEXT,
   icon TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+-- إضافة قيد unique لـ name إذا لم يكن موجوداً
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'categories_name_key'
+  ) THEN
+    ALTER TABLE public.categories ADD CONSTRAINT categories_name_key UNIQUE (name);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
 -- جدول المنتجات
 CREATE TABLE IF NOT EXISTS public.products (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   supplier_id UUID NOT NULL,
-  category_id UUID REFERENCES public.categories(id),
+  category_id UUID,
   name TEXT NOT NULL,
   name_en TEXT,
   name_ur TEXT,
@@ -78,6 +118,16 @@ CREATE TABLE IF NOT EXISTS public.products (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+-- إضافة foreign key لـ category_id إذا لم يكن موجوداً
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'products_category_id_fkey'
+  ) THEN
+    ALTER TABLE public.products ADD CONSTRAINT products_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- جدول الطلبات الرئيسي
 CREATE TABLE IF NOT EXISTS public.orders (
@@ -108,23 +158,45 @@ CREATE TABLE IF NOT EXISTS public.branches (
 
 -- إضافة foreign key للطلبات بعد إنشاء جدول الفروع
 DO $$ BEGIN
-  ALTER TABLE public.orders ADD CONSTRAINT orders_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branches(id);
-EXCEPTION
-  WHEN duplicate_object THEN null;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'orders_branch_id_fkey'
+  ) THEN
+    ALTER TABLE public.orders ADD CONSTRAINT orders_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branches(id);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
 END $$;
 
 -- جدول عناصر الطلبات
 CREATE TABLE IF NOT EXISTS public.order_items (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  order_id UUID NOT NULL,
   supplier_id UUID NOT NULL,
-  product_id UUID NOT NULL REFERENCES public.products(id),
+  product_id UUID NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1,
   unit_price NUMERIC NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
   delivery_fee NUMERIC DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+-- إضافة foreign keys لـ order_items
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'order_items_order_id_fkey'
+  ) THEN
+    ALTER TABLE public.order_items ADD CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE;
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'order_items_product_id_fkey'
+  ) THEN
+    ALTER TABLE public.order_items ADD CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- جدول الإشعارات
 CREATE TABLE IF NOT EXISTS public.notifications (
@@ -134,62 +206,137 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   message TEXT NOT NULL,
   type TEXT NOT NULL DEFAULT 'order',
   is_read BOOLEAN NOT NULL DEFAULT false,
-  order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
+  order_id UUID,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+-- إضافة foreign key لـ order_id
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'notifications_order_id_fkey'
+  ) THEN
+    ALTER TABLE public.notifications ADD CONSTRAINT notifications_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE;
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- جدول المفضلة للمنتجات
 CREATE TABLE IF NOT EXISTS public.favorite_products (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
-  product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  UNIQUE(user_id, product_id)
+  product_id UUID NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+-- إضافة القيود لـ favorite_products
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'favorite_products_product_id_fkey'
+  ) THEN
+    ALTER TABLE public.favorite_products ADD CONSTRAINT favorite_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'favorite_products_user_id_product_id_key'
+  ) THEN
+    ALTER TABLE public.favorite_products ADD CONSTRAINT favorite_products_user_id_product_id_key UNIQUE (user_id, product_id);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- جدول المفضلة للموردين
 CREATE TABLE IF NOT EXISTS public.favorite_suppliers (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
   supplier_id UUID NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  UNIQUE(user_id, supplier_id)
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+-- إضافة قيد unique لـ favorite_suppliers
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'favorite_suppliers_user_id_supplier_id_key'
+  ) THEN
+    ALTER TABLE public.favorite_suppliers ADD CONSTRAINT favorite_suppliers_user_id_supplier_id_key UNIQUE (user_id, supplier_id);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- جدول الأسعار المخصصة
 CREATE TABLE IF NOT EXISTS public.product_custom_prices (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL,
   restaurant_id UUID NOT NULL,
   supplier_id UUID NOT NULL,
   custom_price NUMERIC NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  UNIQUE(product_id, restaurant_id)
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+-- إضافة القيود لـ product_custom_prices
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'product_custom_prices_product_id_fkey'
+  ) THEN
+    ALTER TABLE public.product_custom_prices ADD CONSTRAINT product_custom_prices_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'product_custom_prices_product_id_restaurant_id_key'
+  ) THEN
+    ALTER TABLE public.product_custom_prices ADD CONSTRAINT product_custom_prices_product_id_restaurant_id_key UNIQUE (product_id, restaurant_id);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- جدول شرائح الأسعار
 CREATE TABLE IF NOT EXISTS public.product_price_tiers (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL,
   min_quantity INTEGER NOT NULL,
   price_per_unit NUMERIC NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+-- إضافة foreign key لـ product_price_tiers
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'product_price_tiers_product_id_fkey'
+  ) THEN
+    ALTER TABLE public.product_price_tiers ADD CONSTRAINT product_price_tiers_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
 -- جدول إعدادات الموقع
 CREATE TABLE IF NOT EXISTS public.site_settings (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  key text NOT NULL UNIQUE,
+  key text NOT NULL,
   value text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
 
+-- إضافة قيد unique لـ key
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'site_settings_key_key'
+  ) THEN
+    ALTER TABLE public.site_settings ADD CONSTRAINT site_settings_key_key UNIQUE (key);
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
 -- جدول المدفوعات
 CREATE TABLE IF NOT EXISTS public.order_payments (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  order_id UUID REFERENCES public.orders(id) ON DELETE SET NULL,
+  order_id UUID,
   supplier_id UUID NOT NULL,
   restaurant_id UUID NOT NULL,
   is_paid BOOLEAN NOT NULL DEFAULT false,
@@ -198,16 +345,24 @@ CREATE TABLE IF NOT EXISTS public.order_payments (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- إضافة قيد فريد للمدفوعات (إذا لم يكن موجوداً)
+-- إضافة foreign key لـ order_id
 DO $$ BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint 
-    WHERE conname = 'order_payments_supplier_restaurant_unique'
+    SELECT 1 FROM pg_constraint WHERE conname = 'order_payments_order_id_fkey'
+  ) THEN
+    ALTER TABLE public.order_payments ADD CONSTRAINT order_payments_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE SET NULL;
+  END IF;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+-- إضافة قيد فريد للمدفوعات
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'order_payments_supplier_restaurant_unique'
   ) THEN
     ALTER TABLE public.order_payments ADD CONSTRAINT order_payments_supplier_restaurant_unique UNIQUE (supplier_id, restaurant_id);
   END IF;
-EXCEPTION
-  WHEN duplicate_object THEN null;
+EXCEPTION WHEN duplicate_object THEN null;
 END $$;
 
 -- ============================================
