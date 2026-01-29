@@ -544,6 +544,30 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          name_en: string | null
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          name_en?: string | null
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          name_en?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
