@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Copy, Check, Loader2, Banknote, Building, User, Upload, Image } from "lucide-react";
+import { CreditCard, Copy, Check, Loader2, Banknote, Building, User, Upload, Image, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +25,7 @@ interface PaymentDetailsDialogProps {
   supplierProfile: SupplierBankDetails | null;
   amountToPay: number;
   orderId?: string;
+  isConfirmed?: boolean; // Whether the supplier has confirmed the order
 }
 
 export const PaymentDetailsDialog = ({
@@ -33,6 +34,7 @@ export const PaymentDetailsDialog = ({
   supplierProfile,
   amountToPay,
   orderId,
+  isConfirmed = false,
 }: PaymentDetailsDialogProps) => {
   const { t } = useTranslation();
   const { user, profile } = useAuth();
@@ -177,6 +179,17 @@ export const PaymentDetailsDialog = ({
         <div className="space-y-4 py-4">
           {hasBankDetails ? (
             <>
+              {/* Warning message - only show if order not confirmed */}
+              {!isConfirmed && (
+                <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800 dark:text-amber-300">
+                    <p className="font-medium">{t("cart.paymentWarningTitle")}</p>
+                    <p className="text-amber-700 dark:text-amber-400 mt-1">{t("cart.paymentWarningMessage")}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Amount to Pay */}
               <div className="bg-primary/10 rounded-xl p-4 text-center">
                 <p className="text-sm text-muted-foreground mb-1">{t("cart.amountToPay")}</p>
