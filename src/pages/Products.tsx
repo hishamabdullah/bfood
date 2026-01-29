@@ -9,11 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, X, Store, MapPin } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { useSupplierProfile } from "@/hooks/useSuppliers";
+import { saudiRegions, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
+import i18n from "i18next";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useRestaurantAllCustomPrices } from "@/hooks/useCustomPrices";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCard from "@/components/products/ProductCard";
-import { saudiRegions } from "@/data/saudiRegions";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,9 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedRegion, setSelectedRegion] = useState("all");
+  const [selectedCity, setSelectedCity] = useState("all");
+
+  const availableCities = selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [];
 
   const { data: products, isLoading: productsLoading } = useProducts(selectedCategory);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
@@ -45,6 +49,11 @@ const Products = () => {
     
     // Filter by region
     if (selectedRegion !== "all" && product.supplier_profile?.region !== selectedRegion) {
+      return false;
+    }
+
+    // Filter by city
+    if (selectedCity !== "all" && product.supplier_profile?.city !== selectedCity) {
       return false;
     }
     
@@ -111,20 +120,38 @@ const Products = () => {
             </div>
             
             {/* Region Filter */}
-            <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-              <SelectTrigger className="w-full md:w-[200px]">
+            <Select value={selectedRegion} onValueChange={(val) => { setSelectedRegion(val); setSelectedCity("all"); }}>
+              <SelectTrigger className="w-full md:w-[180px]">
                 <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
-                <SelectValue placeholder="جميع المناطق" />
+                <SelectValue placeholder={t("suppliers.allRegions")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">جميع المناطق</SelectItem>
+                <SelectItem value="all">{t("suppliers.allRegions")}</SelectItem>
                 {saudiRegions.map((region) => (
-                  <SelectItem key={region} value={region}>
-                    {region}
+                  <SelectItem key={region.name} value={region.name}>
+                    {getRegionName(region, i18n.language)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+
+            {/* City Filter */}
+            {selectedRegion !== "all" && availableCities.length > 0 && (
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
+                  <SelectValue placeholder={t("suppliers.allCities")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("suppliers.allCities")}</SelectItem>
+                  {availableCities.map((city) => (
+                    <SelectItem key={city.name} value={city.name}>
+                      {getCityName(city, i18n.language)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Categories */}

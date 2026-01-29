@@ -462,6 +462,7 @@ export type Database = {
           bank_name: string | null
           bio: string | null
           business_name: string
+          city: string | null
           created_at: string
           customer_code: string | null
           default_delivery_fee: number | null
@@ -483,6 +484,7 @@ export type Database = {
           bank_name?: string | null
           bio?: string | null
           business_name: string
+          city?: string | null
           created_at?: string
           customer_code?: string | null
           default_delivery_fee?: number | null
@@ -504,6 +506,7 @@ export type Database = {
           bank_name?: string | null
           bio?: string | null
           business_name?: string
+          city?: string | null
           created_at?: string
           customer_code?: string | null
           default_delivery_fee?: number | null

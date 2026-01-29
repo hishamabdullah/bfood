@@ -102,6 +102,7 @@ interface AuthContextType {
     phone: string;
     role: UserRole;
     region?: string;
+    city?: string;
     supplyCategories?: string[];
   }) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -364,6 +365,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       phone: string;
       role: UserRole;
       region?: string;
+      city?: string;
       supplyCategories?: string[];
     }
   ) => {
@@ -388,6 +390,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             business_name: userData.businessName,
             phone: userData.phone,
             region: userData.region || null,
+            city: userData.city || null,
             supply_categories: userData.supplyCategories || null,
           } as any);
 
