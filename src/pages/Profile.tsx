@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -36,7 +37,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { saudiRegions, supplyCategories } from "@/data/saudiRegions";
+import { saudiRegions, supplyCategories, getSupplyCategoryName } from "@/data/saudiRegions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { BranchesManager } from "@/components/branches/BranchesManager";
@@ -538,17 +539,17 @@ const Profile = () => {
                 {isOwnProfile ? (
                   <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded-lg">
                     {supplyCategories.map((category) => (
-                      <div key={category} className="flex items-center space-x-2 space-x-reverse">
+                      <div key={category.name} className="flex items-center space-x-2 space-x-reverse">
                         <Checkbox
-                          id={`cat-${category}`}
-                          checked={profileData.supply_categories.includes(category)}
-                          onCheckedChange={() => handleCategoryToggle(category)}
+                          id={`cat-${category.name}`}
+                          checked={profileData.supply_categories.includes(category.name)}
+                          onCheckedChange={() => handleCategoryToggle(category.name)}
                         />
                         <label
-                          htmlFor={`cat-${category}`}
+                          htmlFor={`cat-${category.name}`}
                           className="text-sm cursor-pointer"
                         >
-                          {category}
+                          {getSupplyCategoryName(category, i18n.language)}
                         </label>
                       </div>
                     ))}
@@ -556,9 +557,11 @@ const Profile = () => {
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {profileData.supply_categories.length > 0 ? (
-                      profileData.supply_categories.map((cat) => (
-                        <Badge key={cat} variant="secondary">{cat}</Badge>
-                      ))
+                      profileData.supply_categories.map((cat) => {
+                        const categoryObj = supplyCategories.find(c => c.name === cat);
+                        const displayName = categoryObj ? getSupplyCategoryName(categoryObj, i18n.language) : cat;
+                        return <Badge key={cat} variant="secondary">{displayName}</Badge>;
+                      })
                     ) : (
                       <span className="text-muted-foreground">{t("profile.notSpecified")}</span>
                     )}

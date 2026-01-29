@@ -1,4 +1,5 @@
 import { useState } from "react";
+import i18n from "i18next";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Loader2, Plus, Store, Truck, Search, Pencil, Trash2, Mail } from "lucide-react";
@@ -41,7 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { saudiRegions, supplyCategories } from "@/data/saudiRegions";
+import { saudiRegions, supplyCategories, getSupplyCategoryName } from "@/data/saudiRegions";
 
 const AdminUsersManager = () => {
   const { data: users, isLoading } = useAdminUsers();
@@ -413,14 +414,14 @@ const AdminUsersManager = () => {
                   <Label>مجالات التوريد</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto">
                     {supplyCategories.map((category) => (
-                      <div key={category} className="flex items-center gap-2">
+                      <div key={category.name} className="flex items-center gap-2">
                         <Checkbox
-                          id={`create-${category}`}
-                          checked={selectedCategories.includes(category)}
-                          onCheckedChange={() => handleCategoryToggle(category)}
+                          id={`create-${category.name}`}
+                          checked={selectedCategories.includes(category.name)}
+                          onCheckedChange={() => handleCategoryToggle(category.name)}
                         />
-                        <Label htmlFor={`create-${category}`} className="text-sm cursor-pointer">
-                          {category}
+                        <Label htmlFor={`create-${category.name}`} className="text-sm cursor-pointer">
+                          {getSupplyCategoryName(category, i18n.language)}
                         </Label>
                       </div>
                     ))}
@@ -504,14 +505,14 @@ const AdminUsersManager = () => {
                   <Label>مجالات التوريد</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto">
                     {supplyCategories.map((category) => (
-                      <div key={category} className="flex items-center gap-2">
+                      <div key={category.name} className="flex items-center gap-2">
                         <Checkbox
-                          id={`edit-${category}`}
-                          checked={selectedCategories.includes(category)}
-                          onCheckedChange={() => handleCategoryToggle(category)}
+                          id={`edit-${category.name}`}
+                          checked={selectedCategories.includes(category.name)}
+                          onCheckedChange={() => handleCategoryToggle(category.name)}
                         />
-                        <Label htmlFor={`edit-${category}`} className="text-sm cursor-pointer">
-                          {category}
+                        <Label htmlFor={`edit-${category.name}`} className="text-sm cursor-pointer">
+                          {getSupplyCategoryName(category, i18n.language)}
                         </Label>
                       </div>
                     ))}

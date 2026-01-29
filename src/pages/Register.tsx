@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +16,7 @@ import {
 import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck, Loader2, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { saudiRegions, supplyCategories } from "@/data/saudiRegions";
+import { saudiRegions, supplyCategories, getSupplyCategoryName } from "@/data/saudiRegions";
 
 type UserType = "restaurant" | "supplier";
 
@@ -239,18 +240,18 @@ const Register = () => {
                 <Label>{t("auth.categoriesHint")}</Label>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded-lg">
                   {supplyCategories.map((category) => (
-                    <div key={category} className="flex items-center space-x-2 space-x-reverse">
+                    <div key={category.name} className="flex items-center space-x-2 space-x-reverse">
                       <Checkbox
-                        id={category}
-                        checked={selectedCategories.includes(category)}
-                        onCheckedChange={() => handleCategoryToggle(category)}
+                        id={category.name}
+                        checked={selectedCategories.includes(category.name)}
+                        onCheckedChange={() => handleCategoryToggle(category.name)}
                         disabled={isLoading}
                       />
                       <label
-                        htmlFor={category}
+                        htmlFor={category.name}
                         className="text-sm cursor-pointer"
                       >
-                        {category}
+                        {getSupplyCategoryName(category, i18n.language)}
                       </label>
                     </div>
                   ))}
