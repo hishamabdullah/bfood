@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, X, Store, MapPin } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { useSupplierProfile } from "@/hooks/useSuppliers";
+import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useRestaurantAllCustomPrices } from "@/hooks/useCustomPrices";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCard from "@/components/products/ProductCard";
@@ -24,6 +25,7 @@ import {
 const Products = () => {
   const { t } = useTranslation();
   const { userRole } = useAuth();
+  const { getCategoryName } = useCategoryTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const supplierId = searchParams.get("supplier");
   
@@ -148,7 +150,7 @@ const Products = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className="whitespace-nowrap"
                 >
-                  {category.name}
+                  {getCategoryName(category)}
                 </Button>
               ))
             )}
