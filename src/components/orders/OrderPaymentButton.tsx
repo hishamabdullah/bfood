@@ -28,7 +28,8 @@ export const OrderPaymentButton = ({
   orderId,
 }: OrderPaymentButtonProps) => {
   const { t } = useTranslation();
-  const { data: paymentStatus } = usePaymentStatus(supplierId);
+  // Pass orderId to check payment status for this specific order
+  const { data: paymentStatus } = usePaymentStatus(supplierId, orderId);
 
   const isPaid = paymentStatus?.is_paid === true;
 
