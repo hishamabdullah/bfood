@@ -264,7 +264,8 @@
     "total": "Total",
     "addedToCart": "Products added to cart",
     "deletedProduct": "Deleted Product",
-    "viewProfile": "View Profile"
+    "viewProfile": "View Profile",
+    "paymentNotified": "Payment notified"
   },
   "notifications": {
     "title": "Notifications",

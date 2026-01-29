@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { OrderPaymentButton } from "@/components/orders/OrderPaymentButton";
 
 // Group order items by supplier with status and delivery fee
 const groupItemsBySupplier = (orderItems: any[]) => {
@@ -288,8 +289,8 @@ const Orders = () => {
                                 })}
                               </div>
 
-                              {/* Supplier Footer with Delivery Fee */}
-                              <div className="bg-muted/20 px-4 py-3 border-t space-y-1 text-sm">
+                              {/* Supplier Footer with Delivery Fee and Payment */}
+                              <div className="bg-muted/20 px-4 py-3 border-t space-y-2 text-sm">
                                 <div className="flex justify-between">
                                   <span className="text-muted-foreground flex items-center gap-1">
                                     <Truck className="h-3 w-3" />
@@ -302,6 +303,16 @@ const Orders = () => {
                                 <div className="flex justify-between font-semibold pt-1 border-t border-border">
                                   <span>{t("orders.supplierTotal")}</span>
                                   <span className="text-primary">{supplierTotal.toFixed(2)} {t("common.sar")}</span>
+                                </div>
+                                {/* Payment Details Button */}
+                                <div className="pt-2 border-t border-border">
+                                  <OrderPaymentButton
+                                    supplierId={group.items[0]?.supplier_id}
+                                    supplierName={group.supplier?.business_name || t("orders.unknownSupplier")}
+                                    supplierProfile={group.supplier}
+                                    amountToPay={supplierTotal}
+                                    orderId={order.id}
+                                  />
                                 </div>
                               </div>
                             </div>
