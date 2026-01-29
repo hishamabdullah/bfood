@@ -64,7 +64,8 @@ interface ProductFormDialogProps {
   product?: SupplierProduct | null;
 }
 
-const units = ["كيلو", "جرام", "قطعة", "صندوق", "كرتون", "لتر", "علبة"];
+// Unit keys that map to translation keys
+const unitKeys = ["kg", "gram", "piece", "box", "carton", "liter", "pack"] as const;
 
 export default function ProductFormDialog({
   open,
@@ -86,7 +87,7 @@ export default function ProductFormDialog({
       name: "",
       description: "",
       price: 0,
-      unit: "كيلو",
+      unit: "kg",
       category_id: "",
       stock_quantity: 0,
       unlimited_stock: false,
@@ -126,7 +127,7 @@ export default function ProductFormDialog({
         name: "",
         description: "",
         price: 0,
-        unit: "كيلو",
+        unit: "kg",
         category_id: "",
         stock_quantity: 0,
         unlimited_stock: false,
@@ -289,9 +290,9 @@ export default function ProductFormDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {units.map((unit) => (
-                          <SelectItem key={unit} value={unit}>
-                            {unit}
+                        {unitKeys.map((unitKey) => (
+                          <SelectItem key={unitKey} value={unitKey}>
+                            {t(`productForm.units.${unitKey}`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
