@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -34,15 +35,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useCategories } from "@/hooks/useProducts";
+import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useCreateProduct, useUpdateProduct, SupplierProduct, PriceTier } from "@/hooks/useSupplierProducts";
 import { Loader2, Globe, Tag } from "lucide-react";
 import PriceTiersEditor from "./PriceTiersEditor";
 
 const productSchema = z.object({
-  name: z.string().min(2, "اسم المنتج مطلوب").max(100),
+  name: z.string().min(2).max(100),
   description: z.string().max(500).optional(),
-  price: z.coerce.number().min(0.01, "السعر يجب أن يكون أكبر من صفر"),
-  unit: z.string().min(1, "الوحدة مطلوبة"),
+  price: z.coerce.number().min(0.01),
+  unit: z.string().min(1),
   category_id: z.string().optional(),
   stock_quantity: z.coerce.number().min(0).default(0),
   unlimited_stock: z.boolean().default(false),
@@ -50,7 +52,6 @@ const productSchema = z.object({
   in_stock: z.boolean().default(true),
   image_url: z.string().url().optional().or(z.literal("")),
   delivery_fee: z.coerce.number().min(0).default(0),
-  // ترجمة إنجليزية اختيارية
   name_en: z.string().max(100).optional(),
   description_en: z.string().max(500).optional(),
 });
@@ -70,12 +71,13 @@ export default function ProductFormDialog({
   onOpenChange,
   product,
 }: ProductFormDialogProps) {
+  const { t } = useTranslation();
   const { data: categories } = useCategories();
+  const { getCategoryName } = useCategoryTranslation();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const isEditing = !!product;
   
-  // State for price tiers (outside of react-hook-form)
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
 
   const form = useForm<ProductFormValues>({
@@ -118,7 +120,6 @@ export default function ProductFormDialog({
         name_en: (product as any).name_en || "",
         description_en: (product as any).description_en || "",
       });
-      // Load existing price tiers
       setPriceTiers(product.price_tiers || []);
     } else {
       form.reset({
@@ -180,7 +181,7 @@ export default function ProductFormDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "تعديل المنتج" : "إضافة منتج جديد"}
+            {isEditing ? t("productForm.editProduct") : t("productForm.addProduct")}
           </DialogTitle>
         </DialogHeader>
 
@@ -191,9 +192,9 @@ export default function ProductFormDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>اسم المنتج (عربي) *</FormLabel>
+                  <FormLabel>{t("productForm.productNameAr")} *</FormLabel>
                   <FormControl>
-                    <Input placeholder="مثال: طماطم طازجة" {...field} />
+                    <Input placeholder={t("productForm.productNamePlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -205,10 +206,10 @@ export default function ProductFormDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>الوصف بالعربي (اختياري)</FormLabel>
+                  <FormLabel>{t("productForm.descriptionAr")}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="وصف مختصر للمنتج..."
+                      placeholder={t("productForm.descriptionPlaceholder")}
                       {...field}
                     />
                   </FormControl>
@@ -217,17 +218,16 @@ export default function ProductFormDialog({
               )}
             />
 
-            {/* ترجمة إنجليزية اختيارية */}
+            {/* English Translation */}
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="translations" className="border rounded-lg px-4">
                 <AccordionTrigger className="hover:no-underline">
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4" />
-                    <span>الترجمة الإنجليزية (اختياري)</span>
+                    <span>{t("productForm.englishTranslation")}</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-4 pt-4">
-                  {/* English */}
                   <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                     <h4 className="font-medium text-sm flex items-center gap-2">
                       🇬🇧 English
@@ -237,9 +237,9 @@ export default function ProductFormDialog({
                       name="name_en"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs">Product Name</FormLabel>
+                          <FormLabel className="text-xs">{t("productForm.productNameEn")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Fresh Tomatoes" {...field} />
+                            <Input placeholder={t("productForm.productNameEnPlaceholder")} {...field} />
                           </FormControl>
                         </FormItem>
                       )}
@@ -249,9 +249,9 @@ export default function ProductFormDialog({
                       name="description_en"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs">Description</FormLabel>
+                          <FormLabel className="text-xs">{t("productForm.descriptionEn")}</FormLabel>
                           <FormControl>
-                            <Textarea placeholder="Product description..." {...field} />
+                            <Textarea placeholder={t("productForm.descriptionEnPlaceholder")} {...field} />
                           </FormControl>
                         </FormItem>
                       )}
@@ -267,7 +267,7 @@ export default function ProductFormDialog({
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>السعر (ر.س)</FormLabel>
+                    <FormLabel>{t("productForm.price")}</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" min="0" {...field} />
                     </FormControl>
@@ -281,11 +281,11 @@ export default function ProductFormDialog({
                 name="unit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>الوحدة</FormLabel>
+                    <FormLabel>{t("productForm.unit")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="اختر الوحدة" />
+                          <SelectValue placeholder={t("productForm.selectUnit")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -309,9 +309,9 @@ export default function ProductFormDialog({
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-lg border p-4">
                   <div>
-                    <FormLabel className="text-base">كمية غير محدودة</FormLabel>
+                    <FormLabel className="text-base">{t("productForm.unlimitedStock")}</FormLabel>
                     <p className="text-sm text-muted-foreground">
-                      تفعيل هذا الخيار يعني أن الكمية متاحة دائماً
+                      {t("productForm.unlimitedStockDesc")}
                     </p>
                   </div>
                   <FormControl>
@@ -331,7 +331,7 @@ export default function ProductFormDialog({
                   name="stock_quantity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>الكمية المتوفرة</FormLabel>
+                      <FormLabel>{t("productForm.stockQuantity")}</FormLabel>
                       <FormControl>
                         <Input type="number" min="0" {...field} />
                       </FormControl>
@@ -346,17 +346,17 @@ export default function ProductFormDialog({
                 name="category_id"
                 render={({ field }) => (
                   <FormItem className={watchUnlimitedStock ? "col-span-2" : ""}>
-                    <FormLabel>التصنيف</FormLabel>
+                    <FormLabel>{t("productForm.category")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="اختر التصنيف" />
+                          <SelectValue placeholder={t("productForm.selectCategory")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {categories?.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
+                            {getCategoryName(cat)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -372,7 +372,7 @@ export default function ProductFormDialog({
               name="country_of_origin"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>بلد المنشأ</FormLabel>
+                  <FormLabel>{t("productForm.countryOfOrigin")}</FormLabel>
                   <FormControl>
                     <Input placeholder="السعودية" {...field} />
                   </FormControl>
@@ -386,7 +386,7 @@ export default function ProductFormDialog({
               name="delivery_fee"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>رسوم التوصيل (ر.س) - اختياري</FormLabel>
+                  <FormLabel>{t("productForm.deliveryFee")}</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" min="0" placeholder="0" {...field} />
                   </FormControl>
@@ -400,11 +400,11 @@ export default function ProductFormDialog({
               name="image_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>رابط الصورة (اختياري)</FormLabel>
+                  <FormLabel>{t("productForm.imageUrl")}</FormLabel>
                   <FormControl>
                     <Input
                       type="url"
-                      placeholder="https://example.com/image.jpg"
+                      placeholder={t("productForm.imageUrlPlaceholder")}
                       {...field}
                     />
                   </FormControl>
@@ -419,9 +419,9 @@ export default function ProductFormDialog({
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-lg border p-4">
                   <div>
-                    <FormLabel className="text-base">متوفر</FormLabel>
+                    <FormLabel className="text-base">{t("productForm.inStock")}</FormLabel>
                     <p className="text-sm text-muted-foreground">
-                      هل المنتج متوفر للطلب؟
+                      {t("productForm.inStockDesc")}
                     </p>
                   </div>
                   <FormControl>
@@ -440,7 +440,7 @@ export default function ProductFormDialog({
                 <AccordionTrigger className="hover:no-underline">
                   <div className="flex items-center gap-2">
                     <Tag className="h-4 w-4 text-primary" />
-                    <span>شرائح الأسعار (اختياري)</span>
+                    <span>{t("productForm.priceTiers")}</span>
                     {priceTiers.length > 0 && (
                       <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
                         {priceTiers.length}
@@ -466,11 +466,11 @@ export default function ProductFormDialog({
                 onClick={() => onOpenChange(false)}
                 className="flex-1"
               >
-                إلغاء
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={isLoading} className="flex-1">
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isEditing ? "حفظ التغييرات" : "إضافة المنتج"}
+                {isEditing ? t("productForm.saveChanges") : t("productForm.addProduct")}
               </Button>
             </div>
           </form>

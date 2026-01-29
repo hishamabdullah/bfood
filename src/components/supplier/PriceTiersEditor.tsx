@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,8 +23,9 @@ export default function PriceTiersEditor({
   basePrice,
   unit,
 }: PriceTiersEditorProps) {
+  const { t } = useTranslation();
+
   const addTier = () => {
-    // Get the highest min_quantity or start at 10
     const lastTier = tiers[tiers.length - 1];
     const newMinQuantity = lastTier ? lastTier.min_quantity + 10 : 10;
     const newPrice = lastTier ? lastTier.price_per_unit * 0.95 : basePrice * 0.95;
@@ -59,7 +60,7 @@ export default function PriceTiersEditor({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Tag className="h-4 w-4 text-primary" />
-          <Label className="text-base font-medium">شرائح الأسعار</Label>
+          <Label className="text-base font-medium">{t("productForm.priceTiers")}</Label>
         </div>
         <Button
           type="button"
@@ -69,19 +70,19 @@ export default function PriceTiersEditor({
           disabled={tiers.length >= 10}
         >
           <Plus className="h-4 w-4 ml-1" />
-          إضافة شريحة
+          {t("productForm.addTier")}
         </Button>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        أضف خصومات على الكميات الكبيرة لتشجيع الطلبات الكبيرة
+        {t("productForm.priceTiersDescription")}
       </p>
 
       {tiers.length === 0 ? (
         <div className="text-center py-6 bg-muted/30 rounded-lg border border-dashed">
           <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">
-            لا توجد شرائح أسعار. اضغط "إضافة شريحة" لإنشاء خصم على الكمية.
+            {t("productForm.noTiers")}
           </p>
         </div>
       ) : (
@@ -94,7 +95,7 @@ export default function PriceTiersEditor({
               <div className="flex-1 grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-muted-foreground">
-                    الحد الأدنى للكمية
+                    {t("productForm.minQuantity")}
                   </Label>
                   <div className="flex items-center gap-1">
                     <Input
@@ -113,7 +114,7 @@ export default function PriceTiersEditor({
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">
-                    السعر للوحدة
+                    {t("productForm.pricePerUnit")}
                   </Label>
                   <div className="flex items-center gap-1">
                     <Input
@@ -126,7 +127,7 @@ export default function PriceTiersEditor({
                       }
                       className="h-9"
                     />
-                    <span className="text-sm text-muted-foreground">ر.س</span>
+                    <span className="text-sm text-muted-foreground">{t("common.sar")}</span>
                   </div>
                 </div>
               </div>
@@ -134,7 +135,7 @@ export default function PriceTiersEditor({
               {/* Discount Badge */}
               {basePrice > 0 && tier.price_per_unit < basePrice && (
                 <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded text-xs font-medium">
-                  خصم {calculateDiscount(tier.price_per_unit)}%
+                  {t("productForm.discount")} {calculateDiscount(tier.price_per_unit)}%
                 </div>
               )}
               
@@ -154,7 +155,7 @@ export default function PriceTiersEditor({
 
       {tiers.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          ملاحظة: الأسعار المخصصة للمطاعم لها الأولوية على شرائح الأسعار.
+          {t("productForm.tiersNote")}
         </p>
       )}
     </div>
