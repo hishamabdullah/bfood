@@ -266,7 +266,8 @@
     "total": "الإجمالي",
     "addedToCart": "تم إضافة المنتجات للسلة",
     "deletedProduct": "منتج محذوف",
-    "viewProfile": "الملف الشخصي"
+    "viewProfile": "الملف الشخصي",
+    "paymentNotified": "تم إبلاغ المورد"
   },
   "notifications": {
     "title": "الإشعارات",
