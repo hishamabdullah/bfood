@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, MapPin, Package, User as UserIcon, Heart } from "lucide-react";
+import { Search, MapPin, Package, User as UserIcon, Heart, Tags } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSuppliers, useRegions } from "@/hooks/useSuppliers";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,15 +19,39 @@ import { saudiRegions } from "@/data/saudiRegions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFavoriteSuppliers, useToggleFavoriteSupplier } from "@/hooks/useFavorites";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+interface SupplierCategory {
+  id: string;
+  name: string;
+  name_en: string | null;
+  icon: string | null;
+}
 
 const Suppliers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   
   const { user, userRole } = useAuth();
   const { data: suppliers, isLoading } = useSuppliers(selectedRegion);
   const { data: favoriteSuppliers = [] } = useFavoriteSuppliers();
   const toggleFavorite = useToggleFavoriteSupplier();
+
+  // Fetch supplier categories
+  const { data: supplierCategories = [] } = useQuery({
+    queryKey: ["supplier-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("supplier_categories")
+        .select("*")
+        .order("created_at", { ascending: true });
+      
+      if (error) throw error;
+      return data as SupplierCategory[];
+    },
+  });
 
   const handleToggleFavorite = (supplierId: string, isFavorite: boolean) => {
     if (!user) {
@@ -42,12 +66,20 @@ const Suppliers = () => {
   };
   const { data: availableRegions } = useRegions();
 
-  const filteredSuppliers = suppliers?.filter(
-    (supplier) =>
+  const filteredSuppliers = suppliers?.filter((supplier) => {
+    // Text search filter
+    const matchesSearch = 
       supplier.business_name?.includes(searchQuery) ||
       supplier.full_name?.includes(searchQuery) ||
-      supplier.region?.includes(searchQuery)
-  ) || [];
+      supplier.region?.includes(searchQuery);
+    
+    // Category filter
+    const matchesCategory = 
+      selectedCategory === "all" || 
+      supplier.supply_categories?.includes(selectedCategory);
+    
+    return matchesSearch && matchesCategory;
+  }) || [];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -84,6 +116,25 @@ const Suppliers = () => {
                 {saudiRegions.map((region) => (
                   <SelectItem key={region} value={region}>
                     {region}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Category Filter */}
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <Tags className="h-4 w-4 ml-2 text-muted-foreground" />
+                <SelectValue placeholder="جميع التصنيفات" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع التصنيفات</SelectItem>
+                {supplierCategories.map((category) => (
+                  <SelectItem key={category.id} value={category.name}>
+                    <span className="flex items-center gap-2">
+                      {category.icon && <span>{category.icon}</span>}
+                      {category.name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
