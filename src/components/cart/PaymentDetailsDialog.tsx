@@ -110,37 +110,19 @@ export const PaymentDetailsDialog = ({
       }
 
       // إنشاء سجل الدفع
-      // If orderId is provided, upsert on order_id + supplier_id + restaurant_id
-      // Otherwise, upsert on supplier_id + restaurant_id (for cart pre-order payments)
-      if (orderId) {
-        const { error: paymentError } = await supabase
-          .from("order_payments")
-          .upsert({
-            order_id: orderId,
-            supplier_id: supplierId,
-            restaurant_id: user.id,
-            is_paid: true,
-            receipt_url: receiptUrl,
-          }, {
-            onConflict: "order_id,supplier_id,restaurant_id"
-          });
+      const { error: paymentError } = await supabase
+        .from("order_payments")
+        .upsert({
+          order_id: orderId || null,
+          supplier_id: supplierId,
+          restaurant_id: user.id,
+          is_paid: true,
+          receipt_url: receiptUrl,
+        }, {
+          onConflict: "supplier_id,restaurant_id"
+        });
 
-        if (paymentError) throw paymentError;
-      } else {
-        const { error: paymentError } = await supabase
-          .from("order_payments")
-          .upsert({
-            order_id: null,
-            supplier_id: supplierId,
-            restaurant_id: user.id,
-            is_paid: true,
-            receipt_url: receiptUrl,
-          }, {
-            onConflict: "supplier_id,restaurant_id"
-          });
-
-        if (paymentError) throw paymentError;
-      }
+      if (paymentError) throw paymentError;
 
       const restaurantName = profile?.business_name || "مطعم";
       

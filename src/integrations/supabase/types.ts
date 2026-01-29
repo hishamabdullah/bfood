@@ -342,38 +342,6 @@ export type Database = {
           },
         ]
       }
-      product_price_tiers: {
-        Row: {
-          created_at: string
-          id: string
-          min_quantity: number
-          price_per_unit: number
-          product_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          min_quantity: number
-          price_per_unit: number
-          product_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          min_quantity?: number
-          price_per_unit?: number
-          product_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_price_tiers_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       products: {
         Row: {
           category_id: string | null

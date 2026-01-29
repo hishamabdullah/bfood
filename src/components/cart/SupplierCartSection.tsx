@@ -126,27 +126,25 @@ export const SupplierCartSection = ({
           onValueChange={(value) => onPickupChange(value === "pickup")}
           className="space-y-2"
         >
-          <Label
-            htmlFor={`delivery-${supplierId}`}
-            className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
-          >
+          <div className="flex items-center space-x-2 rtl:space-x-reverse p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
             <RadioGroupItem value="delivery" id={`delivery-${supplierId}`} />
-            <Truck className="h-4 w-4 text-primary shrink-0" />
-            <span className="flex-1">{t("cart.deliveryToAddress")}</span>
-          </Label>
-          <Label
-            htmlFor={`pickup-${supplierId}`}
-            className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
-          >
-            <RadioGroupItem value="pickup" id={`pickup-${supplierId}`} className="mt-0.5" />
-            <Warehouse className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-            <div className="flex flex-col flex-1">
-              <span>{t("cart.pickupFromWarehouse")}</span>
+            <Label htmlFor={`delivery-${supplierId}`} className="flex items-center gap-2 cursor-pointer flex-1">
+              <Truck className="h-4 w-4 text-primary" />
+              {t("cart.deliveryToAddress")}
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2 rtl:space-x-reverse p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+            <RadioGroupItem value="pickup" id={`pickup-${supplierId}`} />
+            <Label htmlFor={`pickup-${supplierId}`} className="flex flex-col cursor-pointer flex-1">
+              <span className="flex items-center gap-2">
+                <Warehouse className="h-4 w-4 text-primary" />
+                {t("cart.pickupFromWarehouse")}
+              </span>
               <span className="text-xs text-muted-foreground mt-1">
                 {t("cart.pickupFromWarehouseDesc")}
               </span>
-            </div>
-          </Label>
+            </Label>
+          </div>
         </RadioGroup>
 
         {/* Show warehouse location if pickup is selected and URL exists */}
