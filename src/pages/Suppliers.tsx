@@ -131,10 +131,7 @@ const Suppliers = () => {
                 <SelectItem value="all">جميع التصنيفات</SelectItem>
                 {supplierCategories.map((category) => (
                   <SelectItem key={category.id} value={category.name}>
-                    <span className="flex items-center gap-2">
-                      {category.icon && <span>{category.icon}</span>}
-                      {category.name}
-                    </span>
+                    {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>

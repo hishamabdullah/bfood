@@ -148,7 +148,6 @@ const Products = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className="whitespace-nowrap"
                 >
-                  {category.icon && <span className="ml-1">{category.icon}</span>}
                   {category.name}
                 </Button>
               ))
