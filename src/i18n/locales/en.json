@@ -542,6 +542,15 @@
     "pricePerUnit": "Price per Unit",
     "discount": "discount",
     "tiersNote": "Note: Custom prices for specific restaurants take priority over price tiers.",
-    "saveChanges": "Save Changes"
+    "saveChanges": "Save Changes",
+    "units": {
+      "kg": "Kilogram",
+      "gram": "Gram",
+      "piece": "Piece",
+      "box": "Box",
+      "carton": "Carton",
+      "liter": "Liter",
+      "pack": "Pack"
+    }
   }
 }

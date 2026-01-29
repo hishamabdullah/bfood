@@ -108,7 +108,7 @@ export default function PriceTiersEditor({
                       className="h-9"
                     />
                     <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      {unit}
+                      {t(`productForm.units.${unit}`, unit)}
                     </span>
                   </div>
                 </div>
