@@ -31,6 +31,8 @@ import {
   ArrowRight,
   CreditCard,
   Building,
+  Camera,
+  Upload,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -51,9 +53,11 @@ const Profile = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [targetRole, setTargetRole] = useState<string | null>(null);
   const [customerCode, setCustomerCode] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileData, setProfileData] = useState({
     full_name: "",
     business_name: "",
@@ -113,6 +117,7 @@ const Profile = () => {
           bank_iban: (data as any).bank_iban || "",
         });
         setCustomerCode(data.customer_code || null);
+        setAvatarUrl(data.avatar_url || null);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -199,6 +204,60 @@ const Profile = () => {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("profile.invalidImageType") || "يجب اختيار ملف صورة");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error(t("profile.imageTooLarge") || "حجم الصورة كبير جداً (الحد الأقصى 2MB)");
+      return;
+    }
+
+    setIsUploadingLogo(true);
+
+    try {
+      // Upload to logos bucket
+      const fileExt = file.name.split(".").pop();
+      const fileName = `supplier-${user.id}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("logos")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("logos")
+        .getPublicUrl(fileName);
+
+      const publicUrl = urlData.publicUrl;
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast.success(t("profile.logoUploaded") || "تم رفع اللوجو بنجاح");
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast.error(t("profile.logoUploadError") || "حدث خطأ أثناء رفع اللوجو");
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -245,6 +304,67 @@ const Profile = () => {
 
           {/* Profile Card */}
           <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
+            {/* Supplier Logo Upload */}
+            {isSupplier && (
+              <div className="space-y-2">
+                <Label>{t("profile.logo") || "اللوجو"}</Label>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-border">
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl} 
+                        alt="Logo" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Truck className="h-8 w-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  {isOwnProfile && (
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        id="logo-upload"
+                        disabled={isUploadingLogo}
+                      />
+                      <label htmlFor="logo-upload">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="cursor-pointer"
+                          disabled={isUploadingLogo}
+                          asChild
+                        >
+                          <span>
+                            {isUploadingLogo ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin me-2" />
+                                {t("profile.uploading") || "جاري الرفع..."}
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-4 w-4 me-2" />
+                                {avatarUrl 
+                                  ? (t("profile.changeLogo") || "تغيير اللوجو")
+                                  : (t("profile.uploadLogo") || "رفع اللوجو")
+                                }
+                              </>
+                            )}
+                          </span>
+                        </Button>
+                      </label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t("profile.logoHint") || "صورة بحجم أقصى 2MB"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="full_name">{t("profile.fullName")}</Label>
