@@ -230,7 +230,9 @@
     "receiptOptional": "Receipt upload is optional but helps the supplier confirm payment",
     "uploadingReceipt": "Uploading receipt...",
     "onlyImages": "Only images are allowed",
-    "fileTooLarge": "File size must be less than 5MB"
+    "fileTooLarge": "File size must be less than 5MB",
+    "paymentWarningTitle": "Important Notice",
+    "paymentWarningMessage": "It's recommended not to transfer until the supplier confirms the order to ensure product availability"
   },
   "orders": {
     "title": "My Orders",
