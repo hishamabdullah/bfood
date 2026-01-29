@@ -252,7 +252,6 @@ const AdminSupplierCategoriesManager = () => {
             className="flex items-center justify-between p-4 bg-muted/50 rounded-xl"
           >
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{category.icon || "📦"}</span>
               <div>
                 <span className="font-medium block">{getCategoryDisplayName(category)}</span>
                 {category.name_en && currentLang !== "en" && (
