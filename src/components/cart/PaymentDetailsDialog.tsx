@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,8 @@ export const PaymentDetailsDialog = ({
   isConfirmed = false,
 }: PaymentDetailsDialogProps) => {
   const { t } = useTranslation();
-  const { user, profile } = useAuth();
+  const { user, profile, userRole } = useAuth();
+  const queryClient = useQueryClient();
   const [isCopied, setIsCopied] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [open, setOpen] = useState(false);
@@ -86,6 +88,18 @@ export const PaymentDetailsDialog = ({
 
   const notifySupplier = async () => {
     if (!user) return;
+
+    // الحماية: إشعار الدفع يجب أن يرسله المطعم فقط
+    if (userRole !== "restaurant") {
+      toast.error("هذه الميزة متاحة للمطعم فقط");
+      return;
+    }
+
+    // لازم يكون فيه طلب فعلي حتى نربط الدفع بالطلب
+    if (!orderId) {
+      toast.error("يجب إنشاء الطلب أولاً قبل إرسال إشعار الدفع");
+      return;
+    }
     
     setIsNotifying(true);
     try {
@@ -109,11 +123,6 @@ export const PaymentDetailsDialog = ({
 
         receiptUrl = urlData.publicUrl;
         setIsUploading(false);
-      }
-
-      // إنشاء سجل الدفع - مرتبط بالطلب المحدد
-      if (!orderId) {
-        throw new Error("معرف الطلب مطلوب");
       }
 
       // التحقق من وجود سجل دفع للطلب
@@ -163,9 +172,14 @@ export const PaymentDetailsDialog = ({
             amount: amountToPay.toFixed(2),
           }),
           type: "payment",
+          order_id: orderId,
         });
 
       if (error) throw error;
+
+      // تحديث واجهة المستخدم فوراً (علامة الصح + قائمة الدفعات)
+      queryClient.invalidateQueries({ queryKey: ["order-payments", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["order-payment", orderId, supplierId] });
 
       toast.success(t("cart.paymentNotified"));
       setOpen(false);
