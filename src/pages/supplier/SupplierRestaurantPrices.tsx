@@ -192,15 +192,32 @@ export default function SupplierRestaurantPrices() {
             </div>
           ) : filteredPrices.length === 0 ? (
             <div className="text-center py-16 bg-card rounded-2xl border">
-              <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">لا توجد منتجات مخصصة</h3>
-              <p className="text-muted-foreground mb-4">
-                أضف منتجات بأسعار مخصصة لهذا المطعم
-              </p>
-              <Button onClick={() => setIsFormOpen(true)}>
-                <Plus className="h-5 w-5" />
-                إضافة منتج
-              </Button>
+              {/* معلومات المطعم في الأعلى */}
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-8 w-8 text-primary" />
+                </div>
+              </div>
+              <h2 className="text-xl font-bold mb-1">
+                {restaurantInfo?.business_name || restaurantInfo?.full_name || "المطعم"}
+              </h2>
+              {restaurantInfo?.customer_code && (
+                <p className="text-sm text-muted-foreground font-mono mb-6">
+                  رقم العميل: {restaurantInfo.customer_code}
+                </p>
+              )}
+              
+              <div className="border-t pt-6 mt-2">
+                <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">لا توجد منتجات مخصصة بعد</h3>
+                <p className="text-muted-foreground mb-6">
+                  أضف أول منتج لهذا المطعم لبدء تخصيص الأسعار
+                </p>
+                <Button onClick={() => setIsFormOpen(true)} size="lg">
+                  <Plus className="h-5 w-5" />
+                  إضافة أول منتج
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="bg-card rounded-2xl border overflow-hidden">
