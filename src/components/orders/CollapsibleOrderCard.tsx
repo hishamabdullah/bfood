@@ -175,18 +175,18 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
                     {format(new Date(order.created_at), "dd/MM/yyyy", { locale: currentLocale })}
                   </span>
                 </div>
-                {/* عرض كل مورد مع حالته */}
-                <div className="space-y-1">
+                {/* عرض الموردين مع حالاتهم في سطر واحد */}
+                <div className="flex items-center gap-3 flex-wrap">
                   {groupedItems.map((group, idx) => {
                     const supplierStatusConfig = getStatusConfig(group.status);
                     const SupplierStatusIcon = supplierStatusConfig.icon;
                     return (
-                      <div key={idx} className="flex items-center gap-2 flex-wrap">
+                      <div key={idx} className="flex items-center gap-1.5">
                         <Store className="h-3 w-3 text-primary shrink-0" />
-                        <span className="text-sm font-medium truncate max-w-[120px]">
+                        <span className="text-sm font-medium">
                           {group.supplier?.business_name || t("orders.unknownSupplier")}
                         </span>
-                        <Badge className={`${supplierStatusConfig.color} gap-1 text-xs py-0 h-5`}>
+                        <Badge className={`${supplierStatusConfig.color} gap-0.5 text-xs py-0 h-5`}>
                           <SupplierStatusIcon className="h-3 w-3" />
                           {supplierStatusConfig.label}
                         </Badge>
