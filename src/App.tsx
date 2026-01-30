@@ -22,6 +22,7 @@ import Profile from "./pages/Profile";
 import SupplierProducts from "./pages/supplier/SupplierProducts";
 import SupplierOrders from "./pages/supplier/SupplierOrders";
 import SupplierCustomPrices from "./pages/supplier/SupplierCustomPrices";
+import SupplierRestaurantPrices from "./pages/supplier/SupplierRestaurantPrices";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ContactUs from "./pages/ContactUs";
@@ -63,6 +64,7 @@ const App = () => (
                 <Route path="/supplier/products" element={<SupplierProducts />} />
                 <Route path="/supplier/orders" element={<SupplierOrders />} />
                 <Route path="/supplier/custom-prices" element={<SupplierCustomPrices />} />
+                <Route path="/supplier/custom-prices/:restaurantId" element={<SupplierRestaurantPrices />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/contact" element={<ContactUs />} />
