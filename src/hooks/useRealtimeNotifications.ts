@@ -9,18 +9,25 @@ export const useRealtimeNotifications = () => {
   const queryClient = useQueryClient();
   const bellAudioRef = useRef<HTMLAudioElement | null>(null);
   const toneAudioRef = useRef<HTMLAudioElement | null>(null);
+  const paymentChimeRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     // Initialize audio elements
     const bellAudio = new Audio("/sounds/notification-bell.mp3");
     const toneAudio = new Audio("/sounds/notification-tone.mp3");
+    const paymentChime = new Audio("/sounds/payment-chime.mp3");
     
     // Preload audio
     bellAudio.load();
     toneAudio.load();
+    paymentChime.load();
+    
+    // Set payment chime volume lower for softer sound
+    paymentChime.volume = 0.6;
     
     bellAudioRef.current = bellAudio;
     toneAudioRef.current = toneAudio;
+    paymentChimeRef.current = paymentChime;
 
     return () => {
       // Properly cleanup audio elements
@@ -33,6 +40,11 @@ export const useRealtimeNotifications = () => {
         toneAudioRef.current.pause();
         toneAudioRef.current.src = "";
         toneAudioRef.current = null;
+      }
+      if (paymentChimeRef.current) {
+        paymentChimeRef.current.pause();
+        paymentChimeRef.current.src = "";
+        paymentChimeRef.current = null;
       }
     };
   }, []);
@@ -55,17 +67,20 @@ export const useRealtimeNotifications = () => {
           const notification = payload.new as any;
           
           // تشغيل الصوت حسب نوع المستخدم
-          if (userRole === "supplier" && (notification.type === "order" || notification.type === "payment")) {
-            // صوت الجرس للمورد عند طلب جديد أو إشعار دفع
+          if (userRole === "supplier" && notification.type === "order") {
+            // صوت الجرس للمورد عند طلب جديد
             bellAudioRef.current?.play().catch(console.error);
             toast.success(notification.title, {
               description: notification.message,
             });
-
+          } else if (userRole === "supplier" && notification.type === "payment") {
+            // صوت أخف للمورد عند إشعار دفع
+            paymentChimeRef.current?.play().catch(console.error);
+            toast.success(notification.title, {
+              description: notification.message,
+            });
             // تحديث بيانات الدفعات للمورد فوراً
-            if (notification.type === "payment") {
-              queryClient.invalidateQueries({ queryKey: ["supplier-payments", user.id] });
-            }
+            queryClient.invalidateQueries({ queryKey: ["supplier-payments", user.id] });
           } else if (userRole === "restaurant" && notification.type === "status_update") {
             // صوت النغمة للمطعم عند تغيير الحالة
             toneAudioRef.current?.play().catch(console.error);
