@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export interface SupplierStats {
   totalOrders: number;
   pendingOrders: number;
+  newOrders: number; // الطلبات الجديدة التي لم يراها المورد (pending)
   totalProducts: number;
   totalSales: number;
 }
@@ -16,7 +17,7 @@ export const useSupplierStats = () => {
     queryKey: ["supplier-stats", user?.id],
     queryFn: async (): Promise<SupplierStats> => {
       if (!user) {
-        return { totalOrders: 0, pendingOrders: 0, totalProducts: 0, totalSales: 0 };
+        return { totalOrders: 0, pendingOrders: 0, newOrders: 0, totalProducts: 0, totalSales: 0 };
       }
 
       // إجمالي الطلبات
@@ -31,6 +32,13 @@ export const useSupplierStats = () => {
         .select("*", { count: "exact", head: true })
         .eq("supplier_id", user.id)
         .not("status", "in", '("delivered","cancelled")');
+
+      // الطلبات الجديدة التي لم يراها المورد (pending فقط)
+      const { count: newOrders } = await supabase
+        .from("order_items")
+        .select("*", { count: "exact", head: true })
+        .eq("supplier_id", user.id)
+        .eq("status", "pending");
 
       // عدد المنتجات
       const { count: totalProducts } = await supabase
@@ -53,6 +61,7 @@ export const useSupplierStats = () => {
       return {
         totalOrders: totalOrders || 0,
         pendingOrders: pendingOrders || 0,
+        newOrders: newOrders || 0,
         totalProducts: totalProducts || 0,
         totalSales,
       };
