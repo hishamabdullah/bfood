@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Loader2, MapPin, Truck, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, XCircle, Building2 } from "lucide-react";
+import { Loader2, MapPin, Truck, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, XCircle, Building2, Phone } from "lucide-react";
 import { useAdminDeliveryOrders, DeliveryOrder } from "@/hooks/useAdminDeliveryOrders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -118,6 +118,21 @@ const DeliveryOrderCard = ({ order }: { order: DeliveryOrder }) => {
                   <span className="text-muted-foreground">العنوان:</span>{" "}
                   <span className="font-medium">{order.branch?.address || order.delivery_address || "-"}</span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">رقم التواصل:</span>{" "}
+                  {order.restaurant_profile?.phone ? (
+                    <a
+                      href={`tel:${order.restaurant_profile.phone}`}
+                      className="font-medium text-primary hover:underline inline-flex items-center gap-1"
+                      dir="ltr"
+                    >
+                      <Phone className="h-3 w-3" />
+                      {order.restaurant_profile.phone}
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </div>
                 {(order.branch?.google_maps_url || order.restaurant_profile?.google_maps_url) && (
                   <div className="md:col-span-2">
                     <a
@@ -155,6 +170,16 @@ const DeliveryOrderCard = ({ order }: { order: DeliveryOrder }) => {
                       <p className="text-sm text-muted-foreground">
                         {supplier.items_count} منتج • المنطقة: {supplier.supplier_profile?.region || "غير محدد"}
                       </p>
+                      {supplier.supplier_profile?.phone && (
+                        <a
+                          href={`tel:${supplier.supplier_profile.phone}`}
+                          className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-1"
+                          dir="ltr"
+                        >
+                          <Phone className="h-3 w-3" />
+                          {supplier.supplier_profile.phone}
+                        </a>
+                      )}
                     </div>
                     
                     <div className="text-left">
