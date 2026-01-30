@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -18,10 +18,15 @@ const Favorites = () => {
   
   const { data: favoriteProductIds = [], isLoading: favProductsLoading } = useFavoriteProducts();
   const { data: favoriteSupplierIds = [], isLoading: favSuppliersLoading } = useFavoriteSuppliers();
-  const { data: allProducts, isLoading: productsLoading } = useProducts("all");
+  const { data: productsData, isLoading: productsLoading } = useProducts("all");
   const { data: allSuppliers, isLoading: suppliersLoading } = useSuppliers("all");
 
-  const favoriteProducts = allProducts?.filter((p) => favoriteProductIds.includes(p.id)) || [];
+  // Flatten all pages of products
+  const allProducts = useMemo(() => {
+    return productsData?.pages.flatMap(page => page.products) || [];
+  }, [productsData]);
+
+  const favoriteProducts = allProducts.filter((p) => favoriteProductIds.includes(p.id));
   const favoriteSuppliers = allSuppliers?.filter((s) => favoriteSupplierIds.includes(s.user_id)) || [];
 
   const isLoading = favProductsLoading || favSuppliersLoading || productsLoading || suppliersLoading;

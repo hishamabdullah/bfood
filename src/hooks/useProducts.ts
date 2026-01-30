@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { dynamicQueryOptions, semiStaticQueryOptions } from "@/lib/queryConfig";
@@ -11,34 +11,47 @@ export type Product = Tables<"products"> & {
   delivery_fee?: number | null;
 };
 
+const PRODUCTS_PER_PAGE = 12;
+
 export const useProducts = (categoryId?: string) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["products", categoryId],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
+      const from = pageParam * PRODUCTS_PER_PAGE;
+      const to = from + PRODUCTS_PER_PAGE - 1;
+
       let query = supabase
         .from("products")
         .select(`
           *,
           category:categories(id, name, name_en, icon)
-        `)
-        .eq("in_stock", true);
+        `, { count: "exact" })
+        .eq("in_stock", true)
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
       if (categoryId && categoryId !== "all") {
         query = query.eq("category_id", categoryId);
       }
 
-      const { data: products, error } = await query.order("created_at", { ascending: false });
+      const { data: products, error, count } = await query;
 
       if (error) throw error;
 
       // Fetch supplier profiles separately - only needed fields
       const supplierIds = [...new Set(products?.map(p => p.supplier_id) || [])];
       
-      if (supplierIds.length === 0) return products as Product[];
+      if (supplierIds.length === 0) {
+        return {
+          products: products as Product[],
+          nextPage: null,
+          totalCount: count || 0,
+        };
+      }
       
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, business_name, avatar_url, region")
+        .select("user_id, business_name, avatar_url, region, city")
         .in("user_id", supplierIds);
 
       // Map profiles to products
@@ -48,9 +61,18 @@ export const useProducts = (categoryId?: string) => {
         supplier_profile: profileMap.get(product.supplier_id) || null,
       })) || [];
 
-      return productsWithProfiles as Product[];
+      const hasMore = (from + PRODUCTS_PER_PAGE) < (count || 0);
+
+      return {
+        products: productsWithProfiles as Product[],
+        nextPage: hasMore ? pageParam + 1 : null,
+        totalCount: count || 0,
+      };
     },
-    ...dynamicQueryOptions,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
+    staleTime: dynamicQueryOptions.staleTime,
+    gcTime: dynamicQueryOptions.gcTime,
   });
 };
 
