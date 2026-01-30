@@ -153,7 +153,7 @@ export default function SupplierRestaurantPrices() {
                 className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                العودة للمطاعم
+                {t("customPrices.backToRestaurants")}
               </Link>
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20">
@@ -161,7 +161,7 @@ export default function SupplierRestaurantPrices() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold">
-                    {restaurantInfo?.business_name || restaurantInfo?.full_name || "المطعم"}
+                    {restaurantInfo?.business_name || restaurantInfo?.full_name || t("customPrices.restaurants")}
                   </h1>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     {restaurantInfo?.customer_code && (
@@ -169,7 +169,7 @@ export default function SupplierRestaurantPrices() {
                         #{restaurantInfo.customer_code}
                       </span>
                     )}
-                    <span className="text-sm">{restaurantPrices.length} منتج مخصص</span>
+                    <span className="text-sm">{restaurantPrices.length} {t("customPrices.customProducts")}</span>
                   </div>
                 </div>
               </div>
@@ -182,12 +182,12 @@ export default function SupplierRestaurantPrices() {
                   className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   <Trash className="h-5 w-5" />
-                  حذف الكل
+                  {t("customPrices.deleteAll")}
                 </Button>
               )}
               <Button onClick={() => setIsFormOpen(true)}>
                 <Plus className="h-5 w-5" />
-                إضافة منتج
+                {t("customPrices.addProduct")}
               </Button>
             </div>
           </div>
@@ -196,7 +196,7 @@ export default function SupplierRestaurantPrices() {
           <div className="relative mb-6">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="البحث بالمنتج..."
+              placeholder={t("customPrices.searchByProduct")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="ps-10"
@@ -219,11 +219,11 @@ export default function SupplierRestaurantPrices() {
                       <Store className="h-10 w-10 text-primary-foreground" />
                     </div>
                     <h2 className="text-2xl font-bold mb-2">
-                      {restaurantInfo?.business_name || restaurantInfo?.full_name || "المطعم"}
+                      {restaurantInfo?.business_name || restaurantInfo?.full_name || t("customPrices.restaurants")}
                     </h2>
                     {restaurantInfo?.customer_code && (
                       <span className="inline-flex items-center gap-1 text-sm bg-background/80 backdrop-blur px-3 py-1 rounded-full font-mono text-muted-foreground">
-                        رقم العميل: <span className="text-foreground font-semibold">{restaurantInfo.customer_code}</span>
+                        {t("customPrices.customerCode")}: <span className="text-foreground font-semibold">{restaurantInfo.customer_code}</span>
                       </span>
                     )}
                   </div>
@@ -233,14 +233,13 @@ export default function SupplierRestaurantPrices() {
                     <div className="inline-flex items-center justify-center h-14 w-14 rounded-xl bg-muted/50 mb-4">
                       <Sparkles className="h-7 w-7 text-muted-foreground" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">ابدأ تخصيص الأسعار</h3>
+                    <h3 className="text-lg font-semibold mb-2">{t("customPrices.startCustomizing")}</h3>
                     <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-                      أضف أول منتج بسعر مخصص لهذا المطعم<br />
-                      ليظهر له السعر الخاص بدلاً من السعر العام
+                      {t("customPrices.emptyStateMessage")}
                     </p>
                     <Button onClick={() => setIsFormOpen(true)} size="lg" className="w-full gap-2">
                       <Plus className="h-5 w-5" />
-                      إضافة أول منتج
+                      {t("customPrices.addFirstProduct")}
                     </Button>
                   </div>
                 </div>
@@ -251,11 +250,11 @@ export default function SupplierRestaurantPrices() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-start">المنتج</TableHead>
-                    <TableHead className="text-start">السعر الأصلي</TableHead>
-                    <TableHead className="text-start">السعر المخصص</TableHead>
-                    <TableHead className="text-start">الخصم</TableHead>
-                    <TableHead className="text-start w-[100px]">الإجراءات</TableHead>
+                    <TableHead className="text-start">{t("customPrices.product")}</TableHead>
+                    <TableHead className="text-start">{t("customPrices.originalPrice")}</TableHead>
+                    <TableHead className="text-start">{t("customPrices.customPrice")}</TableHead>
+                    <TableHead className="text-start">{t("customPrices.discount")}</TableHead>
+                    <TableHead className="text-start w-[100px]">{t("customPrices.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -263,7 +262,7 @@ export default function SupplierRestaurantPrices() {
                     <TableRow key={cp.id}>
                       <TableCell>
                         <div className="font-medium">
-                          {cp.product?.name || "منتج محذوف"}
+                          {cp.product?.name || t("customPrices.deletedProduct")}
                         </div>
                         {cp.product && (
                           <div className="text-sm text-muted-foreground">
@@ -337,18 +336,18 @@ export default function SupplierRestaurantPrices() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>حذف السعر المخصص</AlertDialogTitle>
+            <AlertDialogTitle>{t("customPrices.deleteCustomPrice")}</AlertDialogTitle>
             <AlertDialogDescription>
-              هل أنت متأكد من حذف هذا السعر المخصص؟ سيعود المطعم لرؤية السعر الأصلي.
+              {t("customPrices.deleteCustomPriceConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              حذف
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -361,14 +360,13 @@ export default function SupplierRestaurantPrices() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>حذف جميع الأسعار المخصصة</AlertDialogTitle>
+            <AlertDialogTitle>{t("customPrices.deleteAllCustomPrices")}</AlertDialogTitle>
             <AlertDialogDescription>
-              هل أنت متأكد من حذف جميع الأسعار المخصصة ({restaurantPrices.length} منتج) لهذا المطعم؟ 
-              سيعود المطعم لرؤية الأسعار الأصلية لجميع المنتجات.
+              {t("customPrices.deleteAllConfirm", { count: restaurantPrices.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAll}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -377,7 +375,7 @@ export default function SupplierRestaurantPrices() {
               {deleteAllPrices.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "حذف الكل"
+                t("customPrices.deleteAll")
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

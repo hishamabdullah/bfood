@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, User, Check } from "lucide-react";
+import { Loader2, Search, Store, Check } from "lucide-react";
 import { useRestaurantsForSupplier } from "@/hooks/useCustomPrices";
 
 interface Restaurant {
@@ -31,6 +32,7 @@ export default function AddRestaurantDialog({
   onOpenChange,
   existingRestaurantIds,
 }: AddRestaurantDialogProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: restaurants, isLoading } = useRestaurantsForSupplier();
   const [search, setSearch] = useState("");
@@ -102,15 +104,15 @@ export default function AddRestaurantDialog({
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>تأكيد إضافة المطعم</DialogTitle>
+            <DialogTitle>{t("customPrices.confirmAddRestaurant")}</DialogTitle>
             <DialogDescription>
-              هل تريد إضافة أسعار مخصصة لهذا المطعم؟
+              {t("customPrices.confirmAddRestaurantDesc")}
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-xl">
-            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <User className="h-7 w-7 text-primary" />
+            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 border border-primary/20">
+              <Store className="h-7 w-7 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-lg">
@@ -118,7 +120,7 @@ export default function AddRestaurantDialog({
               </div>
               {selectedRestaurant.customer_code && (
                 <span className="text-sm text-muted-foreground font-mono">
-                  رقم العميل: {selectedRestaurant.customer_code}
+                  {t("customPrices.customerCode")}: {selectedRestaurant.customer_code}
                 </span>
               )}
             </div>
@@ -126,11 +128,11 @@ export default function AddRestaurantDialog({
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={handleCancel}>
-              إلغاء
+              {t("common.cancel")}
             </Button>
             <Button onClick={handleConfirmAdd}>
               <Check className="h-4 w-4" />
-              تأكيد الإضافة
+              {t("customPrices.confirmAdd")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -142,9 +144,9 @@ export default function AddRestaurantDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>اختر مطعم لتخصيص أسعاره</DialogTitle>
+          <DialogTitle>{t("customPrices.selectRestaurant")}</DialogTitle>
           <DialogDescription>
-            ابحث عن المطعم برقم العميل أو اسم المطعم
+            {t("customPrices.searchHint")}
           </DialogDescription>
         </DialogHeader>
 
@@ -152,7 +154,7 @@ export default function AddRestaurantDialog({
         <div className="relative">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="رقم العميل أو اسم المطعم..."
+            placeholder={t("customPrices.searchByNameOrCode")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="ps-9"
@@ -165,15 +167,15 @@ export default function AddRestaurantDialog({
           {isLoading ? (
             <div className="p-6 text-center text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
-              جاري التحميل...
+              {t("common.loading")}
             </div>
           ) : filteredRestaurants.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground">
               {availableRestaurants.length === 0 
-                ? "جميع المطاعم لديها أسعار مخصصة بالفعل"
+                ? t("customPrices.allRestaurantsHaveCustomPrices")
                 : search.trim() 
-                  ? `لا يوجد مطعم بـ "${search}"`
-                  : "لا توجد مطاعم متاحة"
+                  ? t("customPrices.noResultsFor", { query: search })
+                  : t("customPrices.noRestaurantsAvailable")
               }
             </div>
           ) : (
@@ -184,8 +186,8 @@ export default function AddRestaurantDialog({
                   onClick={() => handleSelectRestaurant(restaurant)}
                   className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-start"
                 >
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <User className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 border border-primary/10">
+                    <Store className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">
@@ -193,7 +195,7 @@ export default function AddRestaurantDialog({
                     </div>
                     {restaurant.customer_code && (
                       <span className="text-xs text-muted-foreground font-mono">
-                        رقم العميل: {restaurant.customer_code}
+                        {t("customPrices.customerCode")}: {restaurant.customer_code}
                       </span>
                     )}
                   </div>
@@ -205,7 +207,7 @@ export default function AddRestaurantDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleClose(false)}>
-            إلغاء
+            {t("common.cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>
