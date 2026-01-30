@@ -31,9 +31,9 @@ export default function SupplierOrders() {
   const { data: payments } = useSupplierPayments();
   const updateStatus = useUpdateOrderStatus();
 
-  // Helper function to get payment info for a restaurant
-  const getPaymentForRestaurant = (restaurantId: string) => {
-    return payments?.find(p => p.restaurant_id === restaurantId);
+  // Helper function to get payment info for a specific order
+  const getPaymentForOrder = (orderId: string) => {
+    return payments?.find(p => p.order_id === orderId);
   };
 
   // Group items by order
@@ -138,7 +138,7 @@ export default function SupplierOrders() {
                 <CollapsibleSupplierOrderCard
                   key={order.orderId}
                   order={order}
-                  payment={getPaymentForRestaurant(order.restaurant?.user_id)}
+                  payment={getPaymentForOrder(order.orderId)}
                   onStatusChange={handleOrderStatusChange}
                   isUpdating={updateStatus.isPending}
                 />
