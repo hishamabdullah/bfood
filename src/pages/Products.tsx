@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/layout/Header";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProductSkeleton from "@/components/products/ProductSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, X, Store, MapPin } from "lucide-react";
+import { Search, X, Store, MapPin, Loader2 } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { useSupplierProfile } from "@/hooks/useSuppliers";
 import { saudiRegions, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
@@ -41,14 +41,25 @@ const Products = () => {
     [selectedRegion]
   );
 
-  const { data: products, isLoading: productsLoading } = useProducts(selectedCategory);
+  const { 
+    data: productsData, 
+    isLoading: productsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useProducts(selectedCategory);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: supplierProfile } = useSupplierProfile(supplierId || "");
   const { data: customPrices } = useRestaurantAllCustomPrices();
 
+  // Flatten all pages of products
+  const allProducts = useMemo(() => {
+    return productsData?.pages.flatMap(page => page.products) || [];
+  }, [productsData]);
+
   // Memoize filtered products to prevent recalculation on every render
   const filteredProducts = useMemo(() => {
-    return products?.filter((product) => {
+    return allProducts.filter((product) => {
       if (supplierId && product.supplier_id !== supplierId) {
         return false;
       }
@@ -67,8 +78,28 @@ const Products = () => {
         product.name.includes(searchQuery) || 
         product.supplier_profile?.business_name?.includes(searchQuery);
       return matchesSearch;
-    }) || [];
-  }, [products, supplierId, selectedRegion, selectedCity, searchQuery]);
+    });
+  }, [allProducts, supplierId, selectedRegion, selectedCity, searchQuery]);
+
+  // Infinite scroll observer
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const clearSupplierFilter = useCallback(() => {
     searchParams.delete("supplier");
@@ -197,18 +228,30 @@ const Products = () => {
 
           {/* Products Grid */}
           {productsLoading ? (
-            <ProductSkeleton count={8} />
+            <ProductSkeleton count={12} />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product, index) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  index={index}
-                  customPrice={userRole === "restaurant" ? customPrices?.[product.id] : undefined}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredProducts.map((product, index) => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    index={index}
+                    customPrice={userRole === "restaurant" ? customPrices?.[product.id] : undefined}
+                  />
+                ))}
+              </div>
+
+              {/* Load More Trigger */}
+              <div ref={loadMoreRef} className="h-20 flex items-center justify-center">
+                {isFetchingNextPage && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>{t("common.loading")}</span>
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {/* Empty State */}
