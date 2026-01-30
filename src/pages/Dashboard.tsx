@@ -180,7 +180,13 @@ const Dashboard = () => {
                   </Link>
                 </div>
 
-                <div className="bg-card rounded-2xl border border-border p-6">
+                <div className="bg-card rounded-2xl border border-border p-6 relative">
+                  {/* Badge أحمر للطلبات الجديدة */}
+                  {(supplierStats?.newOrders || 0) > 0 && (
+                    <div className="absolute -top-2 -end-2 bg-red-500 text-white text-xs font-bold rounded-full min-w-[24px] h-6 flex items-center justify-center px-2 shadow-lg animate-pulse">
+                      {supplierStats?.newOrders}
+                    </div>
+                  )}
                   <h3 className="text-lg font-semibold mb-4">{t("orders.incomingOrders")}</h3>
                   <p className="text-muted-foreground mb-4">
                     {t("dashboard.incomingOrdersDesc")}
