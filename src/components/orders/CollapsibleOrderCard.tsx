@@ -6,6 +6,7 @@ import { ar, enUS } from "date-fns/locale";
 import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, CreditCard, Receipt, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { PaymentDetailsDialog } from "@/components/cart/PaymentDetailsDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -21,6 +22,9 @@ interface OrderItem {
   supplier_profile?: {
     business_name?: string;
     user_id?: string;
+    bank_name?: string | null;
+    bank_account_name?: string | null;
+    bank_iban?: string | null;
   } | null;
   product?: {
     id: string;
@@ -53,6 +57,9 @@ interface SupplierGroup {
   supplier: {
     business_name?: string;
     user_id?: string;
+    bank_name?: string | null;
+    bank_account_name?: string | null;
+    bank_iban?: string | null;
   } | null;
   items: OrderItem[];
   status: string;
@@ -202,7 +209,7 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
                   <div key={index} className="border rounded-xl overflow-hidden">
                     {/* Supplier Header */}
                     <div className="bg-muted/30 px-3 py-2 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap flex-1">
                         <Store className="h-4 w-4 text-primary shrink-0" />
                         <span className="font-semibold text-sm">
                           {group.supplier?.business_name || t("orders.unknownSupplier")}
@@ -216,6 +223,15 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
                           {groupStatusConfig.label}
                         </Badge>
                       </div>
+                      {/* Payment Details Button */}
+                      <PaymentDetailsDialog
+                        supplierId={group.items[0]?.supplier_id}
+                        supplierName={group.supplier?.business_name || t("orders.unknownSupplier")}
+                        supplierProfile={group.supplier}
+                        amountToPay={supplierTotal}
+                        orderId={order.id}
+                        isConfirmed={group.status === "confirmed" || group.status === "preparing" || group.status === "shipped" || group.status === "delivered"}
+                      />
                       {group.supplier?.user_id && (
                         <Link to={`/profile/${group.supplier.user_id}`}>
                           <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">

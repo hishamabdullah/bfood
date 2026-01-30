@@ -6,7 +6,7 @@ import { withTimeout } from "@/lib/withTimeout";
 
 export type OrderItem = Tables<"order_items"> & {
   product?: Tables<"products"> | null;
-  supplier_profile?: Tables<"profiles"> | null;
+  supplier_profile?: Pick<Tables<"profiles">, "business_name" | "user_id" | "bank_name" | "bank_account_name" | "bank_iban"> | null;
 };
 
 export type Order = Tables<"orders"> & {
@@ -57,13 +57,13 @@ export const useRestaurantOrders = () => {
         });
       });
 
-      // Fetch supplier profiles
-      let supplierProfiles: Tables<"profiles">[] = [];
+      // Fetch supplier profiles with bank details
+      let supplierProfiles: Pick<Tables<"profiles">, "user_id" | "business_name" | "bank_name" | "bank_account_name" | "bank_iban">[] = [];
       if (supplierIds.size > 0) {
         const { data: profiles, error: profilesError } = await withTimeout(
           supabase
             .from("profiles")
-            .select("*")
+            .select("user_id, business_name, bank_name, bank_account_name, bank_iban")
             .in("user_id", Array.from(supplierIds)),
           8000,
           "supplier-profiles timeout"
