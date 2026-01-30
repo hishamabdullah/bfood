@@ -472,7 +472,9 @@
     "bankTransferCompleted": "تم التحويل البنكي",
     "viewReceipt": "عرض الإيصال",
     "receiptImage": "صورة إيصال التحويل",
-    "openFullImage": "فتح الصورة بالحجم الكامل"
+    "openFullImage": "فتح الصورة بالحجم الكامل",
+    "paymentReceived": "تم الإبلاغ بالتحويل",
+    "paymentPending": "لم يتم الدفع بعد"
   },
   "profile": {
     "title": "الملف الشخصي",
