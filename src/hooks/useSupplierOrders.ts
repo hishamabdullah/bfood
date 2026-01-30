@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { dynamicQueryOptions } from "@/lib/queryConfig";
 
 export type SupplierOrderItem = Tables<"order_items"> & {
   product?: Tables<"products"> | null;
@@ -20,13 +21,21 @@ export const useSupplierOrders = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      // Get order items for this supplier
+      // Get order items for this supplier - select only needed fields
       const { data: orderItems, error } = await supabase
         .from("order_items")
         .select(`
-          *,
-          product:products(*),
-          order:orders(*, branch:branches(*))
+          id,
+          order_id,
+          product_id,
+          supplier_id,
+          quantity,
+          unit_price,
+          status,
+          delivery_fee,
+          created_at,
+          product:products(id, name, image_url, unit, price),
+          order:orders(id, restaurant_id, status, total_amount, delivery_fee, delivery_address, notes, created_at, is_pickup, branch:branches(id, name, address))
         `)
         .eq("supplier_id", user.id)
         .order("created_at", { ascending: false });
@@ -36,21 +45,22 @@ export const useSupplierOrders = () => {
       // Get restaurant profiles for orders
       const restaurantIds = [...new Set(orderItems?.map(item => item.order?.restaurant_id).filter(Boolean) || [])];
       
-      let profiles: Tables<"profiles">[] = [];
-      if (restaurantIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("*")
-          .in("user_id", restaurantIds);
-        profiles = profilesData || [];
-      }
+      if (restaurantIds.length === 0) return orderItems as SupplierOrderItem[];
+      
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, business_name, full_name, phone, google_maps_url")
+        .in("user_id", restaurantIds);
+
+      // Create a map for faster lookups
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
       // Map profiles to order items
       const itemsWithProfiles = orderItems?.map(item => ({
         ...item,
         order: item.order ? {
           ...item.order,
-          restaurant_profile: profiles.find(p => p.user_id === item.order?.restaurant_id) || null,
+          restaurant_profile: profileMap.get(item.order?.restaurant_id) || null,
           branch: item.order.branch || null,
         } : null,
       })) || [];
@@ -58,6 +68,7 @@ export const useSupplierOrders = () => {
       return itemsWithProfiles as SupplierOrderItem[];
     },
     enabled: !!user,
+    ...dynamicQueryOptions,
   });
 };
 

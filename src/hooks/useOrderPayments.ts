@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { userDataQueryOptions } from "@/lib/queryConfig";
 
 export interface OrderPayment {
   id: string;
@@ -23,7 +24,7 @@ export const useSupplierPayments = () => {
 
       const { data, error } = await supabase
         .from("order_payments")
-        .select("*")
+        .select("id, order_id, supplier_id, restaurant_id, is_paid, receipt_url, created_at, updated_at")
         .eq("supplier_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -31,6 +32,7 @@ export const useSupplierPayments = () => {
       return data as OrderPayment[];
     },
     enabled: !!user,
+    ...userDataQueryOptions,
   });
 };
 
@@ -40,7 +42,7 @@ export const useOrderPaymentByOrder = (orderId: string, supplierId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_payments")
-        .select("*")
+        .select("id, order_id, supplier_id, restaurant_id, is_paid, receipt_url, created_at, updated_at")
         .eq("order_id", orderId)
         .eq("supplier_id", supplierId)
         .maybeSingle();
@@ -49,5 +51,6 @@ export const useOrderPaymentByOrder = (orderId: string, supplierId: string) => {
       return data as OrderPayment | null;
     },
     enabled: !!orderId && !!supplierId,
+    ...userDataQueryOptions,
   });
 };

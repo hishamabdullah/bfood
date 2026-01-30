@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { realtimeQueryOptions } from "@/lib/queryConfig";
 
 export interface RestaurantStats {
   totalOrders: number;
@@ -18,37 +19,39 @@ export const useRestaurantStats = () => {
         return { totalOrders: 0, pendingOrders: 0, totalPurchases: 0 };
       }
 
-      // إجمالي الطلبات
-      const { count: totalOrders } = await supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("restaurant_id", user.id);
+      // Run all queries in parallel for better performance
+      const [totalResult, pendingResult, purchasesResult] = await Promise.all([
+        // إجمالي الطلبات
+        supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("restaurant_id", user.id),
+        // الطلبات قيد التنفيذ
+        supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("restaurant_id", user.id)
+          .not("status", "in", '("delivered","cancelled")'),
+        // إجمالي المشتريات
+        supabase
+          .from("orders")
+          .select("total_amount")
+          .eq("restaurant_id", user.id)
+          .eq("status", "delivered"),
+      ]);
 
-      // الطلبات قيد التنفيذ (غير delivered وغير cancelled)
-      const { count: pendingOrders } = await supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("restaurant_id", user.id)
-        .not("status", "in", '("delivered","cancelled")');
-
-      // إجمالي المشتريات (الطلبات التي تم توصيلها فقط)
-      const { data: deliveredOrders } = await supabase
-        .from("orders")
-        .select("total_amount")
-        .eq("restaurant_id", user.id)
-        .eq("status", "delivered");
-
-      const totalPurchases = deliveredOrders?.reduce(
+      const totalPurchases = purchasesResult.data?.reduce(
         (sum, order) => sum + (order.total_amount || 0),
         0
       ) || 0;
 
       return {
-        totalOrders: totalOrders || 0,
-        pendingOrders: pendingOrders || 0,
+        totalOrders: totalResult.count || 0,
+        pendingOrders: pendingResult.count || 0,
         totalPurchases,
       };
     },
     enabled: !!user,
+    ...realtimeQueryOptions,
   });
 };

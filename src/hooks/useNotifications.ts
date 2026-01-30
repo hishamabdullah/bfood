@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
+import { realtimeQueryOptions } from "@/lib/queryConfig";
 
 export interface Notification {
   id: string;
@@ -24,7 +25,7 @@ export const useNotifications = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notifications")
-        .select("*")
+        .select("id, user_id, title, message, type, is_read, order_id, created_at")
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -32,6 +33,7 @@ export const useNotifications = () => {
       return data as Notification[];
     },
     enabled: !!user,
+    ...realtimeQueryOptions,
   });
 
   // عدد الإشعارات غير المقروءة

@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ interface ProductCardProps {
   customPrice?: number | null;
 }
 
-const ProductCard = ({ product, index = 0, customPrice }: ProductCardProps) => {
+const ProductCard = memo(({ product, index = 0, customPrice }: ProductCardProps) => {
   const { addItem } = useCart();
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ const ProductCard = ({ product, index = 0, customPrice }: ProductCardProps) => {
   const hasCustomPrice = customPrice !== null && customPrice !== undefined && customPrice !== product.price;
   const displayPrice = hasCustomPrice ? customPrice : product.price;
   
-  const handleToggleFavorite = (e: React.MouseEvent) => {
+  const handleToggleFavorite = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
@@ -43,9 +44,9 @@ const ProductCard = ({ product, index = 0, customPrice }: ProductCardProps) => {
       return;
     }
     toggleFavorite.mutate({ productId: product.id, isFavorite });
-  };
+  }, [user, userRole, navigate, toggleFavorite, product.id, isFavorite]);
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -67,7 +68,7 @@ const ProductCard = ({ product, index = 0, customPrice }: ProductCardProps) => {
     
     addItem(productWithCustomPrice, 1);
     toast.success(`تم إضافة ${getProductName(product)} للسلة`);
-  };
+  }, [user, userRole, navigate, t, hasCustomPrice, customPrice, product, addItem, getProductName]);
 
   const productName = getProductName(product);
 
@@ -84,6 +85,7 @@ const ProductCard = ({ product, index = 0, customPrice }: ProductCardProps) => {
               src={product.image_url}
               alt={productName}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
             />
           ) : (
             <Package className="h-16 w-16 text-muted-foreground" />
@@ -121,6 +123,7 @@ const ProductCard = ({ product, index = 0, customPrice }: ProductCardProps) => {
                     src={product.supplier_profile.avatar_url} 
                     alt={product.supplier_profile?.business_name || ""} 
                     className="w-5 h-5 rounded-full object-cover shrink-0"
+                    loading="lazy"
                   />
                 ) : null}
                 <p className="text-sm text-muted-foreground truncate">
@@ -158,6 +161,8 @@ const ProductCard = ({ product, index = 0, customPrice }: ProductCardProps) => {
       </div>
     </Link>
   );
-};
+});
+
+ProductCard.displayName = "ProductCard";
 
 export default ProductCard;

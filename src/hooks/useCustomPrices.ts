@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { userDataQueryOptions, semiStaticQueryOptions } from "@/lib/queryConfig";
 
 export interface CustomPrice {
   id: string;
@@ -34,7 +35,7 @@ export const useSupplierCustomPrices = (productId?: string) => {
 
       let query = supabase
         .from("product_custom_prices")
-        .select("*")
+        .select("id, product_id, restaurant_id, supplier_id, custom_price, created_at, updated_at")
         .eq("supplier_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -45,35 +46,40 @@ export const useSupplierCustomPrices = (productId?: string) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // جلب معلومات المطاعم
+      // جلب معلومات المطاعم والمنتجات بالتوازي
       const restaurantIds = [...new Set(data?.map(p => p.restaurant_id) || [])];
-      let profiles: any[] = [];
-      if (restaurantIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("user_id, business_name, full_name, customer_code")
-          .in("user_id", restaurantIds);
-        profiles = profilesData || [];
-      }
-
-      // جلب معلومات المنتجات
       const productIds = [...new Set(data?.map(p => p.product_id) || [])];
-      let products: any[] = [];
-      if (productIds.length > 0) {
-        const { data: productsData } = await supabase
-          .from("products")
-          .select("id, name, price, unit")
-          .in("id", productIds);
-        products = productsData || [];
-      }
+
+      const [profilesResult, productsResult] = await Promise.all([
+        restaurantIds.length > 0
+          ? supabase
+              .from("profiles")
+              .select("user_id, business_name, full_name, customer_code")
+              .in("user_id", restaurantIds)
+          : { data: [] },
+        productIds.length > 0
+          ? supabase
+              .from("products")
+              .select("id, name, price, unit")
+              .in("id", productIds)
+          : { data: [] },
+      ]);
+
+      const profileMap = new Map<string, typeof profilesResult.data extends (infer T)[] ? T : never>(
+        profilesResult.data?.map(p => [p.user_id, p] as const) || []
+      );
+      const productMap = new Map<string, typeof productsResult.data extends (infer T)[] ? T : never>(
+        productsResult.data?.map(p => [p.id, p] as const) || []
+      );
 
       return data?.map(cp => ({
         ...cp,
-        restaurant_profile: profiles.find(p => p.user_id === cp.restaurant_id) || null,
-        product: products.find(p => p.id === cp.product_id) || null,
+        restaurant_profile: profileMap.get(cp.restaurant_id) || null,
+        product: productMap.get(cp.product_id) || null,
       })) as CustomPrice[];
     },
     enabled: !!user,
+    ...userDataQueryOptions,
   });
 };
 
@@ -89,6 +95,7 @@ export const useRestaurantsForSupplier = () => {
 
       return data || [];
     },
+    ...semiStaticQueryOptions,
   });
 };
 

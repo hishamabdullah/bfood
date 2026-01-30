@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { dynamicQueryOptions } from "@/lib/queryConfig";
 
 export type PriceTier = {
   id?: string;
@@ -27,7 +28,7 @@ export const useSupplierProducts = () => {
         .from("products")
         .select(`
           *,
-          category:categories(*),
+          category:categories(id, name, name_en, icon),
           price_tiers:product_price_tiers(id, min_quantity, price_per_unit)
         `)
         .eq("supplier_id", user.id)
@@ -37,6 +38,7 @@ export const useSupplierProducts = () => {
       return data as SupplierProduct[];
     },
     enabled: !!user,
+    ...dynamicQueryOptions,
   });
 };
 
