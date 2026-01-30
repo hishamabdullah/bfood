@@ -150,9 +150,6 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
   };
 
   const groupedItems = groupItemsBySupplier(order.order_items || []);
-  const statusConfig = getStatusConfig(order.status);
-  const StatusIcon = statusConfig.icon;
-  const supplierNames = groupedItems.map(g => g.supplier?.business_name).filter(Boolean).join("، ");
 
   return (
     <Card className="overflow-hidden">
@@ -172,26 +169,37 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
               </CollapsibleTrigger>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold text-sm">#{order.id.slice(0, 8)}</span>
-                  <Badge className={`${statusConfig.color} gap-1`}>
-                    <StatusIcon className="h-3 w-3" />
-                    {statusConfig.label}
-                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(order.created_at), "dd/MM/yyyy", { locale: currentLocale })}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                  <Store className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{supplierNames || t("orders.unknownSupplier")}</span>
+                {/* عرض كل مورد مع حالته */}
+                <div className="space-y-1">
+                  {groupedItems.map((group, idx) => {
+                    const supplierStatusConfig = getStatusConfig(group.status);
+                    const SupplierStatusIcon = supplierStatusConfig.icon;
+                    return (
+                      <div key={idx} className="flex items-center gap-2 flex-wrap">
+                        <Store className="h-3 w-3 text-primary shrink-0" />
+                        <span className="text-sm font-medium truncate max-w-[120px]">
+                          {group.supplier?.business_name || t("orders.unknownSupplier")}
+                        </span>
+                        <Badge className={`${supplierStatusConfig.color} gap-1 text-xs py-0 h-5`}>
+                          <SupplierStatusIcon className="h-3 w-3" />
+                          {supplierStatusConfig.label}
+                        </Badge>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            {/* Left side - Total and date */}
+            {/* Left side - Total */}
             <div className="text-left shrink-0">
               <p className="font-bold text-primary">{Number(order.total_amount).toFixed(2)} {t("common.sar")}</p>
-              <p className="text-xs text-muted-foreground">
-                {format(new Date(order.created_at), "dd/MM/yyyy", { locale: currentLocale })}
-              </p>
             </div>
           </div>
         </CardHeader>
