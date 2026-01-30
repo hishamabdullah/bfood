@@ -124,6 +124,7 @@
     "loginSuccess": "تم تسجيل الدخول بنجاح",
     "welcomeBackMessage": "مرحباً بعودتك!",
     "registerError": "خطأ في التسجيل",
+    "networkAborted": "انقطع الاتصال أثناء إنشاء الحساب. جرّب مرة أخرى.",
     "userAlreadyExists": "هذا البريد الإلكتروني مسجل مسبقاً",
     "registerSuccess": "تم إنشاء الحساب بنجاح",
     "welcomeMessage": "مرحباً بك في BFOOD!",

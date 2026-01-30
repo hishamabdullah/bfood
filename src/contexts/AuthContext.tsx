@@ -369,65 +369,89 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       supplyCategories?: string[];
     }
   ) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-        },
-      });
+    const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+    const isAbortLike = (err: unknown) => {
+      const anyErr = err as any;
+      const name = anyErr?.name ? String(anyErr.name) : "";
+      const message = anyErr?.message ? String(anyErr.message) : "";
+      return name === "AbortError" || /AbortError/i.test(message);
+    };
+    const isNetworkLike = (err: unknown) => {
+      const anyErr = err as any;
+      const message = anyErr?.message ? String(anyErr.message) : "";
+      // iOS Safari and some browsers surface network issues differently
+      return /Failed to fetch/i.test(message) || /NetworkError/i.test(message);
+    };
 
-      if (error) throw error;
+    // Retry once on transient mobile network aborts
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+          },
+        });
 
-      if (data.user) {
-        // إنشاء الملف الشخصي
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert({
-            user_id: data.user.id,
+        if (error) throw error;
+
+        if (data.user) {
+          // إنشاء الملف الشخصي
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .insert({
+              user_id: data.user.id,
+              full_name: userData.fullName,
+              business_name: userData.businessName,
+              phone: userData.phone,
+              region: userData.region || null,
+              city: userData.city || null,
+              supply_categories: userData.supplyCategories || null,
+            } as any);
+
+          if (profileError) throw profileError;
+
+          // إنشاء الدور
+          const { error: roleError } = await supabase
+            .from("user_roles")
+            .insert({
+              user_id: data.user.id,
+              role: userData.role,
+            } as any);
+
+          if (roleError) throw roleError;
+
+          // تحديث الحالة مباشرة بعد التسجيل
+          setUserRole(userData.role);
+          const newProfile = {
             full_name: userData.fullName,
             business_name: userData.businessName,
             phone: userData.phone,
-            region: userData.region || null,
-            city: userData.city || null,
-            supply_categories: userData.supplyCategories || null,
-          } as any);
+            avatar_url: null,
+          };
+          setProfile(newProfile);
+          // الموردين معتمدون تلقائياً، المطاعم تحتاج موافقة
+          const approved = userData.role === "supplier";
+          setIsApproved(approved);
 
-        if (profileError) throw profileError;
+          // احفظ في الكاش لتظهر البيانات فوراً بعد أي Refresh
+          lastFetchedUserIdRef.current = data.user.id;
+          saveToCache(data.user.id, userData.role, newProfile, approved);
+        }
 
-        // إنشاء الدور
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: data.user.id,
-            role: userData.role,
-          } as any);
-
-        if (roleError) throw roleError;
-
-        // تحديث الحالة مباشرة بعد التسجيل
-        setUserRole(userData.role);
-        const newProfile = {
-          full_name: userData.fullName,
-          business_name: userData.businessName,
-          phone: userData.phone,
-          avatar_url: null,
-        };
-        setProfile(newProfile);
-        // الموردين معتمدون تلقائياً، المطاعم تحتاج موافقة
-        const approved = userData.role === "supplier";
-        setIsApproved(approved);
-
-        // احفظ في الكاش لتظهر البيانات فوراً بعد أي Refresh
-        lastFetchedUserIdRef.current = data.user.id;
-        saveToCache(data.user.id, userData.role, newProfile, approved);
+        return { error: null };
+      } catch (error) {
+        const canRetry = attempt === 0 && (isAbortLike(error) || isNetworkLike(error));
+        if (canRetry) {
+          await sleep(800);
+          continue;
+        }
+        return { error: error as Error };
       }
-
-      return { error: null };
-    } catch (error) {
-      return { error: error as Error };
     }
+
+    return { error: new Error("Unknown signup error") };
   };
 
   const signIn = async (email: string, password: string) => {
