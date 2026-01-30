@@ -470,7 +470,9 @@
     "bankTransferCompleted": "Bank Transfer Completed",
     "viewReceipt": "View Receipt",
     "receiptImage": "Transfer Receipt Image",
-    "openFullImage": "Open Full Image"
+    "openFullImage": "Open Full Image",
+    "paymentReceived": "Transfer Notified",
+    "paymentPending": "Payment Pending"
   },
   "profile": {
     "title": "Profile",
