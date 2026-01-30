@@ -34,10 +34,12 @@ import {
   ArrowRight,
   Package,
   User,
+  Trash,
 } from "lucide-react";
 import {
   useSupplierCustomPrices,
   useDeleteCustomPrice,
+  useDeleteAllRestaurantPrices,
   CustomPrice,
 } from "@/hooks/useCustomPrices";
 import RestaurantProductPriceDialog from "@/components/supplier/RestaurantProductPriceDialog";
@@ -49,11 +51,13 @@ export default function SupplierRestaurantPrices() {
   const navigate = useNavigate();
   const { data: allCustomPrices, isLoading } = useSupplierCustomPrices();
   const deleteCustomPrice = useDeleteCustomPrice();
+  const deleteAllPrices = useDeleteAllRestaurantPrices();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPrice, setEditingPrice] = useState<CustomPrice | null>(null);
   const [deletingPriceId, setDeletingPriceId] = useState<string | null>(null);
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
   // فلترة الأسعار لهذا المطعم فقط
   const restaurantPrices = useMemo(() => {
@@ -94,6 +98,14 @@ export default function SupplierRestaurantPrices() {
     if (deletingPriceId) {
       await deleteCustomPrice.mutateAsync(deletingPriceId);
       setDeletingPriceId(null);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (restaurantId) {
+      await deleteAllPrices.mutateAsync(restaurantId);
+      setShowDeleteAllDialog(false);
+      navigate("/supplier/custom-prices");
     }
   };
 
@@ -144,10 +156,22 @@ export default function SupplierRestaurantPrices() {
                 </div>
               </div>
             </div>
-            <Button onClick={() => setIsFormOpen(true)}>
-              <Plus className="h-5 w-5" />
-              إضافة منتج
-            </Button>
+            <div className="flex items-center gap-2">
+              {restaurantPrices.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDeleteAllDialog(true)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash className="h-5 w-5" />
+                  حذف الكل
+                </Button>
+              )}
+              <Button onClick={() => setIsFormOpen(true)}>
+                <Plus className="h-5 w-5" />
+                إضافة منتج
+              </Button>
+            </div>
           </div>
 
           {/* Search */}
@@ -281,6 +305,36 @@ export default function SupplierRestaurantPrices() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete All Confirmation Dialog */}
+      <AlertDialog
+        open={showDeleteAllDialog}
+        onOpenChange={setShowDeleteAllDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف جميع الأسعار المخصصة</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف جميع الأسعار المخصصة ({restaurantPrices.length} منتج) لهذا المطعم؟ 
+              سيعود المطعم لرؤية الأسعار الأصلية لجميع المنتجات.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAll}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteAllPrices.isPending}
+            >
+              {deleteAllPrices.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "حذف الكل"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
