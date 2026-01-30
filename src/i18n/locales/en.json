@@ -70,6 +70,7 @@
     "loginSuccess": "Login Successful",
     "welcomeBackMessage": "Welcome back!",
     "registerError": "Registration Error",
+    "networkAborted": "Network interrupted while creating your account. Please try again.",
     "userAlreadyExists": "This email is already registered",
     "registerSuccess": "Account Created Successfully",
     "welcomeMessage": "Welcome to BFOOD!",

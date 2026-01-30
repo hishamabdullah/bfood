@@ -45,6 +45,16 @@ const Register = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const getRegisterErrorDescription = (error: Error) => {
+    const message = error?.message ?? "";
+
+    if (message === "User already registered") return t("auth.userAlreadyExists");
+    if (/AbortError/i.test(message)) return t("auth.networkAborted");
+    if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) return t("auth.networkAborted");
+
+    return message;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -102,9 +112,7 @@ const Register = () => {
     if (error) {
       toast({
         title: t("auth.registerError"),
-        description: error.message === "User already registered"
-          ? t("auth.userAlreadyExists")
-          : error.message,
+        description: getRegisterErrorDescription(error),
         variant: "destructive",
       });
     } else {
