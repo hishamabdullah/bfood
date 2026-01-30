@@ -111,20 +111,44 @@ export const PaymentDetailsDialog = ({
         setIsUploading(false);
       }
 
-      // إنشاء سجل الدفع
-      const { error: paymentError } = await supabase
-        .from("order_payments")
-        .upsert({
-          order_id: orderId || null,
-          supplier_id: supplierId,
-          restaurant_id: user.id,
-          is_paid: true,
-          receipt_url: receiptUrl,
-        }, {
-          onConflict: "supplier_id,restaurant_id"
-        });
+      // إنشاء سجل الدفع - مرتبط بالطلب المحدد
+      if (!orderId) {
+        throw new Error("معرف الطلب مطلوب");
+      }
 
-      if (paymentError) throw paymentError;
+      // التحقق من وجود سجل دفع للطلب
+      const { data: existingPayment } = await supabase
+        .from("order_payments")
+        .select("id")
+        .eq("order_id", orderId)
+        .eq("supplier_id", supplierId)
+        .maybeSingle();
+
+      if (existingPayment) {
+        // تحديث السجل الموجود
+        const { error: updateError } = await supabase
+          .from("order_payments")
+          .update({
+            is_paid: true,
+            receipt_url: receiptUrl,
+          })
+          .eq("id", existingPayment.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // إنشاء سجل جديد
+        const { error: insertError } = await supabase
+          .from("order_payments")
+          .insert({
+            order_id: orderId,
+            supplier_id: supplierId,
+            restaurant_id: user.id,
+            is_paid: true,
+            receipt_url: receiptUrl,
+          });
+
+        if (insertError) throw insertError;
+      }
 
       const restaurantName = profile?.business_name || "مطعم";
       
