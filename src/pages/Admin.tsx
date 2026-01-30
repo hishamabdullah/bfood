@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags } from "lucide-react";
+import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags, Truck } from "lucide-react";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOrdersTable from "@/components/admin/AdminOrdersTable";
 import AdminCategoriesManager from "@/components/admin/AdminCategoriesManager";
@@ -13,6 +13,7 @@ import AdminApprovalManager from "@/components/admin/AdminApprovalManager";
 import AdminProductsManager from "@/components/admin/AdminProductsManager";
 import AdminLogoSettings from "@/components/admin/AdminLogoSettings";
 import AdminSupplierCategoriesManager from "@/components/admin/AdminSupplierCategoriesManager";
+import AdminDeliveryOrders from "@/components/admin/AdminDeliveryOrders";
 
 const Admin = () => {
   const { user, userRole, loading } = useAuth();
@@ -64,6 +65,10 @@ const Admin = () => {
                 <UserCheck className="h-4 w-4" />
                 الموافقات
               </TabsTrigger>
+              <TabsTrigger value="delivery" className="flex items-center gap-2">
+                <Truck className="h-4 w-4" />
+                طلبات التوصيل
+              </TabsTrigger>
               <TabsTrigger value="products" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 المنتجات
@@ -92,6 +97,10 @@ const Admin = () => {
 
             <TabsContent value="approvals">
               <AdminApprovalManager />
+            </TabsContent>
+
+            <TabsContent value="delivery">
+              <AdminDeliveryOrders />
             </TabsContent>
 
             <TabsContent value="products">
