@@ -55,12 +55,17 @@ export const useRealtimeNotifications = () => {
           const notification = payload.new as any;
           
           // تشغيل الصوت حسب نوع المستخدم
-          if (userRole === "supplier" && notification.type === "order") {
-            // صوت الجرس للمورد عند طلب جديد
+          if (userRole === "supplier" && (notification.type === "order" || notification.type === "payment")) {
+            // صوت الجرس للمورد عند طلب جديد أو إشعار دفع
             bellAudioRef.current?.play().catch(console.error);
             toast.success(notification.title, {
               description: notification.message,
             });
+
+            // تحديث بيانات الدفعات للمورد فوراً
+            if (notification.type === "payment") {
+              queryClient.invalidateQueries({ queryKey: ["supplier-payments", user.id] });
+            }
           } else if (userRole === "restaurant" && notification.type === "status_update") {
             // صوت النغمة للمطعم عند تغيير الحالة
             toneAudioRef.current?.play().catch(console.error);
