@@ -41,7 +41,7 @@ const Suppliers = () => {
   
   const { user, userRole } = useAuth();
   const { getCategoryName } = useCategoryTranslation();
-  const { data: suppliers, isLoading } = useSuppliers(selectedRegion);
+  const { data: suppliers, isLoading } = useSuppliers(selectedRegion, selectedCity);
   const { data: favoriteSuppliers = [] } = useFavoriteSuppliers();
   const toggleFavorite = useToggleFavoriteSupplier();
 
@@ -83,13 +83,8 @@ const Suppliers = () => {
     const matchesCategory = 
       selectedCategory === "all" || 
       supplier.supply_categories?.includes(selectedCategory);
-
-    // City filter
-    const matchesCity = 
-      selectedCity === "all" || 
-      supplier.city === selectedCity;
     
-    return matchesSearch && matchesCategory && matchesCity;
+    return matchesSearch && matchesCategory;
   }) || [];
 
   return (

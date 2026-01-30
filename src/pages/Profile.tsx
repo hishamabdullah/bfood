@@ -37,11 +37,12 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { saudiRegions, supplyCategories, getSupplyCategoryName, getRegionName } from "@/data/saudiRegions";
+import { saudiRegions, saudiCities, supplyCategories, getSupplyCategoryName, getRegionName, getCityName } from "@/data/saudiRegions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { BranchesManager } from "@/components/branches/BranchesManager";
 import { withTimeout } from "@/lib/withTimeout";
+import ServiceAreasSelector from "@/components/auth/ServiceAreasSelector";
 
 const Profile = () => {
   const { t } = useTranslation();
@@ -59,6 +60,8 @@ const Profile = () => {
   const [customerCode, setCustomerCode] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [serviceRegions, setServiceRegions] = useState<string[]>([]);
+  const [serviceCities, setServiceCities] = useState<string[]>([]);
   const [profileData, setProfileData] = useState({
     full_name: "",
     business_name: "",
@@ -119,6 +122,8 @@ const Profile = () => {
         });
         setCustomerCode(data.customer_code || null);
         setAvatarUrl(data.avatar_url || null);
+        setServiceRegions((data as any).service_regions || []);
+        setServiceCities((data as any).service_cities || []);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -170,6 +175,8 @@ const Profile = () => {
           bank_name: profileData.bank_name || null,
           bank_account_name: profileData.bank_account_name || null,
           bank_iban: profileData.bank_iban || null,
+          service_regions: serviceRegions.length > 0 ? serviceRegions : null,
+          service_cities: serviceCities.length > 0 ? serviceCities : null,
         } as any)
         .eq("user_id", user.id);
 
@@ -503,10 +510,40 @@ const Profile = () => {
               )}
             </div>
 
-            {/* Region - For suppliers */}
+            {/* Service Areas - For suppliers */}
             {isSupplier && (
               <div className="space-y-2">
-                <Label>{t("profile.region")}</Label>
+                <Label>{i18n.language === "en" ? "Service Areas" : "مناطق الخدمة"}</Label>
+                {isOwnProfile ? (
+                  <ServiceAreasSelector
+                    selectedRegions={serviceRegions}
+                    selectedCities={serviceCities}
+                    onRegionsChange={setServiceRegions}
+                    onCitiesChange={setServiceCities}
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {serviceCities.length > 0 ? (
+                      serviceCities.map((cityName) => {
+                        const city = saudiCities.find(c => c.name === cityName);
+                        return (
+                          <Badge key={cityName} variant="secondary">
+                            {city ? getCityName(city, i18n.language) : cityName}
+                          </Badge>
+                        );
+                      })
+                    ) : (
+                      <span className="text-muted-foreground">{t("profile.notSpecified")}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Region - For suppliers (main headquarters) */}
+            {isSupplier && (
+              <div className="space-y-2">
+                <Label>{t("profile.region")} ({i18n.language === "en" ? "Headquarters" : "المقر الرئيسي"})</Label>
                 {isOwnProfile ? (
                   <Select
                     value={profileData.region}

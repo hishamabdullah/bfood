@@ -473,6 +473,8 @@ export type Database = {
           minimum_order_amount: number | null
           phone: string | null
           region: string | null
+          service_cities: string[] | null
+          service_regions: string[] | null
           supply_categories: string[] | null
           updated_at: string
           user_id: string
@@ -495,6 +497,8 @@ export type Database = {
           minimum_order_amount?: number | null
           phone?: string | null
           region?: string | null
+          service_cities?: string[] | null
+          service_regions?: string[] | null
           supply_categories?: string[] | null
           updated_at?: string
           user_id: string
@@ -517,6 +521,8 @@ export type Database = {
           minimum_order_amount?: number | null
           phone?: string | null
           region?: string | null
+          service_cities?: string[] | null
+          service_regions?: string[] | null
           supply_categories?: string[] | null
           updated_at?: string
           user_id?: string
