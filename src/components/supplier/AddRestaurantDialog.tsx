@@ -47,8 +47,9 @@ export default function AddRestaurantDialog({
   const filteredRestaurants = useMemo(() => {
     const query = search.trim().toLowerCase();
     
+    // إظهار آخر 5 مطاعم مسجلة فقط عند عدم البحث
     if (!query) {
-      return availableRestaurants.slice(0, 10);
+      return availableRestaurants.slice(0, 5);
     }
     
     return availableRestaurants.filter(r => {
