@@ -66,15 +66,33 @@ export const useRealtimeNotifications = () => {
         (payload) => {
           const notification = payload.new as any;
           
+          // إيقاف جميع الأصوات أولاً لمنع التداخل
+          const stopAllSounds = () => {
+            if (bellAudioRef.current) {
+              bellAudioRef.current.pause();
+              bellAudioRef.current.currentTime = 0;
+            }
+            if (toneAudioRef.current) {
+              toneAudioRef.current.pause();
+              toneAudioRef.current.currentTime = 0;
+            }
+            if (paymentChimeRef.current) {
+              paymentChimeRef.current.pause();
+              paymentChimeRef.current.currentTime = 0;
+            }
+          };
+          
           // تشغيل الصوت حسب نوع المستخدم
           if (userRole === "supplier" && notification.type === "order") {
             // صوت الجرس للمورد عند طلب جديد
+            stopAllSounds();
             bellAudioRef.current?.play().catch(console.error);
             toast.success(notification.title, {
               description: notification.message,
             });
           } else if (userRole === "supplier" && notification.type === "payment") {
             // صوت أخف للمورد عند إشعار دفع
+            stopAllSounds();
             paymentChimeRef.current?.play().catch(console.error);
             toast.success(notification.title, {
               description: notification.message,
@@ -83,6 +101,7 @@ export const useRealtimeNotifications = () => {
             queryClient.invalidateQueries({ queryKey: ["supplier-payments", user.id] });
           } else if (userRole === "restaurant" && notification.type === "status_update") {
             // صوت النغمة للمطعم عند تغيير الحالة
+            stopAllSounds();
             toneAudioRef.current?.play().catch(console.error);
             toast.info(notification.title, {
               description: notification.message,
