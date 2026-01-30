@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { userDataQueryOptions } from "@/lib/queryConfig";
 
 interface OrderItem {
   id: string;
@@ -106,50 +107,52 @@ const groupItemsBySupplier = (orderItems: OrderItem[]): SupplierGroup[] => {
   return Object.values(grouped);
 };
 
-const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProps) => {
+const getStatusConfig = (status: string, t: (key: string) => string) => {
+  switch (status) {
+    case "pending":
+      return { label: t("orders.pending"), variant: "secondary" as const, icon: Clock, color: "bg-yellow-100 text-yellow-800" };
+    case "confirmed":
+      return { label: t("orders.confirmed"), variant: "default" as const, icon: CheckCircle, color: "bg-blue-100 text-blue-800" };
+    case "processing":
+    case "preparing":
+      return { label: t("orders.preparing"), variant: "default" as const, icon: Package, color: "bg-purple-100 text-purple-800" };
+    case "shipped":
+      return { label: t("orders.shipped"), variant: "default" as const, icon: Truck, color: "bg-indigo-100 text-indigo-800" };
+    case "delivered":
+      return { label: t("orders.delivered"), variant: "default" as const, icon: CheckCircle, color: "bg-green-100 text-green-800" };
+    case "cancelled":
+      return { label: t("orders.cancelled"), variant: "destructive" as const, icon: XCircle, color: "bg-red-100 text-red-800" };
+    default:
+      return { label: status, variant: "secondary" as const, icon: Clock, color: "bg-gray-100 text-gray-800" };
+  }
+};
+
+const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCardProps) => {
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const currentLocale = i18n.language === "ar" ? ar : enUS;
 
-  // Fetch payment details for this order
+  // Fetch payment details for this order - only when card is open
   const { data: payments } = useQuery({
     queryKey: ["order-payments", order.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_payments")
-        .select("*")
+        .select("id, order_id, supplier_id, is_paid, receipt_url")
         .eq("order_id", order.id);
       if (error) throw error;
       return data as OrderPayment[];
     },
-    enabled: !!order.id,
+    enabled: !!order.id && isOpen, // Only fetch when card is open
+    ...userDataQueryOptions,
   });
 
   const getPaymentForSupplier = (supplierId: string) => {
     return payments?.find(p => p.supplier_id === supplierId);
   };
 
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case "pending":
-        return { label: t("orders.pending"), variant: "secondary" as const, icon: Clock, color: "bg-yellow-100 text-yellow-800" };
-      case "confirmed":
-        return { label: t("orders.confirmed"), variant: "default" as const, icon: CheckCircle, color: "bg-blue-100 text-blue-800" };
-      case "processing":
-      case "preparing":
-        return { label: t("orders.preparing"), variant: "default" as const, icon: Package, color: "bg-purple-100 text-purple-800" };
-      case "shipped":
-        return { label: t("orders.shipped"), variant: "default" as const, icon: Truck, color: "bg-indigo-100 text-indigo-800" };
-      case "delivered":
-        return { label: t("orders.delivered"), variant: "default" as const, icon: CheckCircle, color: "bg-green-100 text-green-800" };
-      case "cancelled":
-        return { label: t("orders.cancelled"), variant: "destructive" as const, icon: XCircle, color: "bg-red-100 text-red-800" };
-      default:
-        return { label: status, variant: "secondary" as const, icon: Clock, color: "bg-gray-100 text-gray-800" };
-    }
-  };
-
-  const groupedItems = groupItemsBySupplier(order.order_items || []);
+  // Memoize grouped items to prevent unnecessary recalculation
+  const groupedItems = useMemo(() => groupItemsBySupplier(order.order_items || []), [order.order_items]);
 
   return (
     <Card className="overflow-hidden">
@@ -178,7 +181,7 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
                 {/* عرض الموردين مع حالاتهم في سطر واحد */}
                 <div className="flex items-center gap-3 flex-wrap">
                   {groupedItems.map((group, idx) => {
-                    const supplierStatusConfig = getStatusConfig(group.status);
+                    const supplierStatusConfig = getStatusConfig(group.status, t);
                     const SupplierStatusIcon = supplierStatusConfig.icon;
                     return (
                       <div key={idx} className="flex items-center gap-1.5">
@@ -209,7 +212,7 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
             <div className="border-t pt-4 space-y-4">
               {/* Grouped by Supplier */}
               {groupedItems.map((group, index) => {
-                const groupStatusConfig = getStatusConfig(group.status);
+                const groupStatusConfig = getStatusConfig(group.status, t);
                 const GroupStatusIcon = groupStatusConfig.icon;
                 const supplierTotal = group.subtotal + group.deliveryFee;
                 
@@ -388,6 +391,8 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
       </Collapsible>
     </Card>
   );
-};
+});
+
+CollapsibleOrderCard.displayName = "CollapsibleOrderCard";
 
 export default CollapsibleOrderCard;

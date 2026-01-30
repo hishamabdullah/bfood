@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
+import { userDataQueryOptions } from "@/lib/queryConfig";
 
 export type Branch = Tables<"branches">;
 
@@ -22,7 +23,7 @@ export const useBranches = () => {
       
       const { data, error } = await supabase
         .from("branches")
-        .select("*")
+        .select("id, name, address, google_maps_url, is_default, restaurant_id, created_at")
         .eq("restaurant_id", user.id)
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true });
@@ -31,6 +32,7 @@ export const useBranches = () => {
       return data as Branch[];
     },
     enabled: !!user,
+    ...userDataQueryOptions,
   });
 };
 

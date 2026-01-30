@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ProductSkeleton from "@/components/products/ProductSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, X, Store, MapPin } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
@@ -35,38 +36,49 @@ const Products = () => {
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedCity, setSelectedCity] = useState("all");
 
-  const availableCities = selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [];
+  const availableCities = useMemo(() => 
+    selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [], 
+    [selectedRegion]
+  );
 
   const { data: products, isLoading: productsLoading } = useProducts(selectedCategory);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: supplierProfile } = useSupplierProfile(supplierId || "");
   const { data: customPrices } = useRestaurantAllCustomPrices();
 
-  const filteredProducts = products?.filter((product) => {
-    if (supplierId && product.supplier_id !== supplierId) {
-      return false;
-    }
-    
-    // Filter by region
-    if (selectedRegion !== "all" && product.supplier_profile?.region !== selectedRegion) {
-      return false;
-    }
+  // Memoize filtered products to prevent recalculation on every render
+  const filteredProducts = useMemo(() => {
+    return products?.filter((product) => {
+      if (supplierId && product.supplier_id !== supplierId) {
+        return false;
+      }
+      
+      // Filter by region
+      if (selectedRegion !== "all" && product.supplier_profile?.region !== selectedRegion) {
+        return false;
+      }
 
-    // Filter by city
-    if (selectedCity !== "all" && product.supplier_profile?.city !== selectedCity) {
-      return false;
-    }
-    
-    const matchesSearch = 
-      product.name.includes(searchQuery) || 
-      product.supplier_profile?.business_name?.includes(searchQuery);
-    return matchesSearch;
-  }) || [];
+      // Filter by city
+      if (selectedCity !== "all" && product.supplier_profile?.city !== selectedCity) {
+        return false;
+      }
+      
+      const matchesSearch = 
+        product.name.includes(searchQuery) || 
+        product.supplier_profile?.business_name?.includes(searchQuery);
+      return matchesSearch;
+    }) || [];
+  }, [products, supplierId, selectedRegion, selectedCity, searchQuery]);
 
-  const clearSupplierFilter = () => {
+  const clearSupplierFilter = useCallback(() => {
     searchParams.delete("supplier");
     setSearchParams(searchParams);
-  };
+  }, [searchParams, setSearchParams]);
+
+  const handleRegionChange = useCallback((val: string) => { 
+    setSelectedRegion(val); 
+    setSelectedCity("all"); 
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -120,7 +132,7 @@ const Products = () => {
             </div>
             
             {/* Region Filter */}
-            <Select value={selectedRegion} onValueChange={(val) => { setSelectedRegion(val); setSelectedCity("all"); }}>
+            <Select value={selectedRegion} onValueChange={handleRegionChange}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
                 <SelectValue placeholder={t("suppliers.allRegions")} />
@@ -185,21 +197,7 @@ const Products = () => {
 
           {/* Products Grid */}
           {productsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden">
-                  <Skeleton className="h-40 w-full" />
-                  <div className="p-4 space-y-3">
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <div className="flex justify-between items-center">
-                      <Skeleton className="h-6 w-20" />
-                      <Skeleton className="h-9 w-24" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ProductSkeleton count={8} />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((product, index) => (

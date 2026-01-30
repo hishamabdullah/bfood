@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
 import { withTimeout } from "@/lib/withTimeout";
+import { dynamicQueryOptions } from "@/lib/queryConfig";
 
 export type OrderItem = Tables<"order_items"> & {
   product?: Tables<"products"> | null;
@@ -27,9 +28,15 @@ export const useRestaurantOrders = () => {
           .from("orders")
           .select(`
             *,
-            branch:branches(*),
+            branch:branches(id, name, address),
             order_items (
-              *,
+              id,
+              product_id,
+              supplier_id,
+              quantity,
+              unit_price,
+              status,
+              delivery_fee,
               product:products (
                 id,
                 name,
@@ -57,7 +64,7 @@ export const useRestaurantOrders = () => {
         });
       });
 
-      // Fetch supplier profiles with bank details
+      // Fetch supplier profiles with bank details if there are suppliers
       let supplierProfiles: Pick<Tables<"profiles">, "user_id" | "business_name" | "bank_name" | "bank_account_name" | "bank_iban">[] = [];
       if (supplierIds.size > 0) {
         const { data: profiles, error: profilesError } = await withTimeout(
@@ -72,12 +79,15 @@ export const useRestaurantOrders = () => {
         supplierProfiles = profiles || [];
       }
 
+      // Create a map for faster lookups
+      const profileMap = new Map(supplierProfiles.map(p => [p.user_id, p]));
+
       // Map supplier profiles to order items
       const ordersWithSuppliers = data?.map((order) => ({
         ...order,
         order_items: order.order_items?.map((item: any) => ({
           ...item,
-          supplier_profile: supplierProfiles.find((p) => p.user_id === item.supplier_id) || null,
+          supplier_profile: profileMap.get(item.supplier_id) || null,
         })),
       }));
 
@@ -85,5 +95,6 @@ export const useRestaurantOrders = () => {
     },
     enabled: !!user,
     retry: 1,
+    ...dynamicQueryOptions,
   });
 };

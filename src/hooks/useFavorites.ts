@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { userDataQueryOptions } from "@/lib/queryConfig";
 
 export const useFavoriteProducts = () => {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export const useFavoriteProducts = () => {
       return data.map((f) => f.product_id);
     },
     enabled: !!user,
+    ...userDataQueryOptions,
   });
 };
 
@@ -38,6 +40,7 @@ export const useFavoriteSuppliers = () => {
       return data.map((f) => f.supplier_id);
     },
     enabled: !!user,
+    ...userDataQueryOptions,
   });
 };
 

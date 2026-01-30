@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -119,7 +119,7 @@ const getStatusIcon = (status: string) => {
   }
 };
 
-const CollapsibleSupplierOrderCard = ({ 
+const CollapsibleSupplierOrderCard = memo(({ 
   order, 
   payment, 
   onStatusChange,
@@ -130,19 +130,31 @@ const CollapsibleSupplierOrderCard = ({
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
   const currentLocale = i18n.language === "ar" ? ar : enUS;
 
-  const statusLabels: Record<string, string> = {
+  const statusLabels: Record<string, string> = useMemo(() => ({
     pending: t("orders.pending"),
     confirmed: t("orders.confirmed"),
     preparing: t("orders.preparing"),
     shipped: t("orders.shipped"),
     delivered: t("orders.delivered"),
     cancelled: t("orders.cancelled"),
-  };
+  }), [t]);
 
   const StatusIcon = getStatusIcon(order.status);
-  const itemsTotal = order.items.reduce((total, item) => total + item.unit_price * item.quantity, 0);
-  const orderTotal = itemsTotal + order.deliveryFee;
-  const itemsCount = order.items.reduce((total, item) => total + item.quantity, 0);
+  
+  // Memoize calculations
+  const itemsTotal = useMemo(() => 
+    order.items.reduce((total, item) => total + item.unit_price * item.quantity, 0), 
+    [order.items]
+  );
+  const orderTotal = useMemo(() => itemsTotal + order.deliveryFee, [itemsTotal, order.deliveryFee]);
+  const itemsCount = useMemo(() => 
+    order.items.reduce((total, item) => total + item.quantity, 0), 
+    [order.items]
+  );
+
+  const handleStatusChange = useCallback((value: string) => {
+    onStatusChange(order.orderId, value);
+  }, [onStatusChange, order.orderId]);
 
   return (
     <Card className="overflow-hidden">
@@ -214,7 +226,7 @@ const CollapsibleSupplierOrderCard = ({
                 <span className="text-sm font-medium">{t("orders.orderStatus")}:</span>
                 <Select
                   value={order.status}
-                  onValueChange={(value) => onStatusChange(order.orderId, value)}
+                  onValueChange={handleStatusChange}
                   disabled={isUpdating}
                 >
                   <SelectTrigger className="w-[160px]">
@@ -466,6 +478,8 @@ const CollapsibleSupplierOrderCard = ({
       </Collapsible>
     </Card>
   );
-};
+});
+
+CollapsibleSupplierOrderCard.displayName = "CollapsibleSupplierOrderCard";
 
 export default CollapsibleSupplierOrderCard;

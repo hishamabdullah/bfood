@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { dynamicQueryOptions, semiStaticQueryOptions, userDataQueryOptions } from "@/lib/queryConfig";
 
 export type Supplier = Tables<"profiles"> & {
   productsCount?: number;
@@ -22,41 +23,41 @@ export const useSuppliers = (region?: string) => {
       
       if (supplierIds.length === 0) return [];
 
-      // جلب ملفات الموردين
+      // Run profiles and product counts in parallel
       let query = supabase
         .from("profiles")
-        .select("*")
+        .select("user_id, business_name, full_name, avatar_url, region, supply_categories")
         .in("user_id", supplierIds);
 
-      // فلتر حسب المنطقة إذا تم تحديدها
       if (region && region !== "all") {
         query = query.eq("region", region);
       }
 
-      const { data: profiles, error: profilesError } = await query;
+      const [profilesResult, productCountsResult] = await Promise.all([
+        query,
+        supabase
+          .from("products")
+          .select("supplier_id")
+          .in("supplier_id", supplierIds)
+      ]);
 
-      if (profilesError) throw profilesError;
-
-      // جلب عدد المنتجات لكل مورد
-      const { data: productCounts } = await supabase
-        .from("products")
-        .select("supplier_id")
-        .in("supplier_id", supplierIds);
+      if (profilesResult.error) throw profilesResult.error;
 
       // حساب عدد المنتجات لكل مورد
       const countMap = new Map<string, number>();
-      productCounts?.forEach(p => {
+      productCountsResult.data?.forEach(p => {
         countMap.set(p.supplier_id, (countMap.get(p.supplier_id) || 0) + 1);
       });
 
       // دمج البيانات
-      const suppliersWithCounts = profiles?.map(profile => ({
+      const suppliersWithCounts = profilesResult.data?.map(profile => ({
         ...profile,
         productsCount: countMap.get(profile.user_id) || 0,
       })) || [];
 
       return suppliersWithCounts as Supplier[];
     },
+    ...dynamicQueryOptions,
   });
 };
 
@@ -74,6 +75,7 @@ export const useSupplierProfile = (userId: string) => {
       return data;
     },
     enabled: !!userId,
+    ...userDataQueryOptions,
   });
 };
 
@@ -93,5 +95,6 @@ export const useRegions = () => {
       const uniqueRegions = [...new Set(data?.map(p => p.region).filter(Boolean))];
       return uniqueRegions as string[];
     },
+    ...semiStaticQueryOptions,
   });
 };

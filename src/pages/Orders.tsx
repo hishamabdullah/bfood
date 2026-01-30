@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,7 @@ import { Loader2, Package, ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import CollapsibleOrderCard from "@/components/orders/CollapsibleOrderCard";
+import OrderSkeleton from "@/components/orders/OrderSkeleton";
 
 const Orders = () => {
   const { t } = useTranslation();
@@ -28,7 +29,7 @@ const Orders = () => {
     }
   }, [user, userRole, authLoading, navigate]);
 
-  const handleRepeatOrder = (order: any) => {
+  const handleRepeatOrder = useCallback((order: any) => {
     clearCart();
     
     order.order_items?.forEach((item: any) => {
@@ -62,12 +63,26 @@ const Orders = () => {
     
     toast.success(t("orders.addedToCart"));
     navigate("/cart");
-  };
+  }, [clearCart, addItem, t, navigate]);
 
+  // Show skeleton while loading
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1">
+          <div className="container py-8">
+            <div className="flex items-center gap-3 mb-6">
+              <Package className="h-8 w-8 text-primary" />
+              <div>
+                <div className="h-7 w-32 bg-muted rounded animate-pulse" />
+                <div className="h-4 w-24 bg-muted rounded animate-pulse mt-1" />
+              </div>
+            </div>
+            <OrderSkeleton count={4} />
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
