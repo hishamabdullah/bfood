@@ -17,6 +17,7 @@ import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck, Loader2, MapPin } f
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { saudiRegions, supplyCategories, getSupplyCategoryName, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
+import ServiceAreasSelector from "@/components/auth/ServiceAreasSelector";
 
 type UserType = "restaurant" | "supplier";
 
@@ -29,6 +30,8 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [serviceRegions, setServiceRegions] = useState<string[]>([]);
+  const [serviceCities, setServiceCities] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -79,10 +82,10 @@ const Register = () => {
       return;
     }
 
-    if (userType === "supplier" && !formData.region) {
+    if (userType === "supplier" && serviceCities.length === 0) {
       toast({
-        title: t("auth.regionRequired"),
-        description: t("auth.selectYourRegion"),
+        title: i18n.language === "en" ? "Service areas required" : "مناطق الخدمة مطلوبة",
+        description: i18n.language === "en" ? "Please select at least one city you serve" : "الرجاء اختيار مدينة واحدة على الأقل تخدمها",
         variant: "destructive",
       });
       return;
@@ -104,9 +107,11 @@ const Register = () => {
       businessName: formData.businessName,
       phone: formData.phone,
       role: userType,
-      region: userType === "supplier" ? formData.region : undefined,
-      city: userType === "supplier" ? formData.city : undefined,
+      region: userType === "supplier" && serviceRegions.length > 0 ? serviceRegions[0] : undefined,
+      city: userType === "supplier" && serviceCities.length > 0 ? serviceCities[0] : undefined,
       supplyCategories: userType === "supplier" ? selectedCategories : undefined,
+      serviceRegions: userType === "supplier" ? serviceRegions : undefined,
+      serviceCities: userType === "supplier" ? serviceCities : undefined,
     });
 
     if (error) {
@@ -222,54 +227,15 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Supplier Region */}
+            {/* Supplier Service Areas */}
             {userType === "supplier" && (
-              <>
-                <div className="space-y-2">
-                  <Label>{t("auth.region")}</Label>
-                  <Select
-                    value={formData.region}
-                    onValueChange={(value) => setFormData({ ...formData, region: value, city: "" })}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger className="w-full">
-                      <MapPin className="h-5 w-5 text-muted-foreground me-2" />
-                      <SelectValue placeholder={t("auth.chooseRegion")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {saudiRegions.map((region) => (
-                        <SelectItem key={region.name} value={region.name}>
-                          {getRegionName(region, i18n.language)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* City Selector */}
-                {formData.region && availableCities.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>{i18n.language === "en" ? "City" : "المدينة"}</Label>
-                    <Select
-                      value={formData.city}
-                      onValueChange={(value) => setFormData({ ...formData, city: value })}
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger className="w-full">
-                        <MapPin className="h-5 w-5 text-muted-foreground me-2" />
-                        <SelectValue placeholder={i18n.language === "en" ? "Choose your city" : "اختر مدينتك"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableCities.map((city) => (
-                          <SelectItem key={city.name} value={city.name}>
-                            {getCityName(city, i18n.language)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </>
+              <ServiceAreasSelector
+                selectedRegions={serviceRegions}
+                selectedCities={serviceCities}
+                onRegionsChange={setServiceRegions}
+                onCitiesChange={setServiceCities}
+                disabled={isLoading}
+              />
             )}
 
             {/* Supplier Categories */}

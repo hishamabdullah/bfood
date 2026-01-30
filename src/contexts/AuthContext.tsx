@@ -104,6 +104,8 @@ interface AuthContextType {
     region?: string;
     city?: string;
     supplyCategories?: string[];
+    serviceRegions?: string[];
+    serviceCities?: string[];
   }) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -367,6 +369,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       region?: string;
       city?: string;
       supplyCategories?: string[];
+      serviceRegions?: string[];
+      serviceCities?: string[];
     }
   ) => {
     const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -408,6 +412,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               region: userData.region || null,
               city: userData.city || null,
               supply_categories: userData.supplyCategories || null,
+              service_regions: userData.serviceRegions || null,
+              service_cities: userData.serviceCities || null,
             } as any);
 
           if (profileError) throw profileError;

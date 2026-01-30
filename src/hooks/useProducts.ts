@@ -51,7 +51,7 @@ export const useProducts = (categoryId?: string) => {
       
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, business_name, avatar_url, region, city")
+        .select("user_id, business_name, avatar_url, region, city, service_regions, service_cities")
         .in("user_id", supplierIds);
 
       // Map profiles to products

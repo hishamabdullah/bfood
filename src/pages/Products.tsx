@@ -64,14 +64,30 @@ const Products = () => {
         return false;
       }
       
-      // Filter by region
-      if (selectedRegion !== "all" && product.supplier_profile?.region !== selectedRegion) {
-        return false;
+      // Filter by region - check service_regions first, then fallback to region
+      if (selectedRegion !== "all") {
+        const supplierProfile = product.supplier_profile as any;
+        const serviceRegions = supplierProfile?.service_regions as string[] | null;
+        if (serviceRegions && serviceRegions.length > 0) {
+          if (!serviceRegions.includes(selectedRegion)) {
+            return false;
+          }
+        } else if (supplierProfile?.region !== selectedRegion) {
+          return false;
+        }
       }
 
-      // Filter by city
-      if (selectedCity !== "all" && product.supplier_profile?.city !== selectedCity) {
-        return false;
+      // Filter by city - check service_cities first, then fallback to city
+      if (selectedCity !== "all") {
+        const supplierProfile = product.supplier_profile as any;
+        const serviceCities = supplierProfile?.service_cities as string[] | null;
+        if (serviceCities && serviceCities.length > 0) {
+          if (!serviceCities.includes(selectedCity)) {
+            return false;
+          }
+        } else if (supplierProfile?.city !== selectedCity) {
+          return false;
+        }
       }
       
       const matchesSearch = 
