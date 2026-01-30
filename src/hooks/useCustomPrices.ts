@@ -191,6 +191,34 @@ export const useDeleteCustomPrice = () => {
   });
 };
 
+// حذف جميع الأسعار المخصصة لمطعم معين
+export const useDeleteAllRestaurantPrices = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (restaurantId: string) => {
+      if (!user) throw new Error("يجب تسجيل الدخول");
+
+      const { error } = await supabase
+        .from("product_custom_prices")
+        .delete()
+        .eq("supplier_id", user.id)
+        .eq("restaurant_id", restaurantId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["supplier-custom-prices"] });
+      toast.success("تم حذف جميع الأسعار المخصصة للمطعم بنجاح");
+    },
+    onError: (error) => {
+      console.error("Error deleting all custom prices:", error);
+      toast.error("حدث خطأ أثناء حذف الأسعار المخصصة");
+    },
+  });
+};
+
 // جلب السعر المخصص للمطعم الحالي
 export const useRestaurantCustomPrice = (productId: string) => {
   const { user } = useAuth();
