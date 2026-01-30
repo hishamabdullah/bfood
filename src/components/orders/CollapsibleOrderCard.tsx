@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, CreditCard, Receipt, Eye } from "lucide-react";
+import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { PaymentDetailsDialog } from "@/components/cart/PaymentDetailsDialog";
@@ -223,15 +223,26 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
                           {groupStatusConfig.label}
                         </Badge>
                       </div>
-                      {/* Payment Details Button */}
-                      <PaymentDetailsDialog
-                        supplierId={group.items[0]?.supplier_id}
-                        supplierName={group.supplier?.business_name || t("orders.unknownSupplier")}
-                        supplierProfile={group.supplier}
-                        amountToPay={supplierTotal}
-                        orderId={order.id}
-                        isConfirmed={group.status === "confirmed" || group.status === "preparing" || group.status === "shipped" || group.status === "delivered"}
-                      />
+                      {/* Payment Details Button with check mark if notified */}
+                      {(() => {
+                        const payment = getPaymentForSupplier(group.items[0]?.supplier_id);
+                        const hasNotified = payment?.is_paid;
+                        return (
+                          <div className="flex items-center gap-1">
+                            {hasNotified && (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            )}
+                            <PaymentDetailsDialog
+                              supplierId={group.items[0]?.supplier_id}
+                              supplierName={group.supplier?.business_name || t("orders.unknownSupplier")}
+                              supplierProfile={group.supplier}
+                              amountToPay={supplierTotal}
+                              orderId={order.id}
+                              isConfirmed={group.status === "confirmed" || group.status === "preparing" || group.status === "shipped" || group.status === "delivered"}
+                            />
+                          </div>
+                        );
+                      })()}
                       {group.supplier?.user_id && (
                         <Link to={`/profile/${group.supplier.user_id}`}>
                           <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">
@@ -287,48 +298,6 @@ const CollapsibleOrderCard = ({ order, onRepeatOrder }: CollapsibleOrderCardProp
                         <span>{t("orders.supplierTotal")}</span>
                         <span className="text-primary">{supplierTotal.toFixed(2)} {t("common.sar")}</span>
                       </div>
-                      
-                      {/* Payment Status */}
-                      {(() => {
-                        const payment = getPaymentForSupplier(group.items[0]?.supplier_id);
-                        return (
-                          <div className="flex items-center justify-between pt-2 border-t border-border mt-2">
-                            <div className="flex items-center gap-2">
-                              <CreditCard className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">{t("orders.paymentStatus", "حالة الدفع")}:</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {payment?.is_paid ? (
-                                <Badge className="bg-green-100 text-green-800 gap-1">
-                                  <CheckCircle className="h-3 w-3" />
-                                  {t("orders.paid", "تم الدفع")}
-                                </Badge>
-                              ) : payment ? (
-                                <Badge className="bg-blue-100 text-blue-800 gap-1">
-                                  <Receipt className="h-3 w-3" />
-                                  {t("orders.transferSent", "تم إرسال التحويل")}
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-yellow-100 text-yellow-800 gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {t("orders.pendingPayment", "بانتظار الدفع")}
-                                </Badge>
-                              )}
-                              {payment?.receipt_url && (
-                                <a
-                                  href={payment.receipt_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline flex items-center gap-1 text-xs"
-                                >
-                                  <Eye className="h-3 w-3" />
-                                  {t("orders.viewReceipt", "عرض الإيصال")}
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()}
                     </div>
                   </div>
                 );
