@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -59,6 +59,8 @@ const productSchema = z.object({
   delivery_fee: z.coerce.number().min(0).default(0),
   name_en: z.string().max(100).optional(),
   description_en: z.string().max(500).optional(),
+  sku: z.string().max(50).optional(),
+  supplier_id: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -69,7 +71,39 @@ interface AdminProductFormDialogProps {
   product?: AdminProduct | null;
 }
 
-const units = ["كيلو", "جرام", "قطعة", "صندوق", "كرتون", "لتر", "علبة"];
+const units = ["kg", "gram", "piece", "box", "carton", "liter", "pack"];
+const unitLabels: Record<string, string> = {
+  kg: "كيلو",
+  gram: "جرام",
+  piece: "قطعة",
+  box: "صندوق",
+  carton: "كرتون",
+  liter: "لتر",
+  pack: "علبة",
+};
+
+const useSuppliers = () => {
+  return useQuery({
+    queryKey: ["admin-suppliers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, business_name, full_name")
+        .eq("is_approved", true)
+        .order("business_name");
+
+      if (error) throw error;
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "supplier");
+
+      const supplierIds = new Set(roles?.map((r) => r.user_id) || []);
+      return data?.filter((p) => supplierIds.has(p.user_id)) || [];
+    },
+  });
+};
 
 const useAdminUpdateProduct = () => {
   const queryClient = useQueryClient();
@@ -98,13 +132,42 @@ const useAdminUpdateProduct = () => {
   });
 };
 
+const useAdminCreateProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (product: Omit<Tables<"products">, "id" | "created_at" | "updated_at">) => {
+      const { data, error } = await supabase
+        .from("products")
+        .insert(product)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("تم إضافة المنتج بنجاح");
+    },
+    onError: (error) => {
+      console.error("Error creating product:", error);
+      toast.error("حدث خطأ أثناء إضافة المنتج");
+    },
+  });
+};
+
 export default function AdminProductFormDialog({
   open,
   onOpenChange,
   product,
 }: AdminProductFormDialogProps) {
   const { data: categories } = useCategories();
+  const { data: suppliers } = useSuppliers();
   const updateProduct = useAdminUpdateProduct();
+  const createProduct = useAdminCreateProduct();
+  const isEditing = !!product;
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -112,7 +175,7 @@ export default function AdminProductFormDialog({
       name: "",
       description: "",
       price: 0,
-      unit: "كيلو",
+      unit: "kg",
       category_id: "",
       stock_quantity: 0,
       unlimited_stock: false,
@@ -122,6 +185,8 @@ export default function AdminProductFormDialog({
       delivery_fee: 0,
       name_en: "",
       description_en: "",
+      sku: "",
+      supplier_id: "",
     },
   });
 
@@ -143,16 +208,33 @@ export default function AdminProductFormDialog({
         delivery_fee: product.delivery_fee || 0,
         name_en: product.name_en || "",
         description_en: product.description_en || "",
+        sku: (product as any).sku || "",
+        supplier_id: product.supplier_id || "",
+      });
+    } else {
+      form.reset({
+        name: "",
+        description: "",
+        price: 0,
+        unit: "kg",
+        category_id: "",
+        stock_quantity: 0,
+        unlimited_stock: false,
+        country_of_origin: "السعودية",
+        in_stock: true,
+        image_url: "",
+        delivery_fee: 0,
+        name_en: "",
+        description_en: "",
+        sku: "",
+        supplier_id: "",
       });
     }
-  }, [product, form]);
+  }, [product, form, open]);
 
   const onSubmit = async (values: ProductFormValues) => {
-    if (!product) return;
-
     try {
-      await updateProduct.mutateAsync({
-        id: product.id,
+      const productData = {
         name: values.name,
         description: values.description || null,
         price: values.price,
@@ -166,24 +248,84 @@ export default function AdminProductFormDialog({
         delivery_fee: values.delivery_fee,
         name_en: values.name_en || null,
         description_en: values.description_en || null,
-      });
+        sku: values.sku || null,
+      };
+
+      if (isEditing && product) {
+        await updateProduct.mutateAsync({
+          id: product.id,
+          ...productData,
+        });
+      } else {
+        if (!values.supplier_id) {
+          toast.error("يجب اختيار المورد");
+          return;
+        }
+        await createProduct.mutateAsync({
+          ...productData,
+          supplier_id: values.supplier_id,
+        } as any);
+      }
       onOpenChange(false);
     } catch (error) {
       // Error handled in mutation
     }
   };
 
-  const isLoading = updateProduct.isPending;
+  const isLoading = updateProduct.isPending || createProduct.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>تعديل المنتج</DialogTitle>
+          <DialogTitle>{isEditing ? "تعديل المنتج" : "إضافة منتج جديد"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Supplier Selection - Only for new products */}
+            {!isEditing && (
+              <FormField
+                control={form.control}
+                name="supplier_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>المورد *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر المورد" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {suppliers?.map((supplier) => (
+                          <SelectItem key={supplier.user_id} value={supplier.user_id}>
+                            {supplier.business_name || supplier.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* SKU Field */}
+            <FormField
+              control={form.control}
+              name="sku"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>رقم المنتج (SKU)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="مثال: PRD-001" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="name"
@@ -285,7 +427,7 @@ export default function AdminProductFormDialog({
                       <SelectContent>
                         {units.map((unit) => (
                           <SelectItem key={unit} value={unit}>
-                            {unit}
+                            {unitLabels[unit] || unit}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -377,7 +519,7 @@ export default function AdminProductFormDialog({
               name="delivery_fee"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>رسوم التوصيل (ر.س) - اختياري</FormLabel>
+                  <FormLabel>رسوم التوصيل (ر.س)</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" min="0" placeholder="0" {...field} />
                   </FormControl>
@@ -424,7 +566,7 @@ export default function AdminProductFormDialog({
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                حفظ التعديلات
+                {isEditing ? "حفظ التعديلات" : "إضافة المنتج"}
               </Button>
             </div>
           </form>
