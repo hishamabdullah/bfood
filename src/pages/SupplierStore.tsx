@@ -206,25 +206,42 @@ export default function SupplierStore() {
                 )}
 
                 {!canOrder && (
-                  <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
+                  <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
                     {!user ? (
-                      <span>
-                        {i18n.language === "ar" 
-                          ? "سجل دخول كمطعم للطلب من هذا المورد" 
-                          : "Login as a restaurant to order from this supplier"}
-                        {" "}
-                        <Link to="/login" className="text-primary hover:underline font-medium">
-                          {t("auth.login")}
-                        </Link>
-                      </span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground">
+                            {i18n.language === "ar" 
+                              ? `أنشئ حساب لتستطيع تصفح منتجات ${supplier.business_name}` 
+                              : `Create an account to browse ${supplier.business_name}'s products`}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {i18n.language === "ar" 
+                              ? "سجل كمطعم للطلب مباشرة من المورد" 
+                              : "Register as a restaurant to order directly from the supplier"}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Link to="/register?type=restaurant">
+                            <Button>
+                              {i18n.language === "ar" ? "إنشاء حساب" : "Create Account"}
+                            </Button>
+                          </Link>
+                          <Link to="/login">
+                            <Button variant="outline">
+                              {t("auth.login")}
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
                     ) : userRole !== "restaurant" ? (
-                      <span>
+                      <span className="text-sm">
                         {i18n.language === "ar" 
                           ? "فقط المطاعم يمكنها الطلب" 
                           : "Only restaurants can place orders"}
                       </span>
                     ) : !isApproved ? (
-                      <span>
+                      <span className="text-sm">
                         {i18n.language === "ar" 
                           ? "حسابك قيد المراجعة" 
                           : "Your account is pending approval"}
