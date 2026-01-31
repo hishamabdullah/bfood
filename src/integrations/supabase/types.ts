@@ -646,6 +646,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_approved_suppliers: {
+        Args: never
+        Returns: {
+          business_name: string
+          created_at: string
+          customer_code: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       get_order_restaurant_id: { Args: { _order_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }

@@ -4,9 +4,7 @@
     "supplierDeliveryFee": "رسوم توصيل المورد",
     "totalDeliveryFee": "إجمالي رسوم التوصيل",
     "freeDeliverySupplier": "رسوم المورد معفاة",
-    "includesProductFees": "تشمل رسوم المنتجات"
-  },
-"cart": {
+    "includesProductFees": "تشمل رسوم المنتجات",
     "title": "سلة المشتريات",
     "paymentDetails": "تفاصيل الدفع",
     "bankDetails": "البيانات البنكية",
@@ -512,7 +510,9 @@
     "fetchError": "حدث خطأ في جلب البيانات",
     "customerCode": "رقم العميل",
     "customerCodeHint": "شارك هذا الرقم مع الموردين لتسهيل البحث عنك عند تخصيص الأسعار",
-    "codeCopied": "تم نسخ رقم العميل",
+    "supplierCode": "رقم المورد",
+    "supplierCodeHint": "رقم فريد يمكن للمدير استخدامه للبحث عنك",
+    "codeCopied": "تم نسخ الرقم",
     "copyError": "فشل نسخ الرقم",
     "bankDetails": "البيانات البنكية",
     "bankName": "اسم البنك",
