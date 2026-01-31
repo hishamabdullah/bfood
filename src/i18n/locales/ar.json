@@ -1,4 +1,19 @@
 {
+  "admin": {
+    "manageSubcategories": "إدارة الأقسام الفرعية",
+    "addSubcategory": "إضافة قسم فرعي",
+    "editSubcategory": "تعديل القسم الفرعي",
+    "addNewSubcategory": "إضافة قسم فرعي جديد",
+    "deleteSubcategory": "حذف القسم الفرعي",
+    "deleteSubcategoryConfirm": "هل أنت متأكد من حذف القسم الفرعي {{name}}؟",
+    "parentCategory": "التصنيف الرئيسي",
+    "selectCategory": "اختر التصنيف",
+    "subcategoryName": "اسم القسم الفرعي",
+    "subcategoryNamePlaceholder": "مثال: لحوم مجمدة",
+    "subcategoryNameEn": "الاسم بالإنجليزية",
+    "noSubcategories": "لا توجد أقسام فرعية",
+    "allSubcategories": "جميع الأقسام"
+  },
   "cart": {
     "productDeliveryFees": "رسوم توصيل المنتجات",
     "supplierDeliveryFee": "رسوم توصيل المورد",

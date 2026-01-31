@@ -1,4 +1,19 @@
 {
+  "admin": {
+    "manageSubcategories": "Manage Subcategories",
+    "addSubcategory": "Add Subcategory",
+    "editSubcategory": "Edit Subcategory",
+    "addNewSubcategory": "Add New Subcategory",
+    "deleteSubcategory": "Delete Subcategory",
+    "deleteSubcategoryConfirm": "Are you sure you want to delete subcategory {{name}}?",
+    "parentCategory": "Parent Category",
+    "selectCategory": "Select Category",
+    "subcategoryName": "Subcategory Name",
+    "subcategoryNamePlaceholder": "e.g. Frozen Meats",
+    "subcategoryNameEn": "English Name",
+    "noSubcategories": "No subcategories",
+    "allSubcategories": "All Subcategories"
+  },
   "common": {
     "login": "Login",
     "register": "Sign Up",
