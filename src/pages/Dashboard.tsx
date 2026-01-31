@@ -24,7 +24,10 @@ import {
   Loader2,
   MapPin,
   User as UserIcon,
-  Tag
+  Tag,
+  Share2,
+  Copy,
+  Check
 } from "lucide-react";
 import { useSupplierStats } from "@/hooks/useSupplierStats";
 import { useRestaurantStats } from "@/hooks/useRestaurantStats";
@@ -34,10 +37,11 @@ import i18n from "i18next";
 import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, userRole, profile, loading, isApproved } = useAuth();
   const navigate = useNavigate();
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [linkCopied, setLinkCopied] = useState(false);
   
   const { data: supplierStats, isLoading: supplierStatsLoading } = useSupplierStats();
   const { data: restaurantStats, isLoading: restaurantStatsLoading } = useRestaurantStats();
@@ -72,6 +76,18 @@ const Dashboard = () => {
   const isSupplier = userRole === "supplier";
   const isRestaurant = userRole === "restaurant";
   const isAdmin = userRole === "admin";
+
+  const storeUrl = user ? `${window.location.origin}/store/${user.id}` : "";
+
+  const copyStoreLink = async () => {
+    try {
+      await navigator.clipboard.writeText(storeUrl);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -202,17 +218,52 @@ const Dashboard = () => {
                 <div className="bg-card rounded-2xl border border-border p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Tag className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold">الأسعار المخصصة</h3>
+                    <h3 className="text-lg font-semibold">
+                      {i18n.language === "ar" ? "الأسعار المخصصة" : "Custom Prices"}
+                    </h3>
                   </div>
                   <p className="text-muted-foreground mb-4">
-                    خصص أسعار معينة لمطاعم محددة
+                    {i18n.language === "ar" ? "خصص أسعار معينة لمطاعم محددة" : "Set custom prices for specific restaurants"}
                   </p>
                   <Link to="/supplier/custom-prices">
                     <Button variant="outline">
-                      إدارة الأسعار
+                      {i18n.language === "ar" ? "إدارة الأسعار" : "Manage Prices"}
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
                   </Link>
+                </div>
+
+                {/* Share Store Link Card */}
+                <div className="bg-card rounded-2xl border border-border p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Share2 className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">
+                      {i18n.language === "ar" ? "رابط متجرك" : "Your Store Link"}
+                    </h3>
+                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    {i18n.language === "ar" 
+                      ? "شارك هذا الرابط مع عملائك ليتمكنوا من تصفح منتجاتك" 
+                      : "Share this link with your customers so they can browse your products"}
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm break-all">
+                      <span className="flex-1 text-muted-foreground truncate">{storeUrl}</span>
+                    </div>
+                    <Button variant="outline" onClick={copyStoreLink} className="w-full">
+                      {linkCopied ? (
+                        <>
+                          <Check className="h-4 w-4 text-green-500" />
+                          {i18n.language === "ar" ? "تم النسخ!" : "Copied!"}
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          {i18n.language === "ar" ? "نسخ الرابط" : "Copy Link"}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </>
             ) : isRestaurant ? (
