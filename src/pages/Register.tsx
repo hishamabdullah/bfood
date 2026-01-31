@@ -16,8 +16,10 @@ import {
 import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck, Loader2, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { saudiRegions, supplyCategories, getSupplyCategoryName, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
+import { saudiRegions, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
+import { useSupplierCategories, getSupplierCategoryName } from "@/hooks/useSupplierCategories";
 import ServiceAreasSelector from "@/components/auth/ServiceAreasSelector";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type UserType = "restaurant" | "supplier";
 
@@ -47,6 +49,7 @@ const Register = () => {
   const { signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { data: supplierCategories, isLoading: categoriesLoading } = useSupplierCategories();
 
   const getRegisterErrorDescription = (error: Error) => {
     const message = error?.message ?? "";
@@ -243,22 +246,28 @@ const Register = () => {
               <div className="space-y-2">
                 <Label>{t("auth.categoriesHint")}</Label>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded-lg">
-                  {supplyCategories.map((category) => (
-                    <div key={category.name} className="flex items-center space-x-2 space-x-reverse">
-                      <Checkbox
-                        id={category.name}
-                        checked={selectedCategories.includes(category.name)}
-                        onCheckedChange={() => handleCategoryToggle(category.name)}
-                        disabled={isLoading}
-                      />
-                      <label
-                        htmlFor={category.name}
-                        className="text-sm cursor-pointer"
-                      >
-                        {getSupplyCategoryName(category, i18n.language)}
-                      </label>
-                    </div>
-                  ))}
+                  {categoriesLoading ? (
+                    Array.from({ length: 6 }).map((_, i) => (
+                      <Skeleton key={i} className="h-6 w-full" />
+                    ))
+                  ) : (
+                    supplierCategories?.map((category) => (
+                      <div key={category.id} className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id={category.id}
+                          checked={selectedCategories.includes(category.name)}
+                          onCheckedChange={() => handleCategoryToggle(category.name)}
+                          disabled={isLoading}
+                        />
+                        <label
+                          htmlFor={category.id}
+                          className="text-sm cursor-pointer"
+                        >
+                          {getSupplierCategoryName(category, i18n.language)}
+                        </label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
