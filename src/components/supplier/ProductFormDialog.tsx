@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,8 +37,11 @@ import {
 import { useCategories } from "@/hooks/useProducts";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useCreateProduct, useUpdateProduct, SupplierProduct, PriceTier } from "@/hooks/useSupplierProducts";
-import { Loader2, Globe, Tag } from "lucide-react";
+import { Loader2, Globe, Tag, Upload, X, ImageIcon } from "lucide-react";
 import PriceTiersEditor from "./PriceTiersEditor";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const productSchema = z.object({
   name: z.string().min(2).max(100),
@@ -73,6 +76,7 @@ export default function ProductFormDialog({
   product,
 }: ProductFormDialogProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { data: categories } = useCategories();
   const { getCategoryName } = useCategoryTranslation();
   const createProduct = useCreateProduct();
@@ -80,6 +84,10 @@ export default function ProductFormDialog({
   const isEditing = !!product;
   
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -122,6 +130,8 @@ export default function ProductFormDialog({
         description_en: (product as any).description_en || "",
       });
       setPriceTiers(product.price_tiers || []);
+      setImagePreview(product.image_url || null);
+      setImageFile(null);
     } else {
       form.reset({
         name: "",
@@ -139,11 +149,75 @@ export default function ProductFormDialog({
         description_en: "",
       });
       setPriceTiers([]);
+      setImagePreview(null);
+      setImageFile(null);
     }
   }, [product, form]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t("productForm.imageTooLarge"));
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    form.setValue("image_url", "");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile || !user) return form.getValues("image_url") || null;
+
+    setIsUploading(true);
+    try {
+      const fileExt = imageFile.name.split(".").pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(fileName, imageFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from("product-images")
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error(t("productForm.imageUploadError"));
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const onSubmit = async (values: ProductFormValues) => {
     try {
+      // Upload image if a new file was selected
+      let imageUrl = values.image_url || null;
+      if (imageFile) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
       const productData = {
         name: values.name,
         description: values.description || null,
@@ -154,7 +228,7 @@ export default function ProductFormDialog({
         unlimited_stock: values.unlimited_stock,
         country_of_origin: values.country_of_origin,
         in_stock: values.in_stock,
-        image_url: values.image_url || null,
+        image_url: imageUrl,
         delivery_fee: values.delivery_fee,
         name_en: values.name_en || null,
         description_en: values.description_en || null,
@@ -175,7 +249,7 @@ export default function ProductFormDialog({
     }
   };
 
-  const isLoading = createProduct.isPending || updateProduct.isPending;
+  const isLoading = createProduct.isPending || updateProduct.isPending || isUploading;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -396,23 +470,61 @@ export default function ProductFormDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="image_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("productForm.imageUrl")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="url"
-                      placeholder={t("productForm.imageUrlPlaceholder")}
-                      {...field}
+            {/* Image Upload Section */}
+            <div className="space-y-2">
+              <FormLabel>{t("productForm.productImage")}</FormLabel>
+              <div className="flex flex-col gap-3">
+                {imagePreview ? (
+                  <div className="relative w-full h-40 rounded-lg overflow-hidden border bg-muted">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 end-2 h-8 w-8"
+                      onClick={removeImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-40 rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 bg-muted/50"
+                  >
+                    <div className="p-3 rounded-full bg-primary/10">
+                      <ImageIcon className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">{t("productForm.clickToUpload")}</p>
+                      <p className="text-xs text-muted-foreground">{t("productForm.maxFileSize")}</p>
+                    </div>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                {!imagePreview && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {t("productForm.uploadImage")}
+                  </Button>
+                )}
+              </div>
+            </div>
 
             <FormField
               control={form.control}
