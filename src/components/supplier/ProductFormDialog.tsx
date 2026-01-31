@@ -57,6 +57,7 @@ const productSchema = z.object({
   delivery_fee: z.coerce.number().min(0).default(0),
   name_en: z.string().max(100).optional(),
   description_en: z.string().max(500).optional(),
+  sku: z.string().max(50).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -105,6 +106,7 @@ export default function ProductFormDialog({
       delivery_fee: 0,
       name_en: "",
       description_en: "",
+      sku: "",
     },
   });
 
@@ -128,6 +130,7 @@ export default function ProductFormDialog({
         delivery_fee: product.delivery_fee || 0,
         name_en: (product as any).name_en || "",
         description_en: (product as any).description_en || "",
+        sku: (product as any).sku || "",
       });
       setPriceTiers(product.price_tiers || []);
       setImagePreview(product.image_url || null);
@@ -147,6 +150,7 @@ export default function ProductFormDialog({
         delivery_fee: 0,
         name_en: "",
         description_en: "",
+        sku: "",
       });
       setPriceTiers([]);
       setImagePreview(null);
@@ -232,6 +236,7 @@ export default function ProductFormDialog({
         delivery_fee: values.delivery_fee,
         name_en: values.name_en || null,
         description_en: values.description_en || null,
+        sku: values.sku || null,
         price_tiers: priceTiers,
       };
 
@@ -262,6 +267,20 @@ export default function ProductFormDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="sku"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("productForm.sku")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("productForm.skuPlaceholder")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="name"

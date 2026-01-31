@@ -57,6 +57,7 @@ const Orders = () => {
           description_en: null,
           description_ur: null,
           description_hi: null,
+          sku: null,
         }, item.quantity);
       }
     });
