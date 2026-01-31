@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Pencil, Trash2, Search, Package, Power, PowerOff } from "lucide-react";
+import { Loader2, Pencil, Trash2, Search, Package, Power, PowerOff, Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import AdminProductFormDialog from "./AdminProductFormDialog";
@@ -204,15 +204,21 @@ export default function AdminProductsManager() {
 
   return (
     <div className="space-y-6">
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="بحث بالاسم أو المورد..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="ps-10"
-        />
+      {/* Header with Search and Add Button */}
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="بحث بالاسم أو المورد..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="ps-10"
+          />
+        </div>
+        <Button onClick={() => setIsFormOpen(true)}>
+          <Plus className="h-4 w-4 me-2" />
+          إضافة منتج
+        </Button>
       </div>
 
       {/* Table */}
@@ -223,6 +229,7 @@ export default function AdminProductsManager() {
               <TableHead>المنتج</TableHead>
               <TableHead>المورد</TableHead>
               <TableHead>السعر</TableHead>
+              <TableHead>رسوم التوصيل</TableHead>
               <TableHead>الكمية</TableHead>
               <TableHead>عدد الطلبات</TableHead>
               <TableHead>الحالة</TableHead>
@@ -232,7 +239,7 @@ export default function AdminProductsManager() {
           <TableBody>
             {filteredProducts?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   لا توجد منتجات
                 </TableCell>
               </TableRow>
@@ -271,6 +278,11 @@ export default function AdminProductsManager() {
                     </span>
                     <span className="text-xs text-muted-foreground block">
                       / {product.unit}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className={product.delivery_fee && product.delivery_fee > 0 ? "font-medium text-primary" : "text-muted-foreground"}>
+                      {product.delivery_fee ? `${product.delivery_fee.toFixed(2)} ر.س` : "مجاني"}
                     </span>
                   </TableCell>
                   <TableCell>
