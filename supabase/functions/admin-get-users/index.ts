@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if user is admin using service role
+    // Check if user is admin or has moderator permissions using service role
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: roleData, error: roleError } = await supabaseAdmin
@@ -42,7 +42,22 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    if (roleError || roleData?.role !== "admin") {
+    // Check if user is admin
+    const isAdmin = !roleError && roleData?.role === "admin";
+    
+    // Check if user is moderator with user management permissions
+    let hasModeratorPermission = false;
+    if (!isAdmin) {
+      const { data: permData } = await supabaseAdmin
+        .from("admin_permissions")
+        .select("can_manage_users")
+        .eq("user_id", user.id)
+        .single();
+      
+      hasModeratorPermission = permData?.can_manage_users === true;
+    }
+
+    if (!isAdmin && !hasModeratorPermission) {
       return new Response(JSON.stringify({ error: "Forbidden - Admin access required" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
