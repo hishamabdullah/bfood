@@ -89,15 +89,16 @@ const Cart = () => {
   const subtotal = getSubtotal();
 
   // Calculate delivery fees per supplier (only if not pickup for that supplier)
+  // Product delivery fees are ALWAYS added, supplier default fee depends on minimum order amount
   const supplierDeliveryFees = useMemo(() => {
-    const fees: Record<string, { fee: number; reason: string; isFree: boolean }> = {};
+    const fees: Record<string, { fee: number; reason: string; isFree: boolean; productFees: number; supplierFee: number }> = {};
 
     Object.entries(groupedBySupplier).forEach(([supplierId, group]) => {
       const isSupplierPickup = supplierPickupStatus[supplierId] || false;
 
       // If pickup for this supplier, no delivery fee
       if (isSupplierPickup) {
-        fees[supplierId] = { fee: 0, reason: "", isFree: false };
+        fees[supplierId] = { fee: 0, reason: "", isFree: false, productFees: 0, supplierFee: 0 };
         return;
       }
 
@@ -105,23 +106,34 @@ const Cart = () => {
       const minimumOrderAmount = supplierProfile?.minimum_order_amount || 0;
       const defaultDeliveryFee = supplierProfile?.default_delivery_fee || 0;
 
+      // Calculate product-level delivery fees (always applied)
+      const productDeliveryFees = group.items.reduce((sum, item) => {
+        const productFee = item.product.delivery_fee || 0;
+        return sum + productFee;
+      }, 0);
+
       const supplierSubtotal = group.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
+      let supplierFee = 0;
+      let reason = "";
+      let isFree = false;
+
       if (minimumOrderAmount > 0 && supplierSubtotal < minimumOrderAmount) {
-        fees[supplierId] = {
-          fee: defaultDeliveryFee,
-          reason: t("cart.belowMinimum", { amount: minimumOrderAmount }) || `أقل من الحد الأدنى (${minimumOrderAmount} ر.س)`,
-          isFree: false,
-        };
+        supplierFee = defaultDeliveryFee;
+        reason = t("cart.belowMinimum", { amount: minimumOrderAmount }) || `أقل من الحد الأدنى (${minimumOrderAmount} ر.س)`;
       } else if (minimumOrderAmount > 0 && supplierSubtotal >= minimumOrderAmount) {
-        fees[supplierId] = {
-          fee: 0,
-          reason: t("cart.freeDelivery") || "توصيل مجاني!",
-          isFree: true,
-        };
-      } else {
-        fees[supplierId] = { fee: 0, reason: "", isFree: false };
+        reason = t("cart.freeDeliverySupplier") || "رسوم المورد معفاة";
+        isFree = true;
       }
+
+      const totalFee = productDeliveryFees + supplierFee;
+      fees[supplierId] = { 
+        fee: totalFee, 
+        reason: productDeliveryFees > 0 ? t("cart.includesProductFees") || "تشمل رسوم المنتجات" : reason,
+        isFree,
+        productFees: productDeliveryFees,
+        supplierFee
+      };
     });
     return fees;
   }, [groupedBySupplier, t, supplierPickupStatus]);

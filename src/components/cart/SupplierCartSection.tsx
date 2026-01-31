@@ -12,7 +12,7 @@ interface SupplierCartSectionProps {
   group: SupplierGroup;
   isPickup: boolean;
   onPickupChange: (isPickup: boolean) => void;
-  deliveryFeeInfo: { fee: number; reason: string; isFree: boolean };
+  deliveryFeeInfo: { fee: number; reason: string; isFree: boolean; productFees?: number; supplierFee?: number };
   updateQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
 }
@@ -175,27 +175,53 @@ export const SupplierCartSection = ({
             <span className="font-medium">{t("cart.freeDelivery")}</span>
           </div>
         ) : (
-          <div
-            className={`flex justify-between text-sm ${
-              deliveryFeeInfo?.fee > 0 ? "text-amber-600" : deliveryFeeInfo?.isFree ? "text-green-600" : ""
-            }`}
-          >
-            <span className="flex items-center gap-1">
-              <Truck className="h-4 w-4" />
-              {t("cart.deliveryFee")}
-              {deliveryFeeInfo?.reason && (
-                <span
-                  className={`text-xs ${
-                    deliveryFeeInfo.isFree ? "bg-green-100 text-green-700 px-2 py-0.5 rounded-full" : ""
-                  }`}
-                >
-                  ({deliveryFeeInfo.reason})
+          <div className="space-y-1">
+            {/* Product delivery fees (always shown if > 0) */}
+            {(deliveryFeeInfo?.productFees ?? 0) > 0 && (
+              <div className="flex justify-between text-sm text-amber-600">
+                <span className="flex items-center gap-1">
+                  <Truck className="h-4 w-4" />
+                  {t("cart.productDeliveryFees")}
                 </span>
-              )}
-            </span>
-            <span>
-              {(deliveryFeeInfo?.fee || 0).toFixed(2)} {t("common.sar")}
-            </span>
+                <span>
+                  {(deliveryFeeInfo?.productFees || 0).toFixed(2)} {t("common.sar")}
+                </span>
+              </div>
+            )}
+            {/* Supplier delivery fee */}
+            {(deliveryFeeInfo?.supplierFee ?? 0) > 0 && (
+              <div className="flex justify-between text-sm text-amber-600">
+                <span className="flex items-center gap-1">
+                  <Truck className="h-4 w-4" />
+                  {t("cart.supplierDeliveryFee")}
+                  <span className="text-xs">
+                    ({deliveryFeeInfo?.reason})
+                  </span>
+                </span>
+                <span>
+                  {(deliveryFeeInfo?.supplierFee || 0).toFixed(2)} {t("common.sar")}
+                </span>
+              </div>
+            )}
+            {/* Show free supplier fee if applicable */}
+            {deliveryFeeInfo?.isFree && (deliveryFeeInfo?.supplierFee ?? 0) === 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span className="flex items-center gap-1">
+                  <Truck className="h-4 w-4" />
+                  {t("cart.supplierDeliveryFee")}
+                </span>
+                <span className="font-medium">{t("cart.freeDelivery")}</span>
+              </div>
+            )}
+            {/* Total delivery if both exist */}
+            {(deliveryFeeInfo?.productFees ?? 0) > 0 && ((deliveryFeeInfo?.supplierFee ?? 0) > 0 || deliveryFeeInfo?.isFree) && (
+              <div className="flex justify-between text-sm font-medium border-t border-border/50 pt-1">
+                <span>{t("cart.totalDeliveryFee")}</span>
+                <span className="text-amber-600">
+                  {(deliveryFeeInfo?.fee || 0).toFixed(2)} {t("common.sar")}
+                </span>
+              </div>
+            )}
           </div>
         )}
         <div className="flex justify-between font-semibold pt-2 border-t border-border">

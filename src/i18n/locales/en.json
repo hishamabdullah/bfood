@@ -1,4 +1,11 @@
 {
+  "cart": {
+    "productDeliveryFees": "Product Delivery Fees",
+    "supplierDeliveryFee": "Supplier Delivery Fee",
+    "totalDeliveryFee": "Total Delivery Fee",
+    "freeDeliverySupplier": "Supplier fee waived",
+    "includesProductFees": "Includes product fees"
+  },
   "common": {
     "login": "Login",
     "register": "Sign Up",
