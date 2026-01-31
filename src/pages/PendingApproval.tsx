@@ -35,11 +35,11 @@ const PendingApproval = () => {
     if (!loading) {
       if (!user) {
         navigate("/login");
-      } else if (userRole !== "restaurant") {
-        // الموردين والمدراء لا يحتاجون موافقة
+      } else if (userRole === "admin") {
+        // المدراء لا يحتاجون موافقة
         navigate("/dashboard");
       } else if (isApproved) {
-        // المطعم معتمد، يذهب للداشبورد
+        // المطعم أو المورد معتمد، يذهب للداشبورد
         navigate("/dashboard");
       }
     }
@@ -47,7 +47,7 @@ const PendingApproval = () => {
 
   // Listen for approval in real-time
   useEffect(() => {
-    if (!user || userRole !== "restaurant") return;
+    if (!user || userRole === "admin") return;
 
     const channel = supabase
       .channel("pending-approval-listener")
@@ -110,7 +110,7 @@ const PendingApproval = () => {
           </div>
           <CardTitle className="text-2xl">في انتظار الموافقة</CardTitle>
           <CardDescription className="text-base">
-            تم تسجيل حساب مطعمك بنجاح! يرجى الانتظار حتى يقوم المدير بمراجعة حسابك والموافقة عليه.
+            تم تسجيل حسابك بنجاح! يرجى الانتظار حتى يقوم المدير بمراجعة حسابك والموافقة عليه.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
