@@ -1,15 +1,17 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Clock, Mail, CheckCircle2, PartyPopper, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const PendingApproval = () => {
   const { user, signOut, loading, isApproved, userRole } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.language === "ar";
   const bellAudioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showApprovalAnimation, setShowApprovalAnimation] = useState(false);
@@ -18,7 +20,7 @@ const PendingApproval = () => {
   useEffect(() => {
     const bellAudio = new Audio("/sounds/payment-chime.mp3");
     bellAudio.load();
-    bellAudio.volume = 0.5; // صوت هادئ
+    bellAudio.volume = 0.5;
     bellAudioRef.current = bellAudio;
 
     return () => {
@@ -38,10 +40,8 @@ const PendingApproval = () => {
       if (!user) {
         navigate("/login");
       } else if (userRole === "admin") {
-        // المدراء لا يحتاجون موافقة
         navigate("/dashboard");
       } else if (isApproved) {
-        // المطعم أو المورد معتمد، يذهب للداشبورد
         navigate("/dashboard");
       }
     }
@@ -65,16 +65,11 @@ const PendingApproval = () => {
           const updatedProfile = payload.new as { is_approved: boolean };
           
           if (updatedProfile.is_approved) {
-            // Show approval animation
             setShowApprovalAnimation(true);
-            
-            // Play soft chime sound
             bellAudioRef.current?.play().catch(console.error);
             
-            // Navigate to dashboard after animation
             timeoutRef.current = setTimeout(() => {
               navigate("/dashboard");
-              // Force reload to update auth context
               window.location.reload();
             }, 3000);
           }
@@ -89,7 +84,6 @@ const PendingApproval = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    // Match the global sign-out behavior (hard reload) to avoid stuck state.
     window.location.href = "/";
   };
 
@@ -104,7 +98,7 @@ const PendingApproval = () => {
   // Approval celebration animation
   if (showApprovalAnimation) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4 overflow-hidden" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4 overflow-hidden" dir={isRtl ? "rtl" : "ltr"}>
         {/* Confetti particles */}
         <div className="absolute inset-0 pointer-events-none">
           {[...Array(20)].map((_, i) => (
@@ -148,16 +142,16 @@ const PendingApproval = () => {
             </div>
 
             <CardTitle className="text-3xl font-bold text-green-600 animate-fade-in">
-              تهانينا! 🎉
+              {t("pendingApproval.congratulations")} 🎉
             </CardTitle>
             <CardDescription className="text-lg text-foreground animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              تمت الموافقة على حسابك بنجاح
+              {t("pendingApproval.approved")}
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-8">
             <div className="flex items-center justify-center gap-2 text-muted-foreground animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              <p>جاري تحويلك إلى لوحة التحكم...</p>
+              <p>{t("pendingApproval.redirecting")}</p>
             </div>
           </CardContent>
         </Card>
@@ -242,21 +236,21 @@ const PendingApproval = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4" dir={isRtl ? "rtl" : "ltr"}>
       <Card className="w-full max-w-md text-center">
         <CardHeader className="space-y-4">
           <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
             <Clock className="w-8 h-8 text-amber-600" />
           </div>
-          <CardTitle className="text-2xl">في انتظار الموافقة</CardTitle>
+          <CardTitle className="text-2xl">{t("pendingApproval.title")}</CardTitle>
           <CardDescription className="text-base">
-            تم تسجيل حسابك بنجاح! يرجى الانتظار حتى يقوم المدير بمراجعة حسابك والموافقة عليه.
+            {t("pendingApproval.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="bg-muted/50 rounded-lg p-4 space-y-3">
             <p className="text-sm text-muted-foreground">
-              سيتم إعلامك تلقائياً عند الموافقة على حسابك وتحويلك إلى لوحة التحكم. يمكنك التواصل معنا للاستفسار:
+              {t("pendingApproval.autoNotify")}
             </p>
             <div className="flex items-center justify-center gap-4 text-sm">
               <a href="mailto:support@bfood.io" className="flex items-center gap-1 text-primary hover:underline">
@@ -267,7 +261,7 @@ const PendingApproval = () => {
           </div>
           
           <Button variant="outline" onClick={handleSignOut} className="w-full">
-            تسجيل الخروج
+            {t("pendingApproval.signOut")}
           </Button>
         </CardContent>
       </Card>
