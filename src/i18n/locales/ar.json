@@ -1,4 +1,11 @@
 {
+  "cart": {
+    "productDeliveryFees": "رسوم توصيل المنتجات",
+    "supplierDeliveryFee": "رسوم توصيل المورد",
+    "totalDeliveryFee": "إجمالي رسوم التوصيل",
+    "freeDeliverySupplier": "رسوم المورد معفاة",
+    "includesProductFees": "تشمل رسوم المنتجات"
+  },
 "cart": {
     "title": "سلة المشتريات",
     "paymentDetails": "تفاصيل الدفع",
