@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Loader2, MapPin, Truck, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, XCircle, Building2, Phone } from "lucide-react";
+import { Loader2, MapPin, Truck, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, XCircle, Building2, Phone, Package } from "lucide-react";
 import { useAdminDeliveryOrders, DeliveryOrder } from "@/hooks/useAdminDeliveryOrders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -215,6 +216,38 @@ const DeliveryOrderCard = ({ order }: { order: DeliveryOrder }) => {
                       <p className="font-medium">{supplier.supplier_profile?.region || "-"}</p>
                     </div>
                   </div>
+
+                  {/* قائمة المنتجات المطلوبة */}
+                  {supplier.items && supplier.items.length > 0 && (
+                    <div className="mt-3 border rounded-lg overflow-hidden">
+                      <div className="bg-muted/50 px-3 py-2 flex items-center gap-2">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">المنتجات المطلوبة ({supplier.items.length})</span>
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/30">
+                            <TableHead className="text-right">المنتج</TableHead>
+                            <TableHead className="text-center">الكمية</TableHead>
+                            <TableHead className="text-center">السعر</TableHead>
+                            <TableHead className="text-left">المجموع</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {supplier.items.map((item, idx) => (
+                            <TableRow key={idx} className="text-sm">
+                              <TableCell className="font-medium">{item.product_name}</TableCell>
+                              <TableCell className="text-center">{item.quantity} {item.unit}</TableCell>
+                              <TableCell className="text-center">{item.unit_price.toFixed(2)} ر.س</TableCell>
+                              <TableCell className="text-left font-semibold">
+                                {(item.quantity * item.unit_price).toFixed(2)} ر.س
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
 
                   {supplier.supplier_profile?.google_maps_url && (
                     <div className="mt-3">
