@@ -54,8 +54,8 @@ const Dashboard = () => {
     if (!loading) {
       if (!user) {
         navigate("/login");
-      } else if (!isApproved && userRole === "restaurant") {
-        // فقط المطاعم غير المعتمدة تُحوّل لصفحة الانتظار
+      } else if (!isApproved && (userRole === "restaurant" || userRole === "supplier")) {
+        // المطاعم والموردين غير المعتمدين يُحوّلون لصفحة الانتظار
         navigate("/pending-approval");
       }
     }

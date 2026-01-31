@@ -621,5 +621,14 @@
     "deleteAllConfirm": "Are you sure you want to delete all custom prices ({count} products) for this restaurant? The restaurant will see the original prices for all products.",
     "deletedProduct": "Deleted Product",
     "recentRestaurants": "Recently Registered"
+  },
+  "pendingApproval": {
+    "title": "Pending Approval",
+    "description": "Your account has been registered successfully! Please wait while the administrator reviews and approves your account.",
+    "autoNotify": "You will be automatically notified when your account is approved and redirected to the dashboard. Contact us for inquiries:",
+    "signOut": "Sign Out",
+    "congratulations": "Congratulations!",
+    "approved": "Your account has been approved successfully",
+    "redirecting": "Redirecting you to the dashboard..."
   }
 }

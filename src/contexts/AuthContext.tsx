@@ -437,8 +437,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             avatar_url: null,
           };
           setProfile(newProfile);
-          // الموردين معتمدون تلقائياً، المطاعم تحتاج موافقة
-          const approved = userData.role === "supplier";
+          // كلا من الموردين والمطاعم يحتاجون موافقة المدير
+          const approved = false;
           setIsApproved(approved);
 
           // احفظ في الكاش لتظهر البيانات فوراً بعد أي Refresh
