@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_permissions: {
+        Row: {
+          can_manage_delivery: boolean
+          can_manage_orders: boolean
+          can_manage_products: boolean
+          can_manage_users: boolean
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_manage_delivery?: boolean
+          can_manage_orders?: boolean
+          can_manage_products?: boolean
+          can_manage_users?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_manage_delivery?: boolean
+          can_manage_orders?: boolean
+          can_manage_products?: boolean
+          can_manage_users?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       branches: {
         Row: {
           address: string | null
