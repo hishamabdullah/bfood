@@ -79,7 +79,7 @@ const ProductCard = memo(({ product, index = 0, customPrice }: ProductCardProps)
         style={{ animationDelay: `${index * 0.05}s` }}
       >
         {/* Product Image */}
-        <div className="aspect-[4/3] bg-muted flex items-center justify-center overflow-hidden relative p-2">
+        <div className="aspect-[4/3] bg-white flex items-center justify-center overflow-hidden relative p-2">
           {product.image_url ? (
             <img
               src={product.image_url}
