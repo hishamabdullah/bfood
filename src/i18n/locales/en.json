@@ -1,11 +1,4 @@
 {
-  "cart": {
-    "productDeliveryFees": "Product Delivery Fees",
-    "supplierDeliveryFee": "Supplier Delivery Fee",
-    "totalDeliveryFee": "Total Delivery Fee",
-    "freeDeliverySupplier": "Supplier fee waived",
-    "includesProductFees": "Includes product fees"
-  },
   "common": {
     "login": "Login",
     "register": "Sign Up",
@@ -192,6 +185,11 @@
     "selectRegion": "Select a region to view available suppliers"
   },
   "cart": {
+    "productDeliveryFees": "Product Delivery Fees",
+    "supplierDeliveryFee": "Supplier Delivery Fee",
+    "totalDeliveryFee": "Total Delivery Fee",
+    "freeDeliverySupplier": "Supplier fee waived",
+    "includesProductFees": "Includes product fees",
     "title": "Shopping Cart",
     "paymentDetails": "Payment Details",
     "bankDetails": "Bank Details",
@@ -510,7 +508,9 @@
     "fetchError": "Error fetching data",
     "customerCode": "Customer Code",
     "customerCodeHint": "Share this code with suppliers to help them find you when setting custom prices",
-    "codeCopied": "Customer code copied",
+    "supplierCode": "Supplier Code",
+    "supplierCodeHint": "A unique code that admins can use to search for you",
+    "codeCopied": "Code copied",
     "copyError": "Failed to copy code",
     "bankDetails": "Bank Details",
     "bankName": "Bank Name",

@@ -411,10 +411,10 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Customer Code - For restaurants only */}
-            {isOwnProfile && isRestaurant && customerCode && (
+            {/* Customer Code - For restaurants and suppliers */}
+            {isOwnProfile && (isRestaurant || isSupplier) && customerCode && (
               <div className="space-y-2">
-                <Label>{t("profile.customerCode")}</Label>
+                <Label>{isSupplier ? t("profile.supplierCode") : t("profile.customerCode")}</Label>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                     <span className="text-2xl font-mono font-bold text-primary tracking-widest">
@@ -436,7 +436,7 @@ const Profile = () => {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {t("profile.customerCodeHint")}
+                  {isSupplier ? t("profile.supplierCodeHint") : t("profile.customerCodeHint")}
                 </p>
               </div>
             )}

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,6 +28,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import {
   Accordion,
@@ -36,8 +49,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useCategories } from "@/hooks/useProducts";
-import { Loader2, Globe } from "lucide-react";
+import { Loader2, Globe, ChevronsUpDown, Check } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type AdminProduct = Tables<"products"> & {
@@ -82,25 +96,22 @@ const unitLabels: Record<string, string> = {
   pack: "علبة",
 };
 
+type SupplierItem = {
+  user_id: string;
+  business_name: string;
+  full_name: string;
+  customer_code: string | null;
+};
+
 const useSuppliers = () => {
   return useQuery({
-    queryKey: ["admin-suppliers"],
+    queryKey: ["admin-suppliers-with-code"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("user_id, business_name, full_name")
-        .eq("is_approved", true)
-        .order("business_name");
+      // استخدام الدالة الآمنة لجلب الموردين
+      const { data, error } = await supabase.rpc("get_approved_suppliers");
 
       if (error) throw error;
-
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "supplier");
-
-      const supplierIds = new Set(roles?.map((r) => r.user_id) || []);
-      return data?.filter((p) => supplierIds.has(p.user_id)) || [];
+      return (data || []) as SupplierItem[];
     },
   });
 };
@@ -168,6 +179,30 @@ export default function AdminProductFormDialog({
   const updateProduct = useAdminUpdateProduct();
   const createProduct = useAdminCreateProduct();
   const isEditing = !!product;
+  
+  // Supplier search state
+  const [supplierSearch, setSupplierSearch] = useState("");
+  const [supplierPopoverOpen, setSupplierPopoverOpen] = useState(false);
+  
+  // Filter suppliers based on search
+  const filteredSuppliers = useMemo(() => {
+    if (!suppliers) return [];
+    if (!supplierSearch.trim()) return suppliers;
+    
+    const search = supplierSearch.toLowerCase();
+    return suppliers.filter((s) => 
+      s.business_name?.toLowerCase().includes(search) ||
+      s.full_name?.toLowerCase().includes(search) ||
+      s.customer_code?.includes(search)
+    );
+  }, [suppliers, supplierSearch]);
+  
+  // Get selected supplier info
+  const selectedSupplier = useMemo(() => {
+    const supplierId = product?.supplier_id;
+    if (!supplierId || !suppliers) return null;
+    return suppliers.find((s) => s.user_id === supplierId);
+  }, [product?.supplier_id, suppliers]);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -283,31 +318,89 @@ export default function AdminProductFormDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Supplier Selection - Only for new products */}
+            {/* Supplier Selection with Search - Only for new products */}
             {!isEditing && (
               <FormField
                 control={form.control}
                 name="supplier_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>المورد *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر المورد" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {suppliers?.map((supplier) => (
-                          <SelectItem key={supplier.user_id} value={supplier.user_id}>
-                            {supplier.business_name || supplier.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const selectedSupplierForField = suppliers?.find((s) => s.user_id === field.value);
+                  
+                  return (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>المورد *</FormLabel>
+                      <Popover open={supplierPopoverOpen} onOpenChange={setSupplierPopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {selectedSupplierForField ? (
+                                <span className="flex items-center gap-2">
+                                  <span>{selectedSupplierForField.business_name || selectedSupplierForField.full_name}</span>
+                                  {selectedSupplierForField.customer_code && (
+                                    <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                                      #{selectedSupplierForField.customer_code}
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                "ابحث عن المورد..."
+                              )}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" align="start">
+                          <Command>
+                            <CommandInput 
+                              placeholder="ابحث بالاسم أو رقم المورد..." 
+                              value={supplierSearch}
+                              onValueChange={setSupplierSearch}
+                            />
+                            <CommandList>
+                              <CommandEmpty>لا يوجد موردين</CommandEmpty>
+                              <CommandGroup>
+                                {filteredSuppliers.map((supplier) => (
+                                  <CommandItem
+                                    key={supplier.user_id}
+                                    value={`${supplier.business_name} ${supplier.full_name} ${supplier.customer_code || ""}`}
+                                    onSelect={() => {
+                                      field.onChange(supplier.user_id);
+                                      setSupplierPopoverOpen(false);
+                                      setSupplierSearch("");
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        field.value === supplier.user_id ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <div className="flex items-center gap-2 flex-1">
+                                      <span>{supplier.business_name || supplier.full_name}</span>
+                                      {supplier.customer_code && (
+                                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                                          #{supplier.customer_code}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             )}
 
