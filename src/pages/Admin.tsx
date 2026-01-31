@@ -4,10 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags, Truck, UserCog } from "lucide-react";
+import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags, Truck, UserCog, Layers } from "lucide-react";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOrdersTable from "@/components/admin/AdminOrdersTable";
 import AdminCategoriesManager from "@/components/admin/AdminCategoriesManager";
+import AdminSubcategoriesManager from "@/components/admin/AdminSubcategoriesManager";
 import AdminUsersManager from "@/components/admin/AdminUsersManager";
 import AdminApprovalManager from "@/components/admin/AdminApprovalManager";
 import AdminProductsManager from "@/components/admin/AdminProductsManager";
@@ -86,6 +87,10 @@ const Admin = () => {
                 <FolderTree className="h-4 w-4" />
                 تصنيفات المنتجات
               </TabsTrigger>
+              <TabsTrigger value="subcategories" className="flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                الأقسام الفرعية
+              </TabsTrigger>
               <TabsTrigger value="supplier-categories" className="flex items-center gap-2">
                 <Tags className="h-4 w-4" />
                 تصنيفات الموردين
@@ -122,6 +127,10 @@ const Admin = () => {
 
             <TabsContent value="categories">
               <AdminCategoriesManager />
+            </TabsContent>
+
+            <TabsContent value="subcategories">
+              <AdminSubcategoriesManager />
             </TabsContent>
 
             <TabsContent value="supplier-categories">
