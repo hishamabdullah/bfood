@@ -79,16 +79,16 @@ const ProductCard = memo(({ product, index = 0, customPrice }: ProductCardProps)
         style={{ animationDelay: `${index * 0.05}s` }}
       >
         {/* Product Image */}
-        <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
+        <div className="aspect-[4/3] bg-muted flex items-center justify-center overflow-hidden relative p-2">
           {product.image_url ? (
             <img
               src={product.image_url}
               alt={productName}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
             />
           ) : (
-            <Package className="h-16 w-16 text-muted-foreground" />
+            <Package className="h-12 w-12 text-muted-foreground" />
           )}
           {/* Favorite Button */}
           {userRole === "restaurant" && (
