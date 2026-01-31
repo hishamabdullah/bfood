@@ -2,6 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
+export type DeliveryOrderItem = {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  unit: string;
+};
+
 export type DeliveryOrderSupplier = {
   supplier_id: string;
   supplier_profile: Tables<"profiles"> | null;
@@ -10,6 +18,7 @@ export type DeliveryOrderSupplier = {
   items_count: number;
   is_paid: boolean;
   receipt_url: string | null;
+  items: DeliveryOrderItem[];
 };
 
 export type DeliveryOrder = Tables<"orders"> & {
@@ -44,11 +53,14 @@ export const useAdminDeliveryOrders = () => {
         .select("*")
         .in("user_id", restaurantIds);
 
-      // جلب عناصر الطلبات
+      // جلب عناصر الطلبات مع بيانات المنتج
       const orderIds = orders.map(o => o.id);
       const { data: orderItems } = await supabase
         .from("order_items")
-        .select("*")
+        .select(`
+          *,
+          product:products(id, name, unit)
+        `)
         .in("order_id", orderIds);
 
       // جلب ملفات الموردين
@@ -91,6 +103,15 @@ export const useAdminDeliveryOrders = () => {
           const payment = payments?.find(p => p.order_id === order.id && p.supplier_id === supplierId);
           const itemsTotal = group.items.reduce((sum, item) => sum + (item.quantity * Number(item.unit_price)), 0);
           
+          // تحويل العناصر لصيغة مختصرة
+          const formattedItems: DeliveryOrderItem[] = group.items.map(item => ({
+            product_id: item.product_id,
+            product_name: (item as any).product?.name || "منتج غير معروف",
+            quantity: item.quantity,
+            unit_price: Number(item.unit_price),
+            unit: (item as any).product?.unit || "وحدة",
+          }));
+          
           return {
             supplier_id: supplierId,
             supplier_profile: supplierProfiles?.find(p => p.user_id === supplierId) || null,
@@ -99,6 +120,7 @@ export const useAdminDeliveryOrders = () => {
             items_count: group.items.length,
             is_paid: payment?.is_paid || false,
             receipt_url: payment?.receipt_url || null,
+            items: formattedItems,
           };
         });
 
