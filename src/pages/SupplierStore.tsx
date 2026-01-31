@@ -11,13 +11,15 @@ import {
   Phone, 
   Store,
   ShoppingBag,
-  ArrowRight
+  ArrowRight,
+  Heart
 } from "lucide-react";
 import { usePublicSupplierStore } from "@/hooks/usePublicSupplierStore";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useFavoriteSuppliers, useToggleFavoriteSupplier } from "@/hooks/useFavorites";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -32,8 +34,26 @@ export default function SupplierStore() {
   const { addItem } = useCart();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const { data: favoriteSuppliers = [] } = useFavoriteSuppliers();
+  const toggleFavorite = useToggleFavoriteSupplier();
 
   const canOrder = user && userRole === "restaurant" && isApproved;
+  const isFavorite = supplierId ? favoriteSuppliers.includes(supplierId) : false;
+
+  const handleToggleFavorite = () => {
+    if (!user) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      navigate("/login");
+      return;
+    }
+    if (userRole !== "restaurant") {
+      toast.error("فقط المطاعم يمكنها إضافة للمفضلة");
+      return;
+    }
+    if (supplierId) {
+      toggleFavorite.mutate({ supplierId, isFavorite });
+    }
+  };
 
   const handleAddToCart = (product: any) => {
     if (!user) {
@@ -163,6 +183,27 @@ export default function SupplierStore() {
                     </div>
                   )}
                 </div>
+
+                {/* Favorite Button for Restaurants */}
+                {userRole === "restaurant" && (
+                  <div className="flex items-center gap-3 mt-4 p-3 bg-card rounded-lg border">
+                    <button
+                      onClick={handleToggleFavorite}
+                      className="p-2 rounded-full bg-background hover:bg-muted transition-colors"
+                    >
+                      <Heart
+                        className={`h-6 w-6 transition-colors ${
+                          isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm text-muted-foreground">
+                      {i18n.language === "ar" 
+                        ? "فضّل المورد لتستطيع العودة إليه بشكل أسهل في صفحة المفضلة" 
+                        : "Favorite this supplier to easily find them in your favorites page"}
+                    </span>
+                  </div>
+                )}
 
                 {!canOrder && (
                   <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
