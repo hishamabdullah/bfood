@@ -11,22 +11,40 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
 import { useRestaurantCustomPrice } from "@/hooks/useCustomPrices";
-import { ArrowRight, Minus, Plus, ShoppingCart, Package, MapPin, Scale, Store, Tag } from "lucide-react";
+import { useProductPriceTiers } from "@/hooks/useProductPriceTiers";
+import { ArrowRight, Minus, Plus, ShoppingCart, Package, MapPin, Scale, Store, Tag, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { getProductName, getProductDescription } = useProductTranslation();
   const { data: product, isLoading, error } = useProduct(id || "");
   const { addItem } = useCart();
   const { user, userRole } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const { data: customPrice } = useRestaurantCustomPrice(id || "");
+  const { data: priceTiers = [] } = useProductPriceTiers(id || "");
 
   const hasCustomPrice = userRole === "restaurant" && customPrice !== null && customPrice !== undefined && customPrice !== product?.price;
-  const displayPrice = hasCustomPrice ? customPrice! : (product?.price || 0);
+  // Custom price takes priority over price tiers
+  const hasPriceTiers = priceTiers.length > 0 && !hasCustomPrice;
+  
+  // Calculate price based on quantity and tiers (only if no custom price)
+  const getTieredPrice = () => {
+    if (hasCustomPrice) return customPrice!;
+    if (!hasPriceTiers || !product) return product?.price || 0;
+    
+    // Find the applicable tier based on quantity
+    const applicableTier = [...priceTiers]
+      .sort((a, b) => b.min_quantity - a.min_quantity)
+      .find(tier => quantity >= tier.min_quantity);
+    
+    return applicableTier ? applicableTier.price_per_unit : product.price;
+  };
+  
+  const displayPrice = getTieredPrice();
 
   const handleAddToCart = () => {
     if (!user) {
@@ -41,10 +59,8 @@ const ProductDetails = () => {
     }
     
     if (product) {
-      // إضافة المنتج بالسعر المخصص إن وجد
-      const productWithPrice = hasCustomPrice 
-        ? { ...product, price: customPrice! }
-        : product;
+      // إضافة المنتج بالسعر المخصص أو سعر الشريحة
+      const productWithPrice = { ...product, price: displayPrice };
       addItem(productWithPrice, quantity);
       toast.success(`تم إضافة ${getProductName(product)} للسلة`);
     }
@@ -174,7 +190,56 @@ const ProductDetails = () => {
                     </span>
                   </div>
                 )}
+                {hasPriceTiers && displayPrice !== product.price && (
+                  <div className="mt-1">
+                    <span className="text-sm text-green-600 font-medium">
+                      {i18n.language === "ar" ? "سعر الشريحة مُطبّق!" : "Tier price applied!"}
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {/* Price Tiers */}
+              {hasPriceTiers && (
+                <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Layers className="h-5 w-5 text-orange-500" />
+                    <h3 className="font-semibold text-orange-700 dark:text-orange-400">
+                      {i18n.language === "ar" ? "شرائح الأسعار" : "Price Tiers"}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {i18n.language === "ar" 
+                      ? "اطلب كمية أكبر واحصل على سعر أفضل!" 
+                      : "Order more and get a better price!"}
+                  </p>
+                  <div className="space-y-2">
+                    {priceTiers.map((tier, index) => {
+                      const isActive = quantity >= tier.min_quantity && 
+                        (index === priceTiers.length - 1 || quantity < priceTiers[index + 1].min_quantity);
+                      return (
+                        <div 
+                          key={tier.id}
+                          className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
+                            isActive 
+                              ? "bg-orange-100 dark:bg-orange-900/50 border border-orange-300 dark:border-orange-700" 
+                              : "bg-background/50"
+                          }`}
+                        >
+                          <span className={`text-sm ${isActive ? "font-medium" : ""}`}>
+                            {i18n.language === "ar" 
+                              ? `${tier.min_quantity}+ ${product.unit}` 
+                              : `${tier.min_quantity}+ ${product.unit}`}
+                          </span>
+                          <span className={`font-bold ${isActive ? "text-orange-600 dark:text-orange-400" : "text-primary"}`}>
+                            {tier.price_per_unit} {t("common.sar")}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Description */}
               {productDescription && (
