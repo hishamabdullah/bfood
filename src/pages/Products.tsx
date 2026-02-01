@@ -262,8 +262,8 @@ const Products = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedSubcategory("all")}
-                className={`whitespace-nowrap border-primary text-primary hover:bg-primary/10 ${
-                  selectedSubcategory === "all" ? "bg-primary/10 font-semibold" : ""
+                className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
+                  selectedSubcategory === "all" ? "bg-primary/25 font-semibold" : ""
                 }`}
               >
                 {t("common.all")}
@@ -279,8 +279,8 @@ const Products = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedSubcategory(subcategory.id)}
-                    className={`whitespace-nowrap border-primary text-primary hover:bg-primary/10 ${
-                      selectedSubcategory === subcategory.id ? "bg-primary/10 font-semibold" : ""
+                    className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
+                      selectedSubcategory === subcategory.id ? "bg-primary/25 font-semibold" : ""
                     }`}
                   >
                     {getSubcategoryName(subcategory, i18n.language)}
