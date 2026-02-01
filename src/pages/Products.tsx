@@ -16,6 +16,7 @@ import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useRestaurantAllCustomPrices } from "@/hooks/useCustomPrices";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCard from "@/components/products/ProductCard";
+import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,7 @@ const Products = () => {
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("all");
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedCity, setSelectedCity] = useState("all");
 
@@ -47,8 +49,11 @@ const Products = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useProducts(selectedCategory);
+  } = useProducts(selectedCategory, selectedSubcategory);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategoriesByCategory(
+    selectedCategory !== "all" ? selectedCategory : null
+  );
   const { data: supplierProfile } = useSupplierProfile(supplierId || "");
   const { data: customPrices } = useRestaurantAllCustomPrices();
 
@@ -214,11 +219,14 @@ const Products = () => {
           </div>
 
           {/* Categories */}
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-8">
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
             <Button
               variant={selectedCategory === "all" ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedCategory("all")}
+              onClick={() => {
+                setSelectedCategory("all");
+                setSelectedSubcategory("all");
+              }}
               className="whitespace-nowrap"
             >
               {t("common.all")}
@@ -233,7 +241,10 @@ const Products = () => {
                   key={category.id}
                   variant={selectedCategory === category.id ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedCategory(category.id)}
+                  onClick={() => {
+                    setSelectedCategory(category.id);
+                    setSelectedSubcategory("all");
+                  }}
                   className="whitespace-nowrap"
                 >
                   {getCategoryName(category)}
@@ -241,6 +252,44 @@ const Products = () => {
               ))
             )}
           </div>
+
+          {/* Subcategories */}
+          {selectedCategory !== "all" && (
+            <div className="flex gap-2 overflow-x-auto pb-2 mb-8">
+              <Button
+                variant={selectedSubcategory === "all" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setSelectedSubcategory("all")}
+                className="whitespace-nowrap"
+              >
+                {t("common.all")}
+              </Button>
+              {subcategoriesLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-16" />
+                ))
+              ) : subcategories && subcategories.length > 0 ? (
+                subcategories.map((subcategory) => (
+                  <Button
+                    key={subcategory.id}
+                    variant={selectedSubcategory === subcategory.id ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setSelectedSubcategory(subcategory.id)}
+                    className="whitespace-nowrap"
+                  >
+                    {getSubcategoryName(subcategory, i18n.language)}
+                  </Button>
+                ))
+              ) : (
+                <span className="text-sm text-muted-foreground py-2">
+                  {t("products.noSubcategories")}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Spacing when no subcategories shown */}
+          {selectedCategory === "all" && <div className="mb-4" />}
 
           {/* Products Grid */}
           {productsLoading ? (

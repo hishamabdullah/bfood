@@ -186,7 +186,8 @@
     "searchProduct": "Search for product...",
     "allCategories": "All Categories",
     "noProducts": "No Products",
-    "noProductsMessage": "No products have been added yet"
+    "noProductsMessage": "No products have been added yet",
+    "noSubcategories": "No subcategories"
   },
   "suppliers": {
     "title": "Suppliers",
