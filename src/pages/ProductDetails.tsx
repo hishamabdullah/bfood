@@ -278,7 +278,7 @@ const ProductDetails = () => {
               <div className="bg-card rounded-xl border border-border p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{t("cart.quantity") || "الكمية"}</span>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="icon"
@@ -286,7 +286,20 @@ const ProductDetails = () => {
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="w-12 text-center font-bold text-lg">{quantity}</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val) && val >= 1) {
+                          setQuantity(val);
+                        } else if (e.target.value === "") {
+                          setQuantity(1);
+                        }
+                      }}
+                      className="w-16 text-center font-bold text-lg border rounded-md py-1 bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
                     <Button
                       variant="outline"
                       size="icon"
