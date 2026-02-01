@@ -17,6 +17,7 @@ import { useRestaurantAllCustomPrices } from "@/hooks/useCustomPrices";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCard from "@/components/products/ProductCard";
 import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
+import { useProductsWithPriceTiers } from "@/hooks/useProductPriceTiers";
 import {
   Select,
   SelectContent,
@@ -56,6 +57,7 @@ const Products = () => {
   );
   const { data: supplierProfile } = useSupplierProfile(supplierId || "");
   const { data: customPrices } = useRestaurantAllCustomPrices();
+  const { data: productsWithTiers = [] } = useProductsWithPriceTiers();
 
   // Flatten all pages of products
   const allProducts = useMemo(() => {
@@ -303,6 +305,7 @@ const Products = () => {
                     product={product} 
                     index={index}
                     customPrice={userRole === "restaurant" ? customPrices?.[product.id] : undefined}
+                    hasPriceTiers={productsWithTiers.includes(product.id)}
                   />
                 ))}
               </div>
