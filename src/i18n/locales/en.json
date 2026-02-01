@@ -56,7 +56,28 @@
     "myOrders": "My Orders",
     "branches": "Manage Branches",
     "favorites": "Favorites",
-    "templates": "Order Templates"
+    "templates": "Order Templates",
+    "analytics": "Analytics"
+  },
+  "analytics": {
+    "title": "Reports & Analytics",
+    "description": "Track your spending and analyze purchases for better decisions",
+    "thisMonth": "This Month's Spending",
+    "lastMonth": "Last Month",
+    "productsOrdered": "Products Ordered",
+    "suppliersUsed": "Suppliers Used",
+    "monthlySpending": "Monthly Spending",
+    "supplierDistribution": "Purchases by Supplier",
+    "topProducts": "Top Products",
+    "supplierBreakdown": "Supplier Breakdown",
+    "product": "Product",
+    "quantity": "Quantity",
+    "totalSpent": "Total Spent",
+    "supplier": "Supplier",
+    "ordersCount": "Orders Count",
+    "percentage": "Percentage",
+    "spending": "Spending",
+    "noData": "Not enough data available"
   },
   "templates": {
     "title": "Order Templates",

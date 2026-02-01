@@ -122,7 +122,28 @@
     "myOrders": "طلباتي",
     "branches": "إدارة الفروع",
     "favorites": "المفضلة",
-    "templates": "قوالب الطلبات"
+    "templates": "قوالب الطلبات",
+    "analytics": "التقارير"
+  },
+  "analytics": {
+    "title": "التقارير والتحليلات",
+    "description": "تابع إنفاقك وحلل مشترياتك لاتخاذ قرارات أفضل",
+    "thisMonth": "إنفاق هذا الشهر",
+    "lastMonth": "الشهر الماضي",
+    "productsOrdered": "منتجات تم طلبها",
+    "suppliersUsed": "موردين تتعامل معهم",
+    "monthlySpending": "الإنفاق الشهري",
+    "supplierDistribution": "توزيع المشتريات حسب المورد",
+    "topProducts": "أكثر المنتجات طلباً",
+    "supplierBreakdown": "تفاصيل المشتريات حسب المورد",
+    "product": "المنتج",
+    "quantity": "الكمية",
+    "totalSpent": "إجمالي الإنفاق",
+    "supplier": "المورد",
+    "ordersCount": "عدد الطلبات",
+    "percentage": "النسبة",
+    "spending": "الإنفاق",
+    "noData": "لا توجد بيانات كافية"
   },
   "templates": {
     "title": "قوالب الطلبات",
