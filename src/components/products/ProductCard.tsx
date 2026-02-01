@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, MapPin, Heart, Tag } from "lucide-react";
+import { Plus, Package, MapPin, Heart, Tag, Layers } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Product } from "@/hooks/useProducts";
@@ -16,13 +16,14 @@ interface ProductCardProps {
   product: Product;
   index?: number;
   customPrice?: number | null;
+  hasPriceTiers?: boolean;
 }
 
-const ProductCard = memo(({ product, index = 0, customPrice }: ProductCardProps) => {
+const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = false }: ProductCardProps) => {
   const { addItem } = useCart();
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { getProductName } = useProductTranslation();
   const { data: favoriteProducts = [] } = useFavoriteProducts();
   const toggleFavorite = useToggleFavoriteProduct();
@@ -30,6 +31,8 @@ const ProductCard = memo(({ product, index = 0, customPrice }: ProductCardProps)
   const isFavorite = favoriteProducts.includes(product.id);
   const hasCustomPrice = customPrice !== null && customPrice !== undefined && customPrice !== product.price;
   const displayPrice = hasCustomPrice ? customPrice : product.price;
+  // Price tiers only show if no custom price (custom price takes priority)
+  const showPriceTiers = hasPriceTiers && !hasCustomPrice;
   
   const handleToggleFavorite = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -108,6 +111,13 @@ const ProductCard = memo(({ product, index = 0, customPrice }: ProductCardProps)
             <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-green-500 text-white text-xs font-medium flex items-center gap-1">
               <Tag className="h-3 w-3" />
               سعر خاص
+            </div>
+          )}
+          {/* Price Tiers Badge */}
+          {showPriceTiers && (
+            <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-orange-500 text-white text-xs font-medium flex items-center gap-1">
+              <Layers className="h-3 w-3" />
+              {i18n.language === "ar" ? "شرائح أسعار" : "Price Tiers"}
             </div>
           )}
         </div>

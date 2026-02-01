@@ -298,58 +298,67 @@ export default function SupplierStore() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((product) => (
-                <div
+                <Link 
                   key={product.id}
-                  className="bg-card rounded-2xl border overflow-hidden hover:shadow-card transition-all duration-300 group"
+                  to={`/products/${product.id}`}
+                  className="block"
                 >
-                  {/* Product Image */}
-                  <div className="aspect-[4/3] bg-white flex items-center justify-center overflow-hidden p-2">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={getProductName(product)}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <Package className="h-12 w-12 text-muted-foreground" />
-                    )}
-                  </div>
-
-                  {/* Product Info */}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg truncate mb-1">
-                      {getProductName(product)}
-                    </h3>
-                    
-                    {product.category && (
-                      <Badge variant="secondary" className="mb-2">
-                        {getCategoryName(product.category)}
-                      </Badge>
-                    )}
-
-                    <div className="flex items-center justify-between mt-3">
-                      <div>
-                        <span className="text-xl font-bold text-primary">
-                          {product.price}
-                        </span>
-                        <span className="text-sm text-muted-foreground ltr:ml-1 rtl:mr-1">
-                          {t("common.sar")}/{product.unit}
-                        </span>
-                      </div>
-                      
-                      {canOrder && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleAddToCart(product)}
-                        >
-                          <ShoppingBag className="h-4 w-4" />
-                          {i18n.language === "ar" ? "أضف" : "Add"}
-                        </Button>
+                  <div
+                    className="bg-card rounded-2xl border overflow-hidden hover:shadow-card transition-all duration-300 group cursor-pointer"
+                  >
+                    {/* Product Image */}
+                    <div className="aspect-[4/3] bg-white flex items-center justify-center overflow-hidden p-2">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={getProductName(product)}
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <Package className="h-12 w-12 text-muted-foreground" />
                       )}
                     </div>
+
+                    {/* Product Info */}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-lg truncate mb-1">
+                        {getProductName(product)}
+                      </h3>
+                      
+                      {product.category && (
+                        <Badge variant="secondary" className="mb-2">
+                          {getCategoryName(product.category)}
+                        </Badge>
+                      )}
+
+                      <div className="flex items-center justify-between mt-3">
+                        <div>
+                          <span className="text-xl font-bold text-primary">
+                            {product.price}
+                          </span>
+                          <span className="text-sm text-muted-foreground ltr:ml-1 rtl:mr-1">
+                            {t("common.sar")}/{product.unit}
+                          </span>
+                        </div>
+                        
+                        {canOrder && (
+                          <Button 
+                            size="sm" 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddToCart(product);
+                            }}
+                          >
+                            <ShoppingBag className="h-4 w-4" />
+                            {i18n.language === "ar" ? "أضف" : "Add"}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
