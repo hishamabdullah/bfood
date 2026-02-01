@@ -32,6 +32,7 @@ import PendingApproval from "./pages/PendingApproval";
 import Favorites from "./pages/Favorites";
 import Branches from "./pages/Branches";
 import Templates from "./pages/Templates";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/branches" element={<Branches />} />
                 <Route path="/templates" element={<Templates />} />
+                <Route path="/analytics" element={<Analytics />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:id" element={<Profile />} />
                 <Route path="/supplier/products" element={<SupplierProducts />} />

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin, FileText } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin, FileText, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -80,6 +80,9 @@ const Header = () => {
               <Link to="/templates" className="text-muted-foreground hover:text-foreground transition-colors">
                 {t("nav.templates")}
               </Link>
+              <Link to="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">
+                {t("nav.analytics")}
+              </Link>
             </>
           )}
           {/* المورد يرى فقط لوحة التحكم */}
@@ -144,6 +147,12 @@ const Header = () => {
                       <Link to="/templates" className="cursor-pointer">
                         <FileText className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
                         {t("nav.templates")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/analytics" className="cursor-pointer">
+                        <BarChart3 className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                        {t("nav.analytics")}
                       </Link>
                     </DropdownMenuItem>
                   </>
@@ -246,6 +255,13 @@ const Header = () => {
                 >
                   {t("nav.templates")}
                 </Link>
+                <Link 
+                  to="/analytics" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t("nav.analytics")}
+                </Link>
               </>
             )}
             {/* المورد يرى فقط لوحة التحكم */}
@@ -283,6 +299,12 @@ const Header = () => {
                         <Button variant="outline" className="w-full gap-2">
                           <FileText className="h-4 w-4" />
                           {t("nav.templates")}
+                        </Button>
+                      </Link>
+                      <Link to="/analytics" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <BarChart3 className="h-4 w-4" />
+                          {t("nav.analytics")}
                         </Button>
                       </Link>
                     </>
