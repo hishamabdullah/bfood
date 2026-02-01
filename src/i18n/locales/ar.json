@@ -4,6 +4,7 @@
     "subtitle": "تصفح جميع المنتجات المتاحة",
     "supplierProducts": "منتجات {{name}}",
     "searchPlaceholder": "ابحث عن منتج...",
+    "searchCategories": "ابحث في التصنيفات...",
     "noSubcategories": "لا توجد أقسام فرعية"
   },
   "admin": {
@@ -606,6 +607,10 @@
     "stockQuantity": "الكمية المتوفرة",
     "category": "التصنيف",
     "selectCategory": "اختر التصنيف",
+    "searchCategory": "ابحث عن تصنيف...",
+    "subcategory": "القسم الفرعي",
+    "selectSubcategory": "اختر القسم الفرعي",
+    "searchSubcategory": "ابحث عن قسم فرعي...",
     "countryOfOrigin": "بلد المنشأ",
     "deliveryFee": "رسوم التوصيل (ر.س) - اختياري",
     "imageUrl": "رابط الصورة (اختياري)",
