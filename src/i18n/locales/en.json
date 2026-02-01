@@ -217,6 +217,7 @@
     "subtitle": "Browse products from all suppliers",
     "searchPlaceholder": "Search for product or supplier...",
     "searchCategories": "Search categories...",
+    "searchSubcategories": "Search subcategories...",
     "noSubcategories": "No subcategories",
     "addToCart": "Add to Cart",
     "inStock": "In Stock",
