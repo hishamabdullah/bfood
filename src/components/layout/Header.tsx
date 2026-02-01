@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -77,6 +77,9 @@ const Header = () => {
               <Link to="/branches" className="text-muted-foreground hover:text-foreground transition-colors">
                 {t("nav.branches")}
               </Link>
+              <Link to="/templates" className="text-muted-foreground hover:text-foreground transition-colors">
+                {t("nav.templates")}
+              </Link>
             </>
           )}
           {/* المورد يرى فقط لوحة التحكم */}
@@ -134,7 +137,13 @@ const Header = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/favorites" className="cursor-pointer">
                         <Heart className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                        المفضلة
+                        {t("nav.favorites")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/templates" className="cursor-pointer">
+                        <FileText className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                        {t("nav.templates")}
                       </Link>
                     </DropdownMenuItem>
                   </>
@@ -230,6 +239,13 @@ const Header = () => {
                 >
                   {t("nav.branches")}
                 </Link>
+                <Link 
+                  to="/templates" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t("nav.templates")}
+                </Link>
               </>
             )}
             {/* المورد يرى فقط لوحة التحكم */}
@@ -260,7 +276,13 @@ const Header = () => {
                       <Link to="/favorites" onClick={() => setIsMenuOpen(false)}>
                         <Button variant="outline" className="w-full gap-2">
                           <Heart className="h-4 w-4" />
-                          المفضلة
+                          {t("nav.favorites")}
+                        </Button>
+                      </Link>
+                      <Link to="/templates" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <FileText className="h-4 w-4" />
+                          {t("nav.templates")}
                         </Button>
                       </Link>
                     </>

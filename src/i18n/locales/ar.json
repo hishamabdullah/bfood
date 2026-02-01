@@ -111,7 +111,8 @@
     "success": "تم بنجاح",
     "error": "حدث خطأ",
     "required": "مطلوب",
-    "optional": "اختياري"
+    "optional": "اختياري",
+    "saving": "جاري الحفظ..."
   },
   "nav": {
     "home": "الرئيسية",
@@ -120,7 +121,29 @@
     "dashboard": "لوحة التحكم",
     "myOrders": "طلباتي",
     "branches": "إدارة الفروع",
-    "favorites": "المفضلة"
+    "favorites": "المفضلة",
+    "templates": "قوالب الطلبات"
+  },
+  "templates": {
+    "title": "قوالب الطلبات",
+    "templatesCount": "قالب",
+    "noTemplates": "لا توجد قوالب",
+    "noTemplatesMessage": "يمكنك حفظ سلة المشتريات كقالب لإعادة طلبها بسرعة",
+    "browseProducts": "تصفح المنتجات",
+    "products": "منتج",
+    "addToCart": "أضف للسلة",
+    "deleteTemplate": "حذف القالب",
+    "deleteConfirm": "هل أنت متأكد من حذف هذا القالب؟",
+    "saveAsTemplate": "حفظ كقالب",
+    "saveAsTemplateDesc": "احفظ محتويات السلة كقالب لإعادة طلبها لاحقاً بنقرة واحدة",
+    "templateName": "اسم القالب",
+    "templateNamePlaceholder": "مثال: طلب أسبوعي",
+    "templateDescription": "وصف القالب",
+    "templateDescriptionPlaceholder": "وصف اختياري للقالب...",
+    "addedToCart": "تم إضافة {count} منتج للسلة",
+    "someUnavailable": "{count} منتج غير متوفر حالياً",
+    "noItems": "القالب فارغ",
+    "backToDashboard": "العودة للوحة التحكم"
   },
   "auth": {
     "email": "البريد الإلكتروني",

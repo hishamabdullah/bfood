@@ -4,7 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ShoppingBag, ArrowLeft, Truck, Warehouse } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Truck, Warehouse, Save } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useCreateOrder } from "@/hooks/useOrders";
@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { BranchSelector } from "@/components/cart/BranchSelector";
 import { useBranches } from "@/hooks/useBranches";
 import { SupplierCartSection } from "@/components/cart/SupplierCartSection";
-
+import { SaveTemplateDialog } from "@/components/cart/SaveTemplateDialog";
 const Cart = () => {
   const { t } = useTranslation();
   const { items, updateQuantity, removeItem, clearCart, getSubtotal, getItemsBySupplier } = useCart();
@@ -25,6 +25,7 @@ const Cart = () => {
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   // Per-supplier pickup status
   const [supplierPickupStatus, setSupplierPickupStatus] = useState<Record<string, boolean>>({});
 
@@ -302,6 +303,16 @@ const Cart = () => {
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
 
+                {/* Save as Template Button */}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowSaveTemplate(true)}
+                >
+                  <Save className="h-4 w-4 me-2" />
+                  {t("templates.saveAsTemplate")}
+                </Button>
+
                 <p className="text-xs text-center text-muted-foreground">{t("cart.orderSplitNote")}</p>
               </div>
             </div>
@@ -309,6 +320,13 @@ const Cart = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Save Template Dialog */}
+      <SaveTemplateDialog
+        open={showSaveTemplate}
+        onOpenChange={setShowSaveTemplate}
+        items={items}
+      />
     </div>
   );
 };
