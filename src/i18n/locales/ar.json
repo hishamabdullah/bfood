@@ -5,6 +5,7 @@
     "supplierProducts": "منتجات {{name}}",
     "searchPlaceholder": "ابحث عن منتج...",
     "searchCategories": "ابحث في التصنيفات...",
+    "searchSubcategories": "ابحث في الأقسام الفرعية...",
     "noSubcategories": "لا توجد أقسام فرعية"
   },
   "admin": {
