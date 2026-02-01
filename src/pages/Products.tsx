@@ -259,10 +259,12 @@ const Products = () => {
           {selectedCategory !== "all" && (
             <div className="flex gap-2 overflow-x-auto pb-2 mb-8">
               <Button
-                variant={selectedSubcategory === "all" ? "secondary" : "ghost"}
+                variant="outline"
                 size="sm"
                 onClick={() => setSelectedSubcategory("all")}
-                className="whitespace-nowrap"
+                className={`whitespace-nowrap border-primary text-primary hover:bg-primary/10 ${
+                  selectedSubcategory === "all" ? "bg-primary/10 font-semibold" : ""
+                }`}
               >
                 {t("common.all")}
               </Button>
@@ -274,10 +276,12 @@ const Products = () => {
                 subcategories.map((subcategory) => (
                   <Button
                     key={subcategory.id}
-                    variant={selectedSubcategory === subcategory.id ? "secondary" : "ghost"}
+                    variant="outline"
                     size="sm"
                     onClick={() => setSelectedSubcategory(subcategory.id)}
-                    className="whitespace-nowrap"
+                    className={`whitespace-nowrap border-primary text-primary hover:bg-primary/10 ${
+                      selectedSubcategory === subcategory.id ? "bg-primary/10 font-semibold" : ""
+                    }`}
                   >
                     {getSubcategoryName(subcategory, i18n.language)}
                   </Button>
