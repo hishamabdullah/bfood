@@ -152,9 +152,9 @@ const Favorites = () => {
                         </div>
 
                         <div className="flex gap-2">
-                          <Link to={`/products?supplier=${supplier.user_id}`} className="flex-1">
+                          <Link to={`/store/${supplier.user_id}`} className="flex-1">
                             <Button variant="outline" className="w-full">
-                              عرض المنتجات
+                              عرض المتجر
                             </Button>
                           </Link>
                           <Link to={`/profile/${supplier.user_id}`}>
