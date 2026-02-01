@@ -1,4 +1,11 @@
 {
+  "products": {
+    "title": "المنتجات",
+    "subtitle": "تصفح جميع المنتجات المتاحة",
+    "supplierProducts": "منتجات {{name}}",
+    "searchPlaceholder": "ابحث عن منتج...",
+    "noSubcategories": "لا توجد أقسام فرعية"
+  },
   "admin": {
     "manageSubcategories": "إدارة الأقسام الفرعية",
     "addSubcategory": "إضافة قسم فرعي",
