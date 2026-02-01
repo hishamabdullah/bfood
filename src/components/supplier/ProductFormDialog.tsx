@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import i18n from "i18next";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import {
@@ -37,11 +38,13 @@ import {
 import { useCategories } from "@/hooks/useProducts";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useCreateProduct, useUpdateProduct, SupplierProduct, PriceTier } from "@/hooks/useSupplierProducts";
-import { Loader2, Globe, Tag, Upload, X, ImageIcon } from "lucide-react";
+import { Loader2, Globe, Tag, Upload, X, ImageIcon, Search } from "lucide-react";
 import PriceTiersEditor from "./PriceTiersEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const productSchema = z.object({
   name: z.string().min(2).max(100),
@@ -49,6 +52,7 @@ const productSchema = z.object({
   price: z.coerce.number().min(0.01),
   unit: z.string().min(1),
   category_id: z.string().optional(),
+  subcategory_id: z.string().optional(),
   stock_quantity: z.coerce.number().min(0).default(0),
   unlimited_stock: z.boolean().default(false),
   country_of_origin: z.string().default("السعودية"),
@@ -89,6 +93,8 @@ export default function ProductFormDialog({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [subcategorySearch, setSubcategorySearch] = useState("");
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -98,6 +104,7 @@ export default function ProductFormDialog({
       price: 0,
       unit: "kg",
       category_id: "",
+      subcategory_id: "",
       stock_quantity: 0,
       unlimited_stock: false,
       country_of_origin: "السعودية",
@@ -109,6 +116,25 @@ export default function ProductFormDialog({
       sku: "",
     },
   });
+
+  const watchCategoryId = form.watch("category_id");
+  const { data: subcategories } = useSubcategoriesByCategory(watchCategoryId || null);
+
+  const filteredCategories = useMemo(() => {
+    if (!categories) return [];
+    if (!categorySearch) return categories;
+    return categories.filter((cat) => 
+      getCategoryName(cat).toLowerCase().includes(categorySearch.toLowerCase())
+    );
+  }, [categories, categorySearch, getCategoryName]);
+
+  const filteredSubcategories = useMemo(() => {
+    if (!subcategories) return [];
+    if (!subcategorySearch) return subcategories;
+    return subcategories.filter((sub) => 
+      getSubcategoryName(sub, i18n.language).toLowerCase().includes(subcategorySearch.toLowerCase())
+    );
+  }, [subcategories, subcategorySearch]);
 
   const watchUnlimitedStock = form.watch("unlimited_stock");
   const watchPrice = form.watch("price");
@@ -122,6 +148,7 @@ export default function ProductFormDialog({
         price: product.price,
         unit: product.unit,
         category_id: product.category_id || "",
+        subcategory_id: (product as any).subcategory_id || "",
         stock_quantity: product.stock_quantity || 0,
         unlimited_stock: (product as any).unlimited_stock || false,
         country_of_origin: product.country_of_origin || "السعودية",
@@ -135,6 +162,8 @@ export default function ProductFormDialog({
       setPriceTiers(product.price_tiers || []);
       setImagePreview(product.image_url || null);
       setImageFile(null);
+      setCategorySearch("");
+      setSubcategorySearch("");
     } else {
       form.reset({
         name: "",
@@ -142,6 +171,7 @@ export default function ProductFormDialog({
         price: 0,
         unit: "kg",
         category_id: "",
+        subcategory_id: "",
         stock_quantity: 0,
         unlimited_stock: false,
         country_of_origin: "السعودية",
@@ -155,6 +185,8 @@ export default function ProductFormDialog({
       setPriceTiers([]);
       setImagePreview(null);
       setImageFile(null);
+      setCategorySearch("");
+      setSubcategorySearch("");
     }
   }, [product, form]);
 
@@ -228,6 +260,7 @@ export default function ProductFormDialog({
         price: values.price,
         unit: values.unit,
         category_id: values.category_id || null,
+        subcategory_id: values.subcategory_id || null,
         stock_quantity: values.unlimited_stock ? null : values.stock_quantity,
         unlimited_stock: values.unlimited_stock,
         country_of_origin: values.country_of_origin,
@@ -441,18 +474,44 @@ export default function ProductFormDialog({
                 render={({ field }) => (
                   <FormItem className={watchUnlimitedStock ? "col-span-2" : ""}>
                     <FormLabel>{t("productForm.category")}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select 
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        form.setValue("subcategory_id", "");
+                      }} 
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t("productForm.selectCategory")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {categories?.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {getCategoryName(cat)}
-                          </SelectItem>
-                        ))}
+                        <div className="p-2">
+                          <div className="relative">
+                            <Search className="absolute start-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder={t("productForm.searchCategory")}
+                              value={categorySearch}
+                              onChange={(e) => setCategorySearch(e.target.value)}
+                              className="ps-8 h-8"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </div>
+                        <ScrollArea className="max-h-[200px]">
+                          {filteredCategories.length > 0 ? (
+                            filteredCategories.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                {getCategoryName(cat)}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="py-2 px-3 text-sm text-muted-foreground">
+                              {t("common.noResults")}
+                            </div>
+                          )}
+                        </ScrollArea>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -460,6 +519,54 @@ export default function ProductFormDialog({
                 )}
               />
             </div>
+
+            {/* Subcategory Field */}
+            {watchCategoryId && subcategories && subcategories.length > 0 && (
+              <FormField
+                control={form.control}
+                name="subcategory_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("productForm.subcategory")}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("productForm.selectSubcategory")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <div className="p-2">
+                          <div className="relative">
+                            <Search className="absolute start-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder={t("productForm.searchSubcategory")}
+                              value={subcategorySearch}
+                              onChange={(e) => setSubcategorySearch(e.target.value)}
+                              className="ps-8 h-8"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </div>
+                        <ScrollArea className="max-h-[200px]">
+                          {filteredSubcategories.length > 0 ? (
+                            filteredSubcategories.map((sub) => (
+                              <SelectItem key={sub.id} value={sub.id}>
+                                {getSubcategoryName(sub, i18n.language)}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="py-2 px-3 text-sm text-muted-foreground">
+                              {t("common.noResults")}
+                            </div>
+                          )}
+                        </ScrollArea>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

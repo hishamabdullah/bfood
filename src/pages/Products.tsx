@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Products = () => {
   const { t } = useTranslation();
@@ -38,6 +39,8 @@ const Products = () => {
   const [selectedSubcategory, setSelectedSubcategory] = useState("all");
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedCity, setSelectedCity] = useState("all");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [subcategorySearch, setSubcategorySearch] = useState("");
 
   const availableCities = useMemo(() => 
     selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [], 
@@ -58,6 +61,24 @@ const Products = () => {
   const { data: supplierProfile } = useSupplierProfile(supplierId || "");
   const { data: customPrices } = useRestaurantAllCustomPrices();
   const { data: productsWithTiers = [] } = useProductsWithPriceTiers();
+
+  // Filter categories based on search
+  const filteredCategories = useMemo(() => {
+    if (!categories) return [];
+    if (!categorySearch) return categories;
+    return categories.filter((cat) =>
+      getCategoryName(cat).toLowerCase().includes(categorySearch.toLowerCase())
+    );
+  }, [categories, categorySearch, getCategoryName]);
+
+  // Filter subcategories based on search
+  const filteredSubcategories = useMemo(() => {
+    if (!subcategories) return [];
+    if (!subcategorySearch) return subcategories;
+    return subcategories.filter((sub) =>
+      getSubcategoryName(sub, i18n.language).toLowerCase().includes(subcategorySearch.toLowerCase())
+    );
+  }, [subcategories, subcategorySearch]);
 
   // Flatten all pages of products
   const allProducts = useMemo(() => {
@@ -220,77 +241,126 @@ const Products = () => {
             )}
           </div>
 
-          {/* Categories */}
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-            <Button
-              variant={selectedCategory === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setSelectedCategory("all");
-                setSelectedSubcategory("all");
-              }}
-              className="whitespace-nowrap"
-            >
-              {t("common.all")}
-            </Button>
-            {categoriesLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-9 w-20" />
-              ))
-            ) : (
-              categories?.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedCategory(category.id);
-                    setSelectedSubcategory("all");
-                  }}
-                  className="whitespace-nowrap"
+          {/* Categories Search and Buttons */}
+          <div className="mb-4">
+            {/* Category Search */}
+            <div className="relative mb-3 max-w-xs">
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t("products.searchCategories")}
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                className="ps-9 h-9"
+              />
+              {categorySearch && (
+                <button
+                  onClick={() => setCategorySearch("")}
+                  className="absolute end-3 top-1/2 -translate-y-1/2"
                 >
-                  {getCategoryName(category)}
-                </Button>
-              ))
-            )}
+                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                </button>
+              )}
+            </div>
+            
+            {/* Category Buttons */}
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <Button
+                variant={selectedCategory === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setSelectedCategory("all");
+                  setSelectedSubcategory("all");
+                  setCategorySearch("");
+                  setSubcategorySearch("");
+                }}
+                className="whitespace-nowrap"
+              >
+                {t("common.all")}
+              </Button>
+              {categoriesLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-20" />
+                ))
+              ) : (
+                filteredCategories.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedCategory(category.id);
+                      setSelectedSubcategory("all");
+                      setSubcategorySearch("");
+                    }}
+                    className="whitespace-nowrap"
+                  >
+                    {getCategoryName(category)}
+                  </Button>
+                ))
+              )}
+            </div>
           </div>
 
           {/* Subcategories */}
           {selectedCategory !== "all" && (
-            <div className="flex gap-2 overflow-x-auto pb-2 mb-8">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedSubcategory("all")}
-                className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
-                  selectedSubcategory === "all" ? "bg-primary/25 font-semibold" : ""
-                }`}
-              >
-                {t("common.all")}
-              </Button>
-              {subcategoriesLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-9 w-16" />
-                ))
-              ) : subcategories && subcategories.length > 0 ? (
-                subcategories.map((subcategory) => (
-                  <Button
-                    key={subcategory.id}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedSubcategory(subcategory.id)}
-                    className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
-                      selectedSubcategory === subcategory.id ? "bg-primary/25 font-semibold" : ""
-                    }`}
-                  >
-                    {getSubcategoryName(subcategory, i18n.language)}
-                  </Button>
-                ))
-              ) : (
-                <span className="text-sm text-muted-foreground py-2">
-                  {t("products.noSubcategories")}
-                </span>
+            <div className="mb-8">
+              {/* Subcategory Search */}
+              {subcategories && subcategories.length > 3 && (
+                <div className="relative mb-3 max-w-xs">
+                  <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t("products.searchCategories")}
+                    value={subcategorySearch}
+                    onChange={(e) => setSubcategorySearch(e.target.value)}
+                    className="ps-9 h-9"
+                  />
+                  {subcategorySearch && (
+                    <button
+                      onClick={() => setSubcategorySearch("")}
+                      className="absolute end-3 top-1/2 -translate-y-1/2"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    </button>
+                  )}
+                </div>
               )}
+              
+              {/* Subcategory Buttons */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedSubcategory("all")}
+                  className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
+                    selectedSubcategory === "all" ? "bg-primary/25 font-semibold" : ""
+                  }`}
+                >
+                  {t("common.all")}
+                </Button>
+                {subcategoriesLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-9 w-16" />
+                  ))
+                ) : filteredSubcategories.length > 0 ? (
+                  filteredSubcategories.map((subcategory) => (
+                    <Button
+                      key={subcategory.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSubcategory(subcategory.id)}
+                      className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
+                        selectedSubcategory === subcategory.id ? "bg-primary/25 font-semibold" : ""
+                      }`}
+                    >
+                      {getSubcategoryName(subcategory, i18n.language)}
+                    </Button>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground py-2">
+                    {t("products.noSubcategories")}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
