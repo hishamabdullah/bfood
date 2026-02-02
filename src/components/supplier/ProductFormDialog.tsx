@@ -517,10 +517,7 @@ export default function ProductFormDialog({
                             )}
                           >
                             {selectedCategory ? (
-                              <span className="flex items-center gap-2">
-                                {selectedCategory.icon && <span>{selectedCategory.icon}</span>}
-                                <span>{getCategoryName(selectedCategory)}</span>
-                              </span>
+                              <span>{getCategoryName(selectedCategory)}</span>
                             ) : (
                               t("productForm.selectCategory")
                             )}
@@ -557,10 +554,7 @@ export default function ProductFormDialog({
                                         field.value === cat.id ? "opacity-100" : "opacity-0"
                                       )}
                                     />
-                                    <span className="flex items-center gap-2">
-                                      {cat.icon && <span>{cat.icon}</span>}
-                                      <span>{getCategoryName(cat)}</span>
-                                    </span>
+                                    <span>{getCategoryName(cat)}</span>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -595,10 +589,7 @@ export default function ProductFormDialog({
                             )}
                           >
                             {selectedSubcategory ? (
-                              <span className="flex items-center gap-2">
-                                {selectedSubcategory.icon && <span>{selectedSubcategory.icon}</span>}
-                                <span>{getSubcategoryName(selectedSubcategory, "ar")}</span>
-                              </span>
+                              <span>{getSubcategoryName(selectedSubcategory, "ar")}</span>
                             ) : (
                               t("productForm.selectSubcategory")
                             )}
@@ -647,10 +638,7 @@ export default function ProductFormDialog({
                                       field.value === sub.id ? "opacity-100" : "opacity-0"
                                     )}
                                   />
-                                  <span className="flex items-center gap-2">
-                                    {sub.icon && <span>{sub.icon}</span>}
-                                    <span>{getSubcategoryName(sub, "ar")}</span>
-                                  </span>
+                                  <span>{getSubcategoryName(sub, "ar")}</span>
                                 </CommandItem>
                               ))}
                             </CommandGroup>
