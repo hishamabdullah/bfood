@@ -50,14 +50,23 @@ export const useSupplierOrders = () => {
       
       if (restaurantIds.length === 0) return orderItems as SupplierOrderItem[];
       
-      // Fetch profiles with customer_code
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, business_name, full_name, phone, google_maps_url, customer_code")
-        .in("user_id", restaurantIds);
-
+      // استخدام الدالة الآمنة لجلب بيانات المطاعم
+      const profilePromises = restaurantIds.map(async (restaurantId) => {
+        const { data } = await supabase.rpc('get_restaurant_profile_for_order', {
+          _restaurant_id: restaurantId
+        });
+        return data?.[0] || null;
+      });
+      
+      const profileResults = await Promise.all(profilePromises);
+      
       // Create a map for faster lookups
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      const profileMap = new Map<string, any>();
+      profileResults.forEach((profile) => {
+        if (profile) {
+          profileMap.set(profile.user_id, profile);
+        }
+      });
 
       // Map profiles to order items
       const itemsWithProfiles = orderItems?.map(item => {
