@@ -531,7 +531,7 @@ export default function ProductFormDialog({
                           value={categorySearch}
                           onValueChange={setCategorySearch}
                         />
-                        <CommandList>
+                        <CommandList className="max-h-[200px] overflow-y-auto">
                           {filteredCategories.length === 0 ? (
                             <CommandEmpty>{t("common.noResults")}</CommandEmpty>
                           ) : (
@@ -602,7 +602,7 @@ export default function ProductFormDialog({
                             value={subcategorySearch}
                             onValueChange={setSubcategorySearch}
                           />
-                          <CommandList>
+                          <CommandList className="max-h-[200px] overflow-y-auto">
                             <CommandGroup>
                               <CommandItem
                                 value="none"
