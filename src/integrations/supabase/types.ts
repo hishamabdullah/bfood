@@ -647,6 +647,63 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_features: {
+        Row: {
+          can_order: boolean
+          can_use_branches: boolean
+          can_use_custom_prices: boolean
+          can_use_favorites: boolean
+          can_use_templates: boolean
+          can_view_analytics: boolean
+          created_at: string
+          id: string
+          is_active: boolean
+          max_orders_per_month: number | null
+          notes: string | null
+          restaurant_id: string
+          subscription_end_date: string | null
+          subscription_start_date: string | null
+          subscription_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          can_order?: boolean
+          can_use_branches?: boolean
+          can_use_custom_prices?: boolean
+          can_use_favorites?: boolean
+          can_use_templates?: boolean
+          can_view_analytics?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_orders_per_month?: number | null
+          notes?: string | null
+          restaurant_id: string
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          can_order?: boolean
+          can_use_branches?: boolean
+          can_use_custom_prices?: boolean
+          can_use_favorites?: boolean
+          can_use_templates?: boolean
+          can_view_analytics?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_orders_per_month?: number | null
+          notes?: string | null
+          restaurant_id?: string
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           created_at: string
@@ -821,6 +878,10 @@ export type Database = {
         Returns: boolean
       }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
+      restaurant_has_feature: {
+        Args: { _feature: string; _restaurant_id: string }
+        Returns: boolean
+      }
       supplier_has_order_items: {
         Args: { _order_id: string; _supplier_id: string }
         Returns: boolean
