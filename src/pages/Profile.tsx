@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -139,6 +140,7 @@ const Profile = () => {
     bank_name: "",
     bank_account_name: "",
     bank_iban: "",
+    delivery_option: "with_fee" as "with_fee" | "minimum_only" | "no_delivery",
   });
 
   useEffect(() => {
@@ -183,6 +185,7 @@ const Profile = () => {
           bank_name: (data as any).bank_name || "",
           bank_account_name: (data as any).bank_account_name || "",
           bank_iban: (data as any).bank_iban || "",
+          delivery_option: (data as any).delivery_option || "with_fee",
         });
         setCustomerCode(data.customer_code || null);
         setAvatarUrl(data.avatar_url || null);
@@ -241,6 +244,7 @@ const Profile = () => {
           bank_iban: profileData.bank_iban || null,
           service_regions: serviceRegions.length > 0 ? serviceRegions : null,
           service_cities: serviceCities.length > 0 ? serviceCities : null,
+          delivery_option: profileData.delivery_option,
         } as any)
         .eq("user_id", user.id);
 
@@ -692,8 +696,8 @@ const Profile = () => {
               </div>
             )}
 
-            {/* Default Delivery Fee - For suppliers */}
-            {isSupplier && (
+            {/* Default Delivery Fee - For suppliers (only show if delivery is enabled) */}
+            {isSupplier && profileData.delivery_option !== "no_delivery" && (
               <div className="space-y-2">
                 <Label htmlFor="default_delivery_fee">{t("profile.defaultDeliveryFee")}</Label>
                 <Input
@@ -710,6 +714,66 @@ const Profile = () => {
                 <p className="text-xs text-muted-foreground">
                   {t("profile.deliveryFeeHint")}
                 </p>
+              </div>
+            )}
+
+            {/* Delivery Options - For suppliers */}
+            {isSupplier && isOwnProfile && (
+              <div className="space-y-4 pt-6 border-t">
+                <div className="flex items-center gap-2 mb-4">
+                  <Truck className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">{t("profile.deliveryOptions")}</h3>
+                </div>
+                
+                <RadioGroup
+                  value={profileData.delivery_option}
+                  onValueChange={(value: "with_fee" | "minimum_only" | "no_delivery") => 
+                    setProfileData({ ...profileData, delivery_option: value })
+                  }
+                  className="space-y-3"
+                >
+                  {/* Option 1: Delivery with fee */}
+                  <Label
+                    htmlFor="delivery-with-fee"
+                    className="flex items-start gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
+                  >
+                    <RadioGroupItem value="with_fee" id="delivery-with-fee" className="shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <span className="font-medium block">{t("profile.deliveryWithFee")}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t("profile.deliveryWithFeeDesc")}
+                      </span>
+                    </div>
+                  </Label>
+
+                  {/* Option 2: Delivery only after minimum */}
+                  <Label
+                    htmlFor="delivery-minimum-only"
+                    className="flex items-start gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
+                  >
+                    <RadioGroupItem value="minimum_only" id="delivery-minimum-only" className="shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <span className="font-medium block">{t("profile.deliveryMinimumOnly")}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t("profile.deliveryMinimumOnlyDesc", { amount: profileData.minimum_order_amount })}
+                      </span>
+                    </div>
+                  </Label>
+
+                  {/* Option 3: No delivery */}
+                  <Label
+                    htmlFor="delivery-none"
+                    className="flex items-start gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
+                  >
+                    <RadioGroupItem value="no_delivery" id="delivery-none" className="shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <span className="font-medium block">{t("profile.noDelivery")}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t("profile.noDeliveryDesc")}
+                      </span>
+                    </div>
+                  </Label>
+                </RadioGroup>
               </div>
             )}
 

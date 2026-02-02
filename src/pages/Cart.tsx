@@ -31,13 +31,29 @@ const Cart = () => {
 
   const groupedBySupplier = getItemsBySupplier();
 
-  // Initialize pickup status for new suppliers
+  // Initialize pickup status for new suppliers (considering delivery_option)
   useEffect(() => {
     const newStatus = { ...supplierPickupStatus };
     let changed = false;
-    Object.keys(groupedBySupplier).forEach((supplierId) => {
+    Object.entries(groupedBySupplier).forEach(([supplierId, group]) => {
+      const deliveryOption = (group.supplierProfile as any)?.delivery_option || "with_fee";
+      
       if (!(supplierId in newStatus)) {
-        newStatus[supplierId] = false;
+        // إذا كان المورد لا يوفر توصيل، اجعله pickup تلقائياً
+        if (deliveryOption === "no_delivery") {
+          newStatus[supplierId] = true;
+        } else if (deliveryOption === "minimum_only") {
+          // تحقق إذا كان يتجاوز الحد الأدنى
+          const supplierSubtotal = group.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+          const minimumOrderAmount = group.supplierProfile?.minimum_order_amount || 0;
+          newStatus[supplierId] = supplierSubtotal < minimumOrderAmount;
+        } else {
+          newStatus[supplierId] = false;
+        }
+        changed = true;
+      } else if (deliveryOption === "no_delivery" && !newStatus[supplierId]) {
+        // تأكد أن الموردين بدون توصيل دائماً pickup
+        newStatus[supplierId] = true;
         changed = true;
       }
     });
@@ -212,18 +228,25 @@ const Cart = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {Object.entries(groupedBySupplier).map(([supplierId, group]) => (
-                <SupplierCartSection
-                  key={supplierId}
-                  supplierId={supplierId}
-                  group={group}
-                  isPickup={supplierPickupStatus[supplierId] || false}
-                  onPickupChange={(isPickup) => handleSupplierPickupChange(supplierId, isPickup)}
-                  deliveryFeeInfo={supplierDeliveryFees[supplierId] || { fee: 0, reason: "", isFree: false }}
-                  updateQuantity={updateQuantity}
-                  removeItem={removeItem}
-                />
-              ))}
+              {Object.entries(groupedBySupplier).map(([supplierId, group]) => {
+                const supplierSubtotal = group.items.reduce(
+                  (sum, item) => sum + item.product.price * item.quantity,
+                  0
+                );
+                return (
+                  <SupplierCartSection
+                    key={supplierId}
+                    supplierId={supplierId}
+                    group={group}
+                    isPickup={supplierPickupStatus[supplierId] || false}
+                    onPickupChange={(isPickup) => handleSupplierPickupChange(supplierId, isPickup)}
+                    deliveryFeeInfo={supplierDeliveryFees[supplierId] || { fee: 0, reason: "", isFree: false }}
+                    updateQuantity={updateQuantity}
+                    removeItem={removeItem}
+                    supplierSubtotal={supplierSubtotal}
+                  />
+                );
+              })}
             </div>
 
             {/* Order Summary */}

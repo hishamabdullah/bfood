@@ -4,7 +4,14 @@
     "notificationSounds": "Notification Sounds",
     "notificationSoundsHint": "Play a sound when receiving new notifications",
     "soundEnabled": "Notification sounds enabled",
-    "soundDisabled": "Notification sounds disabled"
+    "soundDisabled": "Notification sounds disabled",
+    "deliveryOptions": "Delivery Options",
+    "deliveryWithFee": "Delivery with fee",
+    "deliveryWithFeeDesc": "Delivery available for all orders with delivery fee",
+    "deliveryMinimumOnly": "Delivery after minimum",
+    "deliveryMinimumOnlyDesc": "Delivery only for orders exceeding {{amount}} SAR",
+    "noDelivery": "No delivery",
+    "noDeliveryDesc": "Warehouse pickup only - no delivery service"
   },
   "admin": {
     "manageSubcategories": "Manage Subcategories",
@@ -294,6 +301,10 @@
     "pickupFromWarehouseDesc": "Pick up the order directly from supplier's warehouse",
     "warehouseLocation": "Warehouse location on map",
     "noWarehouseLocation": "Supplier hasn't set warehouse location",
+    "minimumForDelivery": "Minimum for delivery is {{amount}} SAR",
+    "minimumReached": "Minimum reached - delivery available",
+    "pickupOnly": "Warehouse Pickup Only",
+    "pickupOnlyDesc": "This supplier doesn't offer delivery service, you must pick up from their warehouse",
     "supplierTotal": "{name} Total",
     "warehousePickup": "Warehouse Pickup",
     "deliveryBranch": "Delivery Branch",

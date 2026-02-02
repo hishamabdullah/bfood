@@ -581,6 +581,7 @@ export type Database = {
           created_at: string
           customer_code: string | null
           default_delivery_fee: number | null
+          delivery_option: string | null
           full_name: string
           google_maps_url: string | null
           id: string
@@ -605,6 +606,7 @@ export type Database = {
           created_at?: string
           customer_code?: string | null
           default_delivery_fee?: number | null
+          delivery_option?: string | null
           full_name: string
           google_maps_url?: string | null
           id?: string
@@ -629,6 +631,7 @@ export type Database = {
           created_at?: string
           customer_code?: string | null
           default_delivery_fee?: number | null
+          delivery_option?: string | null
           full_name?: string
           google_maps_url?: string | null
           id?: string
