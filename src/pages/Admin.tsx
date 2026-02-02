@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags, Truck, UserCog, Layers } from "lucide-react";
+import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags, Truck, UserCog, Layers, Crown } from "lucide-react";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOrdersTable from "@/components/admin/AdminOrdersTable";
 import AdminCategoriesManager from "@/components/admin/AdminCategoriesManager";
@@ -16,6 +16,7 @@ import AdminLogoSettings from "@/components/admin/AdminLogoSettings";
 import AdminSupplierCategoriesManager from "@/components/admin/AdminSupplierCategoriesManager";
 import AdminDeliveryOrders from "@/components/admin/AdminDeliveryOrders";
 import AdminModeratorsManager from "@/components/admin/AdminModeratorsManager";
+import AdminRestaurantFeaturesManager from "@/components/admin/AdminRestaurantFeaturesManager";
 
 const Admin = () => {
   const { user, userRole, loading } = useAuth();
@@ -103,6 +104,10 @@ const Admin = () => {
                 <UserCog className="h-4 w-4" />
                 المشرفين
               </TabsTrigger>
+              <TabsTrigger value="subscriptions" className="flex items-center gap-2">
+                <Crown className="h-4 w-4" />
+                الاشتراكات
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="approvals">
@@ -143,6 +148,10 @@ const Admin = () => {
 
             <TabsContent value="moderators">
               <AdminModeratorsManager />
+            </TabsContent>
+
+            <TabsContent value="subscriptions">
+              <AdminRestaurantFeaturesManager />
             </TabsContent>
           </Tabs>
         </div>
