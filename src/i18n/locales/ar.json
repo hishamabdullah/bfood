@@ -612,7 +612,14 @@
     "clickToUpload": "اضغط لرفع الفاتورة",
     "supportedFormats": "الصيغ المدعومة: JPG, PNG, PDF",
     "orderInvoice": "فاتورة الطلب",
-    "invoiceAttached": "تم إرفاق الفاتورة"
+    "invoiceAttached": "تم إرفاق الفاتورة",
+    "printOrder": "طباعة الطلب",
+    "orderDetails": "تفاصيل الطلب",
+    "customerInfo": "معلومات العميل",
+    "customerCode": "رقم العميل",
+    "printedOn": "تمت الطباعة في",
+    "paymentReceipt": "إيصال الدفع",
+    "noReceiptImage": "لا توجد صورة للإيصال"
   },
 "profile": {
     "title": "الملف الشخصي",

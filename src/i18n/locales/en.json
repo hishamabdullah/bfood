@@ -611,7 +611,14 @@
     "clickToUpload": "Click to upload invoice",
     "supportedFormats": "Supported formats: JPG, PNG, PDF",
     "orderInvoice": "Order Invoice",
-    "invoiceAttached": "Invoice attached"
+    "invoiceAttached": "Invoice attached",
+    "printOrder": "Print Order",
+    "orderDetails": "Order Details",
+    "customerInfo": "Customer Information",
+    "customerCode": "Customer Code",
+    "printedOn": "Printed on",
+    "paymentReceipt": "Payment Receipt",
+    "noReceiptImage": "No receipt image available"
   },
 "profile": {
     "title": "Profile",
