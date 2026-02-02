@@ -529,39 +529,42 @@ export default function ProductFormDialog({
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-[300px] p-0" align="start">
-                        <Command>
+                        <Command shouldFilter={false}>
                           <CommandInput
                             placeholder={t("productForm.searchCategory")}
                             value={categorySearch}
                             onValueChange={setCategorySearch}
                           />
                           <CommandList>
-                            <CommandEmpty>{t("common.noResults")}</CommandEmpty>
-                            <CommandGroup>
-                              {filteredCategories.map((cat) => (
-                                <CommandItem
-                                  key={cat.id}
-                                  value={`${cat.name} ${cat.name_en || ""}`}
-                                  onSelect={() => {
-                                    field.onChange(cat.id);
-                                    form.setValue("subcategory_id", "");
-                                    setCategoryPopoverOpen(false);
-                                    setCategorySearch("");
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "me-2 h-4 w-4",
-                                      field.value === cat.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <span className="flex items-center gap-2">
-                                    {cat.icon && <span>{cat.icon}</span>}
-                                    <span>{getCategoryName(cat)}</span>
-                                  </span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
+                            {filteredCategories.length === 0 ? (
+                              <CommandEmpty>{t("common.noResults")}</CommandEmpty>
+                            ) : (
+                              <CommandGroup>
+                                {filteredCategories.map((cat) => (
+                                  <CommandItem
+                                    key={cat.id}
+                                    value={cat.id}
+                                    onSelect={() => {
+                                      field.onChange(cat.id);
+                                      form.setValue("subcategory_id", "");
+                                      setCategoryPopoverOpen(false);
+                                      setCategorySearch("");
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "me-2 h-4 w-4",
+                                        field.value === cat.id ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <span className="flex items-center gap-2">
+                                      {cat.icon && <span>{cat.icon}</span>}
+                                      <span>{getCategoryName(cat)}</span>
+                                    </span>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            )}
                           </CommandList>
                         </Command>
                       </PopoverContent>
@@ -604,14 +607,13 @@ export default function ProductFormDialog({
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-[300px] p-0" align="start">
-                        <Command>
+                        <Command shouldFilter={false}>
                           <CommandInput
                             placeholder={t("productForm.searchSubcategory")}
                             value={subcategorySearch}
                             onValueChange={setSubcategorySearch}
                           />
                           <CommandList>
-                            <CommandEmpty>{t("common.noResults")}</CommandEmpty>
                             <CommandGroup>
                               <CommandItem
                                 value="none"
@@ -632,7 +634,7 @@ export default function ProductFormDialog({
                               {filteredSubcategories.map((sub) => (
                                 <CommandItem
                                   key={sub.id}
-                                  value={`${sub.name} ${sub.name_en || ""}`}
+                                  value={sub.id}
                                   onSelect={() => {
                                     field.onChange(sub.id);
                                     setSubcategoryPopoverOpen(false);
