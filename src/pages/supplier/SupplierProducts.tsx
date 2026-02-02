@@ -155,51 +155,85 @@ export default function SupplierProducts() {
             <div className="bg-card rounded-2xl border overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-start">{t("supplier.tableProduct")}</TableHead>
-                    <TableHead className="text-start">{t("supplier.tableCategory")}</TableHead>
-                    <TableHead className="text-start">{t("supplier.tablePrice")}</TableHead>
-                    <TableHead className="text-start">{t("supplier.tableStock")}</TableHead>
-                    <TableHead className="text-start">{t("supplier.tableStatus")}</TableHead>
-                    <TableHead className="text-start w-[100px]">{t("supplier.tableActions")}</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="text-start font-semibold">{t("supplier.tableProduct")}</TableHead>
+                    <TableHead className="text-start font-semibold">{t("supplier.tableCategory")}</TableHead>
+                    <TableHead className="text-start font-semibold">{t("supplier.tablePrice")}</TableHead>
+                    <TableHead className="text-start font-semibold">{t("supplier.tableUnit")}</TableHead>
+                    <TableHead className="text-start font-semibold">{t("supplier.tableStock")}</TableHead>
+                    <TableHead className="text-start font-semibold">{t("supplier.tableStatus")}</TableHead>
+                    <TableHead className="text-start w-[100px] font-semibold">{t("supplier.tableActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredProducts.map((product) => (
-                    <TableRow key={product.id}>
+                    <TableRow key={product.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           {product.image_url ? (
                             <img
                               src={product.image_url}
                               alt={product.name}
-                              className="w-10 h-10 rounded-lg object-cover"
+                              className="w-12 h-12 rounded-lg object-cover border bg-white shrink-0"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                              <Package className="h-5 w-5 text-muted-foreground" />
+                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                              <Package className="h-6 w-6 text-muted-foreground" />
                             </div>
                           )}
-                          <div>
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {product.country_of_origin}
-                            </p>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground truncate max-w-[200px]">{product.name}</p>
+                            {product.sku && (
+                              <p className="text-xs text-muted-foreground font-mono">
+                                SKU: {product.sku}
+                              </p>
+                            )}
+                            {product.country_of_origin && (
+                              <p className="text-xs text-muted-foreground">
+                                {product.country_of_origin}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        {product.category ? getCategoryName(product.category) : "-"}
+                        <span className="text-sm">
+                          {product.category ? getCategoryName(product.category) : "-"}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        {product.price.toFixed(2)} {t("common.sar")}/{product.unit}
+                        <span className="text-lg font-bold text-primary">
+                          {product.price.toFixed(2)}
+                        </span>
+                        <span className="text-xs text-muted-foreground ms-1">{t("common.sar")}</span>
                       </TableCell>
                       <TableCell>
-                        {product.stock_quantity || 0}
+                        <Badge variant="outline" className="font-medium">
+                          {t(`units.${product.unit}`, { defaultValue: product.unit })}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className={`text-lg font-bold ${
+                            product.unlimited_stock 
+                              ? "text-green-600" 
+                              : (product.stock_quantity || 0) > 10 
+                                ? "text-foreground" 
+                                : (product.stock_quantity || 0) > 0 
+                                  ? "text-orange-500" 
+                                  : "text-destructive"
+                          }`}>
+                            {product.unlimited_stock ? "∞" : (product.stock_quantity || 0)}
+                          </span>
+                          {product.unlimited_stock && (
+                            <span className="text-xs text-muted-foreground">{t("supplier.unlimited")}</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant={product.in_stock ? "default" : "secondary"}
+                          className={product.in_stock ? "bg-green-500/15 text-green-600 border-green-500/30" : ""}
                         >
                           {product.in_stock ? t("supplier.available") : t("supplier.unavailable")}
                         </Badge>
@@ -210,6 +244,7 @@ export default function SupplierProducts() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(product)}
+                            className="hover:bg-primary/10 hover:text-primary"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -217,6 +252,7 @@ export default function SupplierProducts() {
                             variant="ghost"
                             size="icon"
                             onClick={() => setDeletingProductId(product.id)}
+                            className="hover:bg-destructive/10"
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
