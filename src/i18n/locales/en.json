@@ -290,7 +290,7 @@
     "minimumForDelivery": "Minimum for delivery is {{amount}} SAR",
     "minimumReached": "Minimum reached - delivery available",
     "pickupOnly": "Warehouse Pickup Only",
-    "pickupOnlyDesc": "This supplier doesn't offer delivery service, you must pick up from their warehouse",
+    "pickupOnlyDesc": "This supplier doesn't offer delivery service, but can prepare your order for pickup from their warehouse",
     "supplierTotal": "{name} Total",
     "warehousePickup": "Warehouse Pickup",
     "deliveryBranch": "Delivery Branch",
