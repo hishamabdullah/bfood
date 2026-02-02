@@ -6,6 +6,7 @@ import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin, FileText, 
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useRestaurantAccess } from "@/hooks/useRestaurantAccess";
 import NotificationBell from "./NotificationBell";
 import LanguageSwitcher from "./LanguageSwitcher";
 import {
@@ -21,12 +22,19 @@ const Header = () => {
   const { user, userRole, profile, signOut } = useAuth();
   const { getItemCount } = useCart();
   const { data: siteSettings } = useSiteSettings();
+  const { data: features } = useRestaurantAccess();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const itemCount = getItemCount();
   
   const isSupplier = userRole === "supplier";
   const isRestaurant = userRole === "restaurant";
+
+  // Feature checks for restaurant
+  const canUseBranches = features?.can_use_branches ?? false;
+  const canUseTemplates = features?.can_use_templates ?? false;
+  const canViewAnalytics = features?.can_view_analytics ?? false;
+  const canUseFavorites = features?.can_use_favorites ?? true;
 
   const handleSignOut = async () => {
     try {
@@ -74,15 +82,21 @@ const Header = () => {
               <Link to="/orders" className="text-muted-foreground hover:text-foreground transition-colors">
                 {t("nav.myOrders")}
               </Link>
-              <Link to="/branches" className="text-muted-foreground hover:text-foreground transition-colors">
-                {t("nav.branches")}
-              </Link>
-              <Link to="/templates" className="text-muted-foreground hover:text-foreground transition-colors">
-                {t("nav.templates")}
-              </Link>
-              <Link to="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">
-                {t("nav.analytics")}
-              </Link>
+              {canUseBranches && (
+                <Link to="/branches" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t("nav.branches")}
+                </Link>
+              )}
+              {canUseTemplates && (
+                <Link to="/templates" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t("nav.templates")}
+                </Link>
+              )}
+              {canViewAnalytics && (
+                <Link to="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t("nav.analytics")}
+                </Link>
+              )}
             </>
           )}
           {/* المورد يرى فقط لوحة التحكم */}
@@ -137,24 +151,30 @@ const Header = () => {
                         {t("nav.myOrders")}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/favorites" className="cursor-pointer">
-                        <Heart className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                        {t("nav.favorites")}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/templates" className="cursor-pointer">
-                        <FileText className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                        {t("nav.templates")}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/analytics" className="cursor-pointer">
-                        <BarChart3 className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                        {t("nav.analytics")}
-                      </Link>
-                    </DropdownMenuItem>
+                    {canUseFavorites && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/favorites" className="cursor-pointer">
+                          <Heart className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                          {t("nav.favorites")}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {canUseTemplates && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/templates" className="cursor-pointer">
+                          <FileText className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                          {t("nav.templates")}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {canViewAnalytics && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/analytics" className="cursor-pointer">
+                          <BarChart3 className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                          {t("nav.analytics")}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                   </>
                 )}
                 <DropdownMenuItem asChild>
@@ -241,27 +261,33 @@ const Header = () => {
                 >
                   {t("nav.myOrders")}
                 </Link>
-                <Link 
-                  to="/branches" 
-                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t("nav.branches")}
-                </Link>
-                <Link 
-                  to="/templates" 
-                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t("nav.templates")}
-                </Link>
-                <Link 
-                  to="/analytics" 
-                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t("nav.analytics")}
-                </Link>
+                {canUseBranches && (
+                  <Link 
+                    to="/branches" 
+                    className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t("nav.branches")}
+                  </Link>
+                )}
+                {canUseTemplates && (
+                  <Link 
+                    to="/templates" 
+                    className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t("nav.templates")}
+                  </Link>
+                )}
+                {canViewAnalytics && (
+                  <Link 
+                    to="/analytics" 
+                    className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t("nav.analytics")}
+                  </Link>
+                )}
               </>
             )}
             {/* المورد يرى فقط لوحة التحكم */}
@@ -289,24 +315,30 @@ const Header = () => {
                           {t("nav.myOrders")}
                         </Button>
                       </Link>
-                      <Link to="/favorites" onClick={() => setIsMenuOpen(false)}>
-                        <Button variant="outline" className="w-full gap-2">
-                          <Heart className="h-4 w-4" />
-                          {t("nav.favorites")}
-                        </Button>
-                      </Link>
-                      <Link to="/templates" onClick={() => setIsMenuOpen(false)}>
-                        <Button variant="outline" className="w-full gap-2">
-                          <FileText className="h-4 w-4" />
-                          {t("nav.templates")}
-                        </Button>
-                      </Link>
-                      <Link to="/analytics" onClick={() => setIsMenuOpen(false)}>
-                        <Button variant="outline" className="w-full gap-2">
-                          <BarChart3 className="h-4 w-4" />
-                          {t("nav.analytics")}
-                        </Button>
-                      </Link>
+                      {canUseFavorites && (
+                        <Link to="/favorites" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" className="w-full gap-2">
+                            <Heart className="h-4 w-4" />
+                            {t("nav.favorites")}
+                          </Button>
+                        </Link>
+                      )}
+                      {canUseTemplates && (
+                        <Link to="/templates" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" className="w-full gap-2">
+                            <FileText className="h-4 w-4" />
+                            {t("nav.templates")}
+                          </Button>
+                        </Link>
+                      )}
+                      {canViewAnalytics && (
+                        <Link to="/analytics" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" className="w-full gap-2">
+                            <BarChart3 className="h-4 w-4" />
+                            {t("nav.analytics")}
+                          </Button>
+                        </Link>
+                      )}
                     </>
                   )}
                   <Link to="/profile" onClick={() => setIsMenuOpen(false)}>

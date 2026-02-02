@@ -1,20 +1,22 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Heart, MapPin, User as UserIcon, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Package, Heart, MapPin, User as UserIcon, Loader2, Lock } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
 import { useSuppliers } from "@/hooks/useSuppliers";
 import { useFavoriteProducts, useFavoriteSuppliers } from "@/hooks/useFavorites";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 import ProductCard from "@/components/products/ProductCard";
 
 const Favorites = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("products");
+  const { hasFeature, isLoading: featureLoading } = useHasFeature("can_use_favorites");
   
   const { data: favoriteProductIds = [], isLoading: favProductsLoading } = useFavoriteProducts();
   const { data: favoriteSupplierIds = [], isLoading: favSuppliersLoading } = useFavoriteSuppliers();
@@ -29,7 +31,31 @@ const Favorites = () => {
   const favoriteProducts = allProducts.filter((p) => favoriteProductIds.includes(p.id));
   const favoriteSuppliers = allSuppliers?.filter((s) => favoriteSupplierIds.includes(s.user_id)) || [];
 
-  const isLoading = favProductsLoading || favSuppliersLoading || productsLoading || suppliersLoading;
+  const isLoading = favProductsLoading || favSuppliersLoading || productsLoading || suppliersLoading || featureLoading;
+
+  // Show feature disabled message
+  if (!featureLoading && !hasFeature) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center px-4">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+              <Lock className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">{t("subscription.featureDisabled")}</h2>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              {t("subscription.favoritesDisabled")}
+            </p>
+            <Link to="/dashboard">
+              <Button variant="hero">{t("nav.dashboard")}</Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
