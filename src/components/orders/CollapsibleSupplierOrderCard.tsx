@@ -635,7 +635,7 @@ const CollapsibleSupplierOrderCard = memo(({
                         {/* Unit */}
                         <div className="col-span-2 text-center">
                           <span className="inline-flex items-center justify-center px-2 py-1 bg-muted text-muted-foreground rounded text-sm font-medium">
-                            {item.product?.unit ? t(`units.${item.product.unit}`) : "-"}
+                            {item.product?.unit ? t(`productForm.units.${item.product.unit}`) : "-"}
                           </span>
                         </div>
                         
