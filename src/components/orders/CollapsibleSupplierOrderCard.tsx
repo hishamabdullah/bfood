@@ -18,7 +18,8 @@ import {
   Warehouse,
   Banknote,
   Receipt,
-  Image
+  Image,
+  Printer
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -157,6 +158,216 @@ const CollapsibleSupplierOrderCard = memo(({
   const handleStatusChange = useCallback((value: string) => {
     onStatusChange(order.orderId, value);
   }, [onStatusChange, order.orderId]);
+
+  const handlePrint = useCallback(() => {
+    const printContent = `
+      <!DOCTYPE html>
+      <html dir="${i18n.language === 'ar' ? 'rtl' : 'ltr'}" lang="${i18n.language}">
+      <head>
+        <meta charset="UTF-8">
+        <title>${t("supplier.orderDetails")} #${order.orderId.slice(0, 8)}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif; 
+            padding: 20px; 
+            max-width: 800px; 
+            margin: 0 auto;
+            direction: ${i18n.language === 'ar' ? 'rtl' : 'ltr'};
+          }
+          .header { 
+            border-bottom: 2px solid #333; 
+            padding-bottom: 15px; 
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .order-id { font-size: 24px; font-weight: bold; }
+          .date { color: #666; font-size: 14px; }
+          .status { 
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+          }
+          .status-pending { background: #fef3c7; color: #92400e; }
+          .status-confirmed { background: #dbeafe; color: #1e40af; }
+          .status-preparing { background: #f3e8ff; color: #7c3aed; }
+          .status-shipped { background: #e0e7ff; color: #4338ca; }
+          .status-delivered { background: #dcfce7; color: #166534; }
+          .status-cancelled { background: #fee2e2; color: #dc2626; }
+          .section { margin-bottom: 20px; }
+          .section-title { 
+            font-size: 14px; 
+            font-weight: bold; 
+            color: #666;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+          }
+          .customer-info { 
+            background: #f9fafb; 
+            padding: 12px; 
+            border-radius: 8px;
+          }
+          .customer-info p { margin-bottom: 4px; }
+          .products-table { 
+            width: 100%; 
+            border-collapse: collapse;
+            margin-top: 10px;
+          }
+          .products-table th, .products-table td { 
+            padding: 10px;
+            text-align: ${i18n.language === 'ar' ? 'right' : 'left'};
+            border-bottom: 1px solid #eee;
+          }
+          .products-table th { 
+            background: #f3f4f6;
+            font-weight: 600;
+            font-size: 12px;
+            color: #666;
+          }
+          .products-table .qty { 
+            text-align: center;
+            font-weight: bold;
+            background: #f0f9ff;
+            color: #0369a1;
+          }
+          .products-table .price { text-align: ${i18n.language === 'ar' ? 'left' : 'right'}; }
+          .products-table .subtotal { 
+            text-align: ${i18n.language === 'ar' ? 'left' : 'right'}; 
+            font-weight: bold;
+            color: #0369a1;
+          }
+          .totals { 
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #333;
+          }
+          .totals-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 8px;
+            font-size: 14px;
+          }
+          .totals-row.grand-total { 
+            font-size: 18px; 
+            font-weight: bold;
+            color: #0369a1;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+          }
+          .footer { 
+            margin-top: 30px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+          }
+          .pickup-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-${i18n.language === 'ar' ? 'right' : 'left'}: 8px;
+          }
+          @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="order-id">${t("supplier.orderDetails")} #${order.orderId.slice(0, 8)}</div>
+            <div class="date">${format(new Date(order.createdAt), "dd/MM/yyyy HH:mm", { locale: currentLocale })}</div>
+          </div>
+          <div>
+            <span class="status status-${order.status}">${statusLabels[order.status] || order.status}</span>
+            ${order.isPickup ? `<span class="pickup-badge">${t("supplier.warehousePickup")}</span>` : ''}
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">${t("supplier.customerInfo")}</div>
+          <div class="customer-info">
+            <p><strong>${order.restaurant?.business_name || t("supplier.unknownRestaurant")}</strong></p>
+            ${order.restaurant?.customer_code ? `<p>${t("supplier.customerCode")}: ${order.restaurant.customer_code}</p>` : ''}
+            ${order.restaurant?.full_name ? `<p>${order.restaurant.full_name}</p>` : ''}
+            ${order.restaurant?.phone ? `<p>${t("profile.phone")}: ${order.restaurant.phone}</p>` : ''}
+            ${order.branch ? `<p>${t("orders.branch")}: ${order.branch.name}${order.branch.address ? ` - ${order.branch.address}` : ''}</p>` : ''}
+            ${order.deliveryAddress && !order.branch ? `<p>${t("orders.deliveryAddress")}: ${order.deliveryAddress}</p>` : ''}
+            ${order.notes ? `<p>${t("orders.notes")}: ${order.notes}</p>` : ''}
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">${t("supplier.requestedProducts")}</div>
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th>${t("supplier.tableProduct")}</th>
+                <th style="text-align: center;">${t("orders.quantity")}</th>
+                <th class="price">${t("orders.unitPrice")}</th>
+                <th class="price">${t("orders.subtotal")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.items.map(item => `
+                <tr>
+                  <td>${item.product?.name || t("orders.deletedProduct")}</td>
+                  <td class="qty">${item.quantity}</td>
+                  <td class="price">${item.unit_price.toFixed(2)} ${t("common.sar")}</td>
+                  <td class="subtotal">${(item.quantity * item.unit_price).toFixed(2)} ${t("common.sar")}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="totals">
+          <div class="totals-row">
+            <span>${t("supplier.productsTotal")}:</span>
+            <span>${itemsTotal.toFixed(2)} ${t("common.sar")}</span>
+          </div>
+          ${!order.isPickup ? `
+            <div class="totals-row">
+              <span>${t("orders.deliveryFee")}:</span>
+              <span>${order.deliveryFee.toFixed(2)} ${t("common.sar")}</span>
+            </div>
+          ` : `
+            <div class="totals-row">
+              <span>${t("supplier.warehousePickup")}</span>
+              <span>-</span>
+            </div>
+          `}
+          <div class="totals-row grand-total">
+            <span>${t("orders.total")}:</span>
+            <span>${orderTotal.toFixed(2)} ${t("common.sar")}</span>
+          </div>
+        </div>
+        
+        <div class="footer">
+          ${t("supplier.printedOn")}: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: currentLocale })}
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+  }, [order, itemsTotal, orderTotal, statusLabels, t, i18n.language, currentLocale]);
 
   return (
     <Card className="overflow-hidden">
@@ -362,11 +573,22 @@ const CollapsibleSupplierOrderCard = memo(({
               <div className="border rounded-xl overflow-hidden">
                 <div className="bg-muted/50 px-4 py-3 border-b">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">{t("supplier.requestedProducts")}</h4>
-                    <Badge variant="secondary" className="gap-1 px-3">
-                      <Package className="h-3.5 w-3.5" />
-                      {itemsCount} {t("orders.product")}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold">{t("supplier.requestedProducts")}</h4>
+                      <Badge variant="secondary" className="gap-1 px-3">
+                        <Package className="h-3.5 w-3.5" />
+                        {itemsCount} {t("orders.product")}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={handlePrint}
+                    >
+                      <Printer className="h-4 w-4" />
+                      {t("supplier.printOrder")}
+                    </Button>
                   </div>
                 </div>
                 
