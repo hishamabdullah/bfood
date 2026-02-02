@@ -291,6 +291,8 @@
     "minimumReached": "Minimum reached - delivery available",
     "pickupOnly": "Warehouse Pickup Only",
     "pickupOnlyDesc": "This supplier doesn't offer delivery service, but can prepare your order for pickup from their warehouse",
+    "supplierNoDelivery": "{{name}} doesn't offer delivery service, please choose warehouse pickup",
+    "supplierMinimumNotMet": "Your order from {{name}} must exceed the minimum {{amount}} SAR for delivery",
     "supplierTotal": "{name} Total",
     "warehousePickup": "Warehouse Pickup",
     "deliveryBranch": "Delivery Branch",
