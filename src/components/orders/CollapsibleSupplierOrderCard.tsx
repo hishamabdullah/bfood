@@ -52,6 +52,7 @@ interface OrderItem {
     id: string;
     name: string;
     image_url?: string;
+    unit?: string;
   } | null;
 }
 
@@ -594,10 +595,11 @@ const CollapsibleSupplierOrderCard = memo(({
                 
                 {/* Table Header */}
                 <div className="hidden sm:grid sm:grid-cols-12 gap-2 px-4 py-2 bg-muted/30 text-xs font-semibold text-muted-foreground border-b">
-                  <div className="col-span-5">{t("supplier.tableProduct")}</div>
+                  <div className="col-span-4">{t("supplier.tableProduct")}</div>
                   <div className="col-span-2 text-center">{t("orders.quantity")}</div>
+                  <div className="col-span-2 text-center">{t("supplier.tableUnit")}</div>
                   <div className="col-span-2 text-center">{t("orders.unitPrice")}</div>
-                  <div className="col-span-3 text-end">{t("orders.subtotal")}</div>
+                  <div className="col-span-2 text-end">{t("orders.subtotal")}</div>
                 </div>
                 
                 <div className="divide-y">
@@ -606,7 +608,7 @@ const CollapsibleSupplierOrderCard = memo(({
                       {/* Desktop Layout */}
                       <div className="hidden sm:grid sm:grid-cols-12 gap-2 items-center">
                         {/* Product */}
-                        <div className="col-span-5 flex items-center gap-3">
+                        <div className="col-span-4 flex items-center gap-3">
                           {item.product?.image_url ? (
                             <img
                               src={item.product.image_url}
@@ -630,6 +632,13 @@ const CollapsibleSupplierOrderCard = memo(({
                           </span>
                         </div>
                         
+                        {/* Unit */}
+                        <div className="col-span-2 text-center">
+                          <span className="inline-flex items-center justify-center px-2 py-1 bg-muted text-muted-foreground rounded text-sm font-medium">
+                            {item.product?.unit ? t(`units.${item.product.unit}`) : "-"}
+                          </span>
+                        </div>
+                        
                         {/* Unit Price */}
                         <div className="col-span-2 text-center">
                           <span className="text-muted-foreground">
@@ -639,7 +648,7 @@ const CollapsibleSupplierOrderCard = memo(({
                         </div>
                         
                         {/* Subtotal */}
-                        <div className="col-span-3 text-end">
+                        <div className="col-span-2 text-end">
                           <span className="font-bold text-lg text-primary">
                             {(item.quantity * item.unit_price).toFixed(2)}
                           </span>
