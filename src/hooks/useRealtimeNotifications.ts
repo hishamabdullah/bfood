@@ -75,19 +75,34 @@ export const useRealtimeNotifications = () => {
 
     // تشغيل الصوت مع منع التكرار (يحترم إعداد الصوت)
     const playSound = (audioRef: React.RefObject<HTMLAudioElement | null>) => {
-      // تحقق من تفعيل الصوت
+      // تحقق من تفعيل الصوت - إذا لم يكن هناك إعداد، افترض تفعيل الصوت
       if (userSettings?.sound_enabled === false) {
+        console.log("Sound disabled by user settings");
         return;
       }
       
       const now = Date.now();
       // منع تشغيل الصوت إذا تم تشغيله خلال آخر 500 مللي ثانية
       if (now - lastPlayedRef.current < 500) {
+        console.log("Sound throttled - too soon after last play");
         return;
       }
       lastPlayedRef.current = now;
       stopAllSounds();
-      audioRef.current?.play().catch(console.error);
+      
+      // تأكد من أن الصوت جاهز للتشغيل
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => console.log("Sound played successfully"))
+            .catch((err) => {
+              console.error("Failed to play sound:", err);
+              // محاولة تشغيل الصوت بعد تفاعل المستخدم
+            });
+        }
+      }
     };
 
     // الاستماع للإشعارات الجديدة

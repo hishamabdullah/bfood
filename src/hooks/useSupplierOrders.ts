@@ -21,7 +21,7 @@ export const useSupplierOrders = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      // Get order items for this supplier - select only needed fields
+      // Get order items for this supplier - select only needed fields including restaurant_id
       const { data: orderItems, error } = await supabase
         .from("order_items")
         .select(`
@@ -36,35 +36,42 @@ export const useSupplierOrders = () => {
           invoice_url,
           created_at,
           product:products(id, name, image_url, unit, price),
-          order:orders(id, restaurant_id, status, total_amount, delivery_fee, delivery_address, notes, created_at, is_pickup, branch:branches(id, name, address))
+          order:orders(id, restaurant_id, status, total_amount, delivery_fee, delivery_address, notes, created_at, is_pickup, branch:branches(id, name, address, google_maps_url))
         `)
         .eq("supplier_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // Get restaurant profiles for orders
-      const restaurantIds = [...new Set(orderItems?.map(item => item.order?.restaurant_id).filter(Boolean) || [])];
+      // Get restaurant profiles for orders - extract restaurant_id properly
+      const restaurantIds = [...new Set(
+        orderItems?.map(item => (item.order as any)?.restaurant_id).filter(Boolean) || []
+      )];
       
       if (restaurantIds.length === 0) return orderItems as SupplierOrderItem[];
       
+      // Fetch profiles with customer_code
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, business_name, full_name, phone, google_maps_url")
+        .select("user_id, business_name, full_name, phone, google_maps_url, customer_code")
         .in("user_id", restaurantIds);
 
       // Create a map for faster lookups
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
       // Map profiles to order items
-      const itemsWithProfiles = orderItems?.map(item => ({
-        ...item,
-        order: item.order ? {
-          ...item.order,
-          restaurant_profile: profileMap.get(item.order?.restaurant_id) || null,
-          branch: item.order.branch || null,
-        } : null,
-      })) || [];
+      const itemsWithProfiles = orderItems?.map(item => {
+        const orderData = item.order as any;
+        const restaurantId = orderData?.restaurant_id;
+        return {
+          ...item,
+          order: orderData ? {
+            ...orderData,
+            restaurant_profile: restaurantId ? profileMap.get(restaurantId) : null,
+            branch: orderData.branch || null,
+          } : null,
+        };
+      }) || [];
 
       return itemsWithProfiles as SupplierOrderItem[];
     },
