@@ -798,6 +798,17 @@ export type Database = {
         }[]
       }
       get_order_restaurant_id: { Args: { _order_id: string }; Returns: string }
+      get_restaurant_profile_for_order: {
+        Args: { _restaurant_id: string }
+        Returns: {
+          business_name: string
+          customer_code: string
+          full_name: string
+          google_maps_url: string
+          phone: string
+          user_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
