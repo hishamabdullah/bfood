@@ -15,6 +15,7 @@ interface SupplierCartSectionProps {
   deliveryFeeInfo: { fee: number; reason: string; isFree: boolean; productFees?: number; supplierFee?: number };
   updateQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
+  supplierSubtotal: number;
 }
 
 export const SupplierCartSection = ({
@@ -25,16 +26,21 @@ export const SupplierCartSection = ({
   deliveryFeeInfo,
   updateQuantity,
   removeItem,
+  supplierSubtotal,
 }: SupplierCartSectionProps) => {
   const { t } = useTranslation();
   const { getProductName } = useProductTranslation();
 
-  const supplierSubtotal = group.items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
-
   const warehouseUrl = group.supplierProfile?.google_maps_url;
+  const deliveryOption = (group.supplierProfile as any)?.delivery_option || "with_fee";
+  const minimumOrderAmount = group.supplierProfile?.minimum_order_amount || 0;
+  
+  // حساب إذا كان المطعم مؤهلاً للتوصيل
+  const meetsMinimum = supplierSubtotal >= minimumOrderAmount;
+  
+  // تحديد إذا كان التوصيل متاحاً
+  const isDeliveryAvailable = deliveryOption !== "no_delivery";
+  const canSelectDelivery = deliveryOption === "with_fee" || (deliveryOption === "minimum_only" && meetsMinimum);
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -112,57 +118,122 @@ export const SupplierCartSection = ({
       </div>
 
       {/* Delivery Method Selection for this supplier */}
-      <div className="px-6 py-4 border-t border-border bg-muted/20">
-        <label className="block text-sm font-medium mb-3">{t("cart.deliveryMethod")}</label>
-        <RadioGroup
-          value={isPickup ? "pickup" : "delivery"}
-          onValueChange={(value) => onPickupChange(value === "pickup")}
-          className="space-y-2"
-        >
-          <Label
-            htmlFor={`delivery-${supplierId}`}
-            className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
+      {isDeliveryAvailable ? (
+        <div className="px-6 py-4 border-t border-border bg-muted/20">
+          <label className="block text-sm font-medium mb-3">{t("cart.deliveryMethod")}</label>
+          <RadioGroup
+            value={isPickup ? "pickup" : "delivery"}
+            onValueChange={(value) => {
+              if (value === "delivery" && !canSelectDelivery) {
+                return; // منع التغيير إذا لم يتجاوز الحد الأدنى
+              }
+              onPickupChange(value === "pickup");
+            }}
+            className="space-y-2"
           >
-            <RadioGroupItem value="delivery" id={`delivery-${supplierId}`} className="shrink-0" />
-            <Truck className="h-4 w-4 text-primary shrink-0" />
-            <span className="flex-1">{t("cart.deliveryToAddress")}</span>
-          </Label>
-          <Label
-            htmlFor={`pickup-${supplierId}`}
-            className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
-          >
-            <RadioGroupItem value="pickup" id={`pickup-${supplierId}`} className="shrink-0 mt-0.5" />
-            <Warehouse className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <span className="block">{t("cart.pickupFromWarehouse")}</span>
-              <span className="text-xs text-muted-foreground mt-1 block">
-                {t("cart.pickupFromWarehouseDesc")}
-              </span>
+            {/* Delivery Option */}
+            <div className="relative">
+              <Label
+                htmlFor={`delivery-${supplierId}`}
+                className={`flex items-start gap-3 p-3 rounded-lg border border-border transition-colors ${
+                  canSelectDelivery 
+                    ? "hover:bg-muted/50 cursor-pointer" 
+                    : "opacity-60 cursor-not-allowed bg-muted/30"
+                }`}
+              >
+                <RadioGroupItem 
+                  value="delivery" 
+                  id={`delivery-${supplierId}`} 
+                  className="shrink-0 mt-0.5" 
+                  disabled={!canSelectDelivery}
+                />
+                <Truck className={`h-4 w-4 shrink-0 mt-0.5 ${canSelectDelivery ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="flex-1">
+                  <span className="block">{t("cart.deliveryToAddress")}</span>
+                  {deliveryOption === "minimum_only" && !meetsMinimum && (
+                    <span className="text-xs text-amber-600 mt-1 block">
+                      {t("cart.minimumForDelivery", { amount: minimumOrderAmount })}
+                    </span>
+                  )}
+                  {deliveryOption === "minimum_only" && meetsMinimum && (
+                    <span className="text-xs text-green-600 mt-1 block">
+                      {t("cart.minimumReached")}
+                    </span>
+                  )}
+                </div>
+              </Label>
             </div>
-          </Label>
-        </RadioGroup>
 
-        {/* Show warehouse location if pickup is selected and URL exists */}
-        {isPickup && warehouseUrl && (
-          <a
-            href={warehouseUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-          >
-            <MapPin className="h-4 w-4" />
-            <span className="flex-1 text-sm font-medium">{t("cart.warehouseLocation")}</span>
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        )}
+            {/* Pickup Option */}
+            <Label
+              htmlFor={`pickup-${supplierId}`}
+              className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
+            >
+              <RadioGroupItem value="pickup" id={`pickup-${supplierId}`} className="shrink-0 mt-0.5" />
+              <Warehouse className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <span className="block">{t("cart.pickupFromWarehouse")}</span>
+                <span className="text-xs text-muted-foreground mt-1 block">
+                  {t("cart.pickupFromWarehouseDesc")}
+                </span>
+              </div>
+            </Label>
+          </RadioGroup>
 
-        {isPickup && !warehouseUrl && (
-          <div className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
-            <MapPin className="h-4 w-4" />
-            <span className="text-sm">{t("cart.noWarehouseLocation")}</span>
+          {/* Show warehouse location if pickup is selected and URL exists */}
+          {isPickup && warehouseUrl && (
+            <a
+              href={warehouseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+            >
+              <MapPin className="h-4 w-4" />
+              <span className="flex-1 text-sm font-medium">{t("cart.warehouseLocation")}</span>
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+
+          {isPickup && !warehouseUrl && (
+            <div className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
+              <MapPin className="h-4 w-4" />
+              <span className="text-sm">{t("cart.noWarehouseLocation")}</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* No delivery available - pickup only */
+        <div className="px-6 py-4 border-t border-border bg-amber-50 dark:bg-amber-900/20">
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 mb-3">
+            <Warehouse className="h-5 w-5" />
+            <span className="font-medium">{t("cart.pickupOnly")}</span>
           </div>
-        )}
-      </div>
+          <p className="text-sm text-amber-600 dark:text-amber-500 mb-3">
+            {t("cart.pickupOnlyDesc")}
+          </p>
+          
+          {/* Show warehouse location */}
+          {warehouseUrl && (
+            <a
+              href={warehouseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+            >
+              <MapPin className="h-4 w-4" />
+              <span className="flex-1 text-sm font-medium">{t("cart.warehouseLocation")}</span>
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+
+          {!warehouseUrl && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span className="text-sm">{t("cart.noWarehouseLocation")}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Supplier Footer with Delivery Fee */}
       <div className="bg-muted/30 px-6 py-3 border-t border-border space-y-2">
