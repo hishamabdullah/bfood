@@ -33,6 +33,7 @@ export const useSupplierOrders = () => {
           unit_price,
           status,
           delivery_fee,
+          invoice_url,
           created_at,
           product:products(id, name, image_url, unit, price),
           order:orders(id, restaurant_id, status, total_amount, delivery_fee, delivery_address, notes, created_at, is_pickup, branch:branches(id, name, address))
