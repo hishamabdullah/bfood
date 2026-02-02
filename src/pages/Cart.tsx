@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import { BranchSelector } from "@/components/cart/BranchSelector";
 import { useBranches } from "@/hooks/useBranches";
 import { SupplierCartSection } from "@/components/cart/SupplierCartSection";
 import { SaveTemplateDialog } from "@/components/cart/SaveTemplateDialog";
+import { supabase } from "@/integrations/supabase/client";
+
 const Cart = () => {
   const { t } = useTranslation();
   const { items, updateQuantity, removeItem, clearCart, getSubtotal, getItemsBySupplier } = useCart();
@@ -30,12 +33,52 @@ const Cart = () => {
   const [supplierPickupStatus, setSupplierPickupStatus] = useState<Record<string, boolean>>({});
 
   const groupedBySupplier = getItemsBySupplier();
+  const supplierIds = Object.keys(groupedBySupplier);
+
+  // جلب بيانات الموردين الحديثة من قاعدة البيانات
+  const { data: freshSupplierProfiles } = useQuery({
+    queryKey: ["cart-supplier-profiles", supplierIds],
+    queryFn: async () => {
+      if (supplierIds.length === 0) return {};
+      
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, business_name, avatar_url, minimum_order_amount, default_delivery_fee, delivery_option, google_maps_url")
+        .in("user_id", supplierIds);
+      
+      const profileMap: Record<string, any> = {};
+      profiles?.forEach(p => {
+        profileMap[p.user_id] = p;
+      });
+      return profileMap;
+    },
+    enabled: supplierIds.length > 0,
+    staleTime: 0, // دائماً جلب بيانات جديدة
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
+  // دمج بيانات الموردين الجديدة مع المجموعات
+  const groupedWithFreshData = useMemo(() => {
+    if (!freshSupplierProfiles) return groupedBySupplier;
+    
+    const updated: typeof groupedBySupplier = {};
+    Object.entries(groupedBySupplier).forEach(([supplierId, group]) => {
+      const freshProfile = freshSupplierProfiles[supplierId];
+      updated[supplierId] = {
+        ...group,
+        supplierProfile: freshProfile || group.supplierProfile,
+        supplierName: freshProfile?.business_name || group.supplierName,
+      };
+    });
+    return updated;
+  }, [groupedBySupplier, freshSupplierProfiles]);
 
   // Initialize pickup status for new suppliers (considering delivery_option)
   useEffect(() => {
     const newStatus = { ...supplierPickupStatus };
     let changed = false;
-    Object.entries(groupedBySupplier).forEach(([supplierId, group]) => {
+    Object.entries(groupedWithFreshData).forEach(([supplierId, group]) => {
       const deliveryOption = (group.supplierProfile as any)?.delivery_option || "with_fee";
       
       if (!(supplierId in newStatus)) {
@@ -59,7 +102,7 @@ const Cart = () => {
     });
     // Clean up suppliers no longer in cart
     Object.keys(newStatus).forEach((supplierId) => {
-      if (!(supplierId in groupedBySupplier)) {
+      if (!(supplierId in groupedWithFreshData)) {
         delete newStatus[supplierId];
         changed = true;
       }
@@ -67,13 +110,13 @@ const Cart = () => {
     if (changed) {
       setSupplierPickupStatus(newStatus);
     }
-  }, [groupedBySupplier, supplierPickupStatus]);
+  }, [groupedWithFreshData, supplierPickupStatus]);
 
   // Check if all suppliers are pickup (to hide branch selector)
   const allSuppliersPickup = useMemo(() => {
-    const supplierIds = Object.keys(groupedBySupplier);
+    const supplierIds = Object.keys(groupedWithFreshData);
     return supplierIds.length > 0 && supplierIds.every((id) => supplierPickupStatus[id] === true);
-  }, [groupedBySupplier, supplierPickupStatus]);
+  }, [groupedWithFreshData, supplierPickupStatus]);
 
   // Check if any supplier has delivery
   const anySupplierDelivery = useMemo(() => {
@@ -110,7 +153,7 @@ const Cart = () => {
   const supplierDeliveryFees = useMemo(() => {
     const fees: Record<string, { fee: number; reason: string; isFree: boolean; productFees: number; supplierFee: number }> = {};
 
-    Object.entries(groupedBySupplier).forEach(([supplierId, group]) => {
+    Object.entries(groupedWithFreshData).forEach(([supplierId, group]) => {
       const isSupplierPickup = supplierPickupStatus[supplierId] || false;
 
       // If pickup for this supplier, no delivery fee
@@ -153,7 +196,7 @@ const Cart = () => {
       };
     });
     return fees;
-  }, [groupedBySupplier, t, supplierPickupStatus]);
+  }, [groupedWithFreshData, t, supplierPickupStatus]);
 
   const totalDeliveryFee = Object.values(supplierDeliveryFees).reduce((sum, { fee }) => sum + fee, 0);
   const total = subtotal + totalDeliveryFee;
@@ -176,7 +219,7 @@ const Cart = () => {
     }
 
     // التحقق من شروط التوصيل لكل مورد
-    for (const [supplierId, group] of Object.entries(groupedBySupplier)) {
+    for (const [supplierId, group] of Object.entries(groupedWithFreshData)) {
       const isSupplierPickup = supplierPickupStatus[supplierId] || false;
       const deliveryOption = (group.supplierProfile as any)?.delivery_option || "with_fee";
       const minimumOrderAmount = group.supplierProfile?.minimum_order_amount || 0;
@@ -248,7 +291,7 @@ const Cart = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {Object.entries(groupedBySupplier).map(([supplierId, group]) => {
+              {Object.entries(groupedWithFreshData).map(([supplierId, group]) => {
                 const supplierSubtotal = group.items.reduce(
                   (sum, item) => sum + item.product.price * item.quantity,
                   0
@@ -297,7 +340,7 @@ const Cart = () => {
 
                 <div className="space-y-3">
                   {/* Supplier subtotals */}
-                  {Object.entries(groupedBySupplier).map(([supplierId, group]) => {
+                  {Object.entries(groupedWithFreshData).map(([supplierId, group]) => {
                     const supplierSubtotal = group.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
                     const isSupplierPickup = supplierPickupStatus[supplierId] || false;
                     const supplierFee = isSupplierPickup ? 0 : supplierDeliveryFees[supplierId]?.fee || 0;
