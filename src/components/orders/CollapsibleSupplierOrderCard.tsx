@@ -360,38 +360,105 @@ const CollapsibleSupplierOrderCard = memo(({
 
               {/* Order Items */}
               <div className="border rounded-xl overflow-hidden">
-                <div className="bg-muted/30 px-3 py-2 border-b flex items-center justify-between">
-                  <h4 className="font-medium text-sm">{t("supplier.requestedProducts")}</h4>
-                  <Badge variant="outline" className="gap-1">
-                    <Package className="h-3 w-3" />
-                    {itemsCount} {t("orders.product")}
-                  </Badge>
+                <div className="bg-muted/50 px-4 py-3 border-b">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">{t("supplier.requestedProducts")}</h4>
+                    <Badge variant="secondary" className="gap-1 px-3">
+                      <Package className="h-3.5 w-3.5" />
+                      {itemsCount} {t("orders.product")}
+                    </Badge>
+                  </div>
                 </div>
+                
+                {/* Table Header */}
+                <div className="hidden sm:grid sm:grid-cols-12 gap-2 px-4 py-2 bg-muted/30 text-xs font-semibold text-muted-foreground border-b">
+                  <div className="col-span-5">{t("supplier.tableProduct")}</div>
+                  <div className="col-span-2 text-center">{t("orders.quantity")}</div>
+                  <div className="col-span-2 text-center">{t("orders.unitPrice")}</div>
+                  <div className="col-span-3 text-end">{t("orders.subtotal")}</div>
+                </div>
+                
                 <div className="divide-y">
                   {order.items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3">
-                      <div className="flex items-center gap-2">
-                        {item.product?.image_url ? (
-                          <img
-                            src={item.product.image_url}
-                            alt={item.product?.name}
-                            className="w-10 h-10 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium text-sm">{item.product?.name || t("orders.deletedProduct")}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.quantity} × {item.unit_price} {t("common.sar")}
+                    <div key={item.id} className="p-4 hover:bg-muted/20 transition-colors">
+                      {/* Desktop Layout */}
+                      <div className="hidden sm:grid sm:grid-cols-12 gap-2 items-center">
+                        {/* Product */}
+                        <div className="col-span-5 flex items-center gap-3">
+                          {item.product?.image_url ? (
+                            <img
+                              src={item.product.image_url}
+                              alt={item.product?.name}
+                              className="w-12 h-12 rounded-lg object-cover border bg-white shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                              <Package className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                          <p className="font-semibold text-foreground line-clamp-2">
+                            {item.product?.name || t("orders.deletedProduct")}
                           </p>
                         </div>
+                        
+                        {/* Quantity */}
+                        <div className="col-span-2 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg text-lg">
+                            {item.quantity}
+                          </span>
+                        </div>
+                        
+                        {/* Unit Price */}
+                        <div className="col-span-2 text-center">
+                          <span className="text-muted-foreground">
+                            {item.unit_price.toFixed(2)}
+                          </span>
+                          <span className="text-xs text-muted-foreground/70 ms-1">{t("common.sar")}</span>
+                        </div>
+                        
+                        {/* Subtotal */}
+                        <div className="col-span-3 text-end">
+                          <span className="font-bold text-lg text-primary">
+                            {(item.quantity * item.unit_price).toFixed(2)}
+                          </span>
+                          <span className="text-xs text-muted-foreground ms-1">{t("common.sar")}</span>
+                        </div>
                       </div>
-                      <p className="font-medium text-sm">
-                        {(item.quantity * item.unit_price).toFixed(2)} {t("common.sar")}
-                      </p>
+                      
+                      {/* Mobile Layout */}
+                      <div className="sm:hidden">
+                        <div className="flex items-start gap-3">
+                          {item.product?.image_url ? (
+                            <img
+                              src={item.product.image_url}
+                              alt={item.product?.name}
+                              className="w-14 h-14 rounded-lg object-cover border bg-white shrink-0"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                              <Package className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-foreground mb-2">
+                              {item.product?.name || t("orders.deletedProduct")}
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="inline-flex items-center justify-center px-3 py-1 bg-primary/10 text-primary font-bold rounded-lg">
+                                  {item.quantity}×
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                  {item.unit_price.toFixed(2)} {t("common.sar")}
+                                </span>
+                              </div>
+                              <span className="font-bold text-primary">
+                                {(item.quantity * item.unit_price).toFixed(2)} {t("common.sar")}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
