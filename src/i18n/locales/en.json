@@ -1,18 +1,4 @@
 {
-  "profile": {
-    "soundSettings": "Sound Settings",
-    "notificationSounds": "Notification Sounds",
-    "notificationSoundsHint": "Play a sound when receiving new notifications",
-    "soundEnabled": "Notification sounds enabled",
-    "soundDisabled": "Notification sounds disabled",
-    "deliveryOptions": "Delivery Options",
-    "deliveryWithFee": "Delivery with fee",
-    "deliveryWithFeeDesc": "Delivery available for all orders with delivery fee",
-    "deliveryMinimumOnly": "Delivery after minimum",
-    "deliveryMinimumOnlyDesc": "Delivery only for orders exceeding {{amount}} SAR",
-    "noDelivery": "No delivery",
-    "noDeliveryDesc": "Warehouse pickup only - no delivery service"
-  },
   "admin": {
     "manageSubcategories": "Manage Subcategories",
     "addSubcategory": "Add Subcategory",
@@ -576,7 +562,7 @@
     "orderInvoice": "Order Invoice",
     "invoiceAttached": "Invoice attached"
   },
-  "profile": {
+"profile": {
     "title": "Profile",
     "updateInfo": "Update your account information",
     "backToSuppliers": "Back to Suppliers",
@@ -613,7 +599,19 @@
     "bankName": "Bank Name",
     "bankAccountName": "Account Holder Name",
     "bankIban": "IBAN Number",
-    "bankDetailsHint": "This information will be shown to restaurants for payment transfers"
+    "bankDetailsHint": "This information will be shown to restaurants for payment transfers",
+    "soundSettings": "Sound Settings",
+    "notificationSounds": "Notification Sounds",
+    "notificationSoundsHint": "Play a sound when receiving new notifications",
+    "soundEnabled": "Notification sounds enabled",
+    "soundDisabled": "Notification sounds disabled",
+    "deliveryOptions": "Delivery Options",
+    "deliveryWithFee": "Delivery with fee",
+    "deliveryWithFeeDesc": "Delivery available for all orders with delivery fee",
+    "deliveryMinimumOnly": "Delivery after minimum",
+    "deliveryMinimumOnlyDesc": "Delivery only for orders exceeding {{amount}} SAR",
+    "noDelivery": "No delivery",
+    "noDeliveryDesc": "Warehouse pickup only - no delivery service"
   },
   "productForm": {
     "addProduct": "Add New Product",

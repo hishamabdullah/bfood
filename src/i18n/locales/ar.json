@@ -1,18 +1,4 @@
 {
-  "profile": {
-    "soundSettings": "إعدادات الصوت",
-    "notificationSounds": "أصوات الإشعارات",
-    "notificationSoundsHint": "تشغيل صوت عند استلام إشعار جديد",
-    "soundEnabled": "تم تفعيل أصوات الإشعارات",
-    "soundDisabled": "تم إيقاف أصوات الإشعارات",
-    "deliveryOptions": "خيارات التوصيل",
-    "deliveryWithFee": "توصيل مع رسوم",
-    "deliveryWithFeeDesc": "التوصيل متاح لجميع الطلبات مع رسوم توصيل",
-    "deliveryMinimumOnly": "توصيل بعد الحد الأدنى",
-    "deliveryMinimumOnlyDesc": "التوصيل متاح فقط للطلبات التي تتجاوز {{amount}} ريال",
-    "noDelivery": "لا يوجد توصيل",
-    "noDeliveryDesc": "الاستلام من المستودع فقط - لا يوجد خدمة توصيل"
-  },
   "products": {
     "title": "المنتجات",
     "subtitle": "تصفح جميع المنتجات المتاحة",
@@ -583,7 +569,7 @@
     "orderInvoice": "فاتورة الطلب",
     "invoiceAttached": "تم إرفاق الفاتورة"
   },
-  "profile": {
+"profile": {
     "title": "الملف الشخصي",
     "updateInfo": "تحديث بيانات حسابك",
     "backToSuppliers": "العودة للموردين",
@@ -620,7 +606,19 @@
     "bankName": "اسم البنك",
     "bankAccountName": "اسم صاحب الحساب",
     "bankIban": "رقم الآيبان (IBAN)",
-    "bankDetailsHint": "هذه البيانات ستظهر للمطاعم لتحويل المبالغ"
+    "bankDetailsHint": "هذه البيانات ستظهر للمطاعم لتحويل المبالغ",
+    "soundSettings": "إعدادات الصوت",
+    "notificationSounds": "أصوات الإشعارات",
+    "notificationSoundsHint": "تشغيل صوت عند استلام إشعار جديد",
+    "soundEnabled": "تم تفعيل أصوات الإشعارات",
+    "soundDisabled": "تم إيقاف أصوات الإشعارات",
+    "deliveryOptions": "خيارات التوصيل",
+    "deliveryWithFee": "توصيل مع رسوم",
+    "deliveryWithFeeDesc": "التوصيل متاح لجميع الطلبات مع رسوم توصيل",
+    "deliveryMinimumOnly": "توصيل بعد الحد الأدنى",
+    "deliveryMinimumOnlyDesc": "التوصيل متاح فقط للطلبات التي تتجاوز {{amount}} ريال",
+    "noDelivery": "لا يوجد توصيل",
+    "noDeliveryDesc": "الاستلام من المستودع فقط - لا يوجد خدمة توصيل"
   },
   "productForm": {
     "addProduct": "إضافة منتج جديد",
