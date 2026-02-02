@@ -482,92 +482,90 @@ export default function ProductFormDialog({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              {!watchUnlimitedStock && (
-                <FormField
-                  control={form.control}
-                  name="stock_quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("productForm.stockQuantity")}</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
+            {!watchUnlimitedStock && (
               <FormField
                 control={form.control}
-                name="category_id"
+                name="stock_quantity"
                 render={({ field }) => (
-                  <FormItem className={cn("flex flex-col", watchUnlimitedStock ? "col-span-2" : "")}>
-                    <FormLabel>{t("productForm.category")}</FormLabel>
-                    <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {selectedCategory ? (
-                              <span>{getCategoryName(selectedCategory)}</span>
-                            ) : (
-                              t("productForm.selectCategory")
-                            )}
-                            <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0" align="start">
-                        <Command shouldFilter={false}>
-                          <CommandInput
-                            placeholder={t("productForm.searchCategory")}
-                            value={categorySearch}
-                            onValueChange={setCategorySearch}
-                          />
-                          <CommandList>
-                            {filteredCategories.length === 0 ? (
-                              <CommandEmpty>{t("common.noResults")}</CommandEmpty>
-                            ) : (
-                              <CommandGroup>
-                                {filteredCategories.map((cat) => (
-                                  <CommandItem
-                                    key={cat.id}
-                                    value={cat.id}
-                                    onSelect={() => {
-                                      field.onChange(cat.id);
-                                      form.setValue("subcategory_id", "");
-                                      setCategoryPopoverOpen(false);
-                                      setCategorySearch("");
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "me-2 h-4 w-4",
-                                        field.value === cat.id ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    <span>{getCategoryName(cat)}</span>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            )}
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                  <FormItem>
+                    <FormLabel>{t("productForm.stockQuantity")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
+            )}
+
+            <FormField
+              control={form.control}
+              name="category_id"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>{t("productForm.category")}</FormLabel>
+                  <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {selectedCategory ? (
+                            <span>{getCategoryName(selectedCategory)}</span>
+                          ) : (
+                            t("productForm.selectCategory")
+                          )}
+                          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <Command shouldFilter={false}>
+                        <CommandInput
+                          placeholder={t("productForm.searchCategory")}
+                          value={categorySearch}
+                          onValueChange={setCategorySearch}
+                        />
+                        <CommandList>
+                          {filteredCategories.length === 0 ? (
+                            <CommandEmpty>{t("common.noResults")}</CommandEmpty>
+                          ) : (
+                            <CommandGroup>
+                              {filteredCategories.map((cat) => (
+                                <CommandItem
+                                  key={cat.id}
+                                  value={cat.id}
+                                  onSelect={() => {
+                                    field.onChange(cat.id);
+                                    form.setValue("subcategory_id", "");
+                                    setCategoryPopoverOpen(false);
+                                    setCategorySearch("");
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "me-2 h-4 w-4",
+                                      field.value === cat.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <span>{getCategoryName(cat)}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Subcategory Field - Optional, shown when category is selected */}
             {watchCategoryId && subcategories && subcategories.length > 0 && (
