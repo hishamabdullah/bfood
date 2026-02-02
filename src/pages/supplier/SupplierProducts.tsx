@@ -71,9 +71,13 @@ export default function SupplierProducts() {
     return null;
   }
 
-  const filteredProducts = products?.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredProducts = products?.filter((product) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(query) ||
+      (product.sku && product.sku.toLowerCase().includes(query))
+    );
+  }) || [];
 
   const handleEdit = (product: SupplierProduct) => {
     setEditingProduct(product);
@@ -127,7 +131,7 @@ export default function SupplierProducts() {
           <div className="relative mb-6">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder={t("supplier.searchProduct")}
+              placeholder={t("supplier.searchProductOrSku")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="ps-10"
