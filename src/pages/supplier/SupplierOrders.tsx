@@ -1,13 +1,15 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { ShoppingBag, Loader2, ArrowRight } from "lucide-react";
+import { ShoppingBag, Loader2, ArrowRight, Search, X } from "lucide-react";
 import { useSupplierOrders, useUpdateOrderStatus } from "@/hooks/useSupplierOrders";
 import { useSupplierPayments } from "@/hooks/useOrderPayments";
 import CollapsibleSupplierOrderCard from "@/components/orders/CollapsibleSupplierOrderCard";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 // Group order items by order_id
 interface GroupedOrder {
@@ -30,6 +32,7 @@ export default function SupplierOrders() {
   const { data: orderItems, isLoading } = useSupplierOrders();
   const { data: payments } = useSupplierPayments();
   const updateStatus = useUpdateOrderStatus();
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Helper function to get payment info for a specific order
   const getPaymentForOrder = (orderId: string) => {
@@ -76,6 +79,18 @@ export default function SupplierOrders() {
     );
   }, [orderItems]);
 
+  // Filter orders by search query
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery.trim()) return groupedOrders;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return groupedOrders.filter((order) => 
+      order.orderId.toLowerCase().includes(query) ||
+      order.restaurant?.business_name?.toLowerCase().includes(query) ||
+      order.restaurant?.customer_code?.toLowerCase().includes(query)
+    );
+  }, [groupedOrders, searchQuery]);
+
   useEffect(() => {
     if (!loading && (!user || userRole !== "supplier")) {
       navigate("/dashboard");
@@ -117,24 +132,49 @@ export default function SupplierOrders() {
               <div>
                 <h1 className="text-2xl font-bold">{t("orders.incomingOrders")}</h1>
                 <p className="text-sm text-muted-foreground">
-                  {groupedOrders.length} {t("supplier.ordersCount")}
+                  {filteredOrders.length} {t("supplier.ordersCount")}
                 </p>
               </div>
             </div>
           </div>
 
+          {/* Search Bar */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t("supplier.searchOrderPlaceholder")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="ps-10 pe-10"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute end-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+
           {/* Orders */}
-          {groupedOrders.length === 0 ? (
+          {filteredOrders.length === 0 ? (
             <div className="text-center py-16 bg-card rounded-2xl border">
               <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">{t("supplier.noOrders")}</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {searchQuery ? t("supplier.noSearchResults") : t("supplier.noOrders")}
+              </h3>
               <p className="text-muted-foreground">
-                {t("supplier.ordersWillAppear")}
+                {searchQuery ? t("supplier.tryDifferentSearch") : t("supplier.ordersWillAppear")}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {groupedOrders.map((order) => (
+              {filteredOrders.map((order) => (
                 <CollapsibleSupplierOrderCard
                   key={order.orderId}
                   order={order}
