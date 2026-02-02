@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import i18n from "i18next";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import {
@@ -28,6 +27,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import {
   Accordion,
@@ -38,11 +50,12 @@ import {
 import { useCategories } from "@/hooks/useProducts";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useCreateProduct, useUpdateProduct, SupplierProduct, PriceTier } from "@/hooks/useSupplierProducts";
-import { Loader2, Globe, Upload, X, ImageIcon, Tag } from "lucide-react";
+import { Loader2, Globe, Upload, X, ImageIcon, Tag, ChevronsUpDown, Check } from "lucide-react";
 import PriceTiersEditor from "./PriceTiersEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
 
 const productSchema = z.object({
@@ -92,6 +105,12 @@ export default function ProductFormDialog({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Category and subcategory popover states
+  const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
+  const [subcategoryPopoverOpen, setSubcategoryPopoverOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [subcategorySearch, setSubcategorySearch] = useState("");
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -120,6 +139,41 @@ export default function ProductFormDialog({
   const watchUnlimitedStock = form.watch("unlimited_stock");
   const watchPrice = form.watch("price");
   const watchUnit = form.watch("unit");
+  
+  // Filter categories based on search
+  const filteredCategories = useMemo(() => {
+    if (!categories) return [];
+    if (!categorySearch.trim()) return categories;
+    const search = categorySearch.toLowerCase();
+    return categories.filter((cat) =>
+      cat.name?.toLowerCase().includes(search) ||
+      cat.name_en?.toLowerCase().includes(search)
+    );
+  }, [categories, categorySearch]);
+  
+  // Filter subcategories based on search
+  const filteredSubcategories = useMemo(() => {
+    if (!subcategories) return [];
+    if (!subcategorySearch.trim()) return subcategories;
+    const search = subcategorySearch.toLowerCase();
+    return subcategories.filter((sub) =>
+      sub.name?.toLowerCase().includes(search) ||
+      sub.name_en?.toLowerCase().includes(search)
+    );
+  }, [subcategories, subcategorySearch]);
+  
+  // Get selected category and subcategory info
+  const selectedCategory = useMemo(() => {
+    const catId = form.watch("category_id");
+    if (!catId || !categories) return null;
+    return categories.find((c) => c.id === catId);
+  }, [form.watch("category_id"), categories]);
+  
+  const selectedSubcategory = useMemo(() => {
+    const subId = form.watch("subcategory_id");
+    if (!subId || !subcategories) return null;
+    return subcategories.find((s) => s.id === subId);
+  }, [form.watch("subcategory_id"), subcategories]);
 
   useEffect(() => {
     if (product) {
@@ -449,28 +503,69 @@ export default function ProductFormDialog({
                 control={form.control}
                 name="category_id"
                 render={({ field }) => (
-                  <FormItem className={watchUnlimitedStock ? "col-span-2" : ""}>
+                  <FormItem className={cn("flex flex-col", watchUnlimitedStock ? "col-span-2" : "")}>
                     <FormLabel>{t("productForm.category")}</FormLabel>
-                    <Select 
-                      onValueChange={(val) => {
-                        field.onChange(val);
-                        form.setValue("subcategory_id", "");
-                      }} 
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("productForm.selectCategory")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-background border shadow-lg z-50">
-                        {categories?.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.icon} {getCategoryName(cat)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {selectedCategory ? (
+                              <span className="flex items-center gap-2">
+                                {selectedCategory.icon && <span>{selectedCategory.icon}</span>}
+                                <span>{getCategoryName(selectedCategory)}</span>
+                              </span>
+                            ) : (
+                              t("productForm.selectCategory")
+                            )}
+                            <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder={t("productForm.searchCategory")}
+                            value={categorySearch}
+                            onValueChange={setCategorySearch}
+                          />
+                          <CommandList>
+                            <CommandEmpty>{t("common.noResults")}</CommandEmpty>
+                            <CommandGroup>
+                              {filteredCategories.map((cat) => (
+                                <CommandItem
+                                  key={cat.id}
+                                  value={`${cat.name} ${cat.name_en || ""}`}
+                                  onSelect={() => {
+                                    field.onChange(cat.id);
+                                    form.setValue("subcategory_id", "");
+                                    setCategoryPopoverOpen(false);
+                                    setCategorySearch("");
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "me-2 h-4 w-4",
+                                      field.value === cat.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <span className="flex items-center gap-2">
+                                    {cat.icon && <span>{cat.icon}</span>}
+                                    <span>{getCategoryName(cat)}</span>
+                                  </span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -483,23 +578,85 @@ export default function ProductFormDialog({
                 control={form.control}
                 name="subcategory_id"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>{t("productForm.subcategory")}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("productForm.selectSubcategory")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-background border shadow-lg z-50">
-                        {subcategories.map((sub) => (
-                          <SelectItem key={sub.id} value={sub.id}>
-                            {sub.icon} {getSubcategoryName(sub, i18n.language)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
+                    <Popover open={subcategoryPopoverOpen} onOpenChange={setSubcategoryPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {selectedSubcategory ? (
+                              <span className="flex items-center gap-2">
+                                {selectedSubcategory.icon && <span>{selectedSubcategory.icon}</span>}
+                                <span>{getSubcategoryName(selectedSubcategory, "ar")}</span>
+                              </span>
+                            ) : (
+                              t("productForm.selectSubcategory")
+                            )}
+                            <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder={t("productForm.searchSubcategory")}
+                            value={subcategorySearch}
+                            onValueChange={setSubcategorySearch}
+                          />
+                          <CommandList>
+                            <CommandEmpty>{t("common.noResults")}</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                value="none"
+                                onSelect={() => {
+                                  field.onChange("");
+                                  setSubcategoryPopoverOpen(false);
+                                  setSubcategorySearch("");
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "me-2 h-4 w-4",
+                                    !field.value ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span>{t("productForm.noSubcategory")}</span>
+                              </CommandItem>
+                              {filteredSubcategories.map((sub) => (
+                                <CommandItem
+                                  key={sub.id}
+                                  value={`${sub.name} ${sub.name_en || ""}`}
+                                  onSelect={() => {
+                                    field.onChange(sub.id);
+                                    setSubcategoryPopoverOpen(false);
+                                    setSubcategorySearch("");
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "me-2 h-4 w-4",
+                                      field.value === sub.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <span className="flex items-center gap-2">
+                                    {sub.icon && <span>{sub.icon}</span>}
+                                    <span>{getSubcategoryName(sub, "ar")}</span>
+                                  </span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <p className="text-xs text-muted-foreground mt-1">
                       {t("productForm.subcategoryHint")}
                     </p>
                     <FormMessage />
