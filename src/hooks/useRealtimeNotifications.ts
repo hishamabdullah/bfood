@@ -3,10 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useUserSettings } from "@/hooks/useUserSettings";
 
 export const useRealtimeNotifications = () => {
   const { user, userRole } = useAuth();
   const queryClient = useQueryClient();
+  const { data: userSettings } = useUserSettings();
   const bellAudioRef = useRef<HTMLAudioElement | null>(null);
   const toneAudioRef = useRef<HTMLAudioElement | null>(null);
   const paymentChimeRef = useRef<HTMLAudioElement | null>(null);
@@ -71,8 +73,13 @@ export const useRealtimeNotifications = () => {
       }
     };
 
-    // تشغيل الصوت مع منع التكرار
+    // تشغيل الصوت مع منع التكرار (يحترم إعداد الصوت)
     const playSound = (audioRef: React.RefObject<HTMLAudioElement | null>) => {
+      // تحقق من تفعيل الصوت
+      if (userSettings?.sound_enabled === false) {
+        return;
+      }
+      
       const now = Date.now();
       // منع تشغيل الصوت إذا تم تشغيله خلال آخر 500 مللي ثانية
       if (now - lastPlayedRef.current < 500) {

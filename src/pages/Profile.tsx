@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -34,6 +35,9 @@ import {
   Building,
   Camera,
   Upload,
+  Volume2,
+  VolumeX,
+  Settings,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -43,6 +47,66 @@ import { Link } from "react-router-dom";
 import { BranchesManager } from "@/components/branches/BranchesManager";
 import { withTimeout } from "@/lib/withTimeout";
 import ServiceAreasSelector from "@/components/auth/ServiceAreasSelector";
+import { useUserSettings, useUpdateUserSettings } from "@/hooks/useUserSettings";
+
+// Sound Settings Component
+const SoundSettings = () => {
+  const { t } = useTranslation();
+  const { data: userSettings, isLoading } = useUserSettings();
+  const updateSettings = useUpdateUserSettings();
+
+  const handleSoundToggle = (enabled: boolean) => {
+    updateSettings.mutate({ sound_enabled: enabled }, {
+      onSuccess: () => {
+        toast.success(enabled ? t("profile.soundEnabled") : t("profile.soundDisabled"));
+      }
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 pt-6 border-t">
+        <div className="flex items-center gap-2 mb-4">
+          <Settings className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">{t("profile.soundSettings")}</h3>
+        </div>
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 pt-6 border-t">
+      <div className="flex items-center gap-2 mb-4">
+        <Settings className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold">{t("profile.soundSettings")}</h3>
+      </div>
+      
+      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+        <div className="flex items-center gap-3">
+          {userSettings?.sound_enabled ? (
+            <Volume2 className="h-5 w-5 text-primary" />
+          ) : (
+            <VolumeX className="h-5 w-5 text-muted-foreground" />
+          )}
+          <div>
+            <p className="font-medium">{t("profile.notificationSounds")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("profile.notificationSoundsHint")}
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={userSettings?.sound_enabled ?? true}
+          onCheckedChange={handleSoundToggle}
+          disabled={updateSettings.isPending}
+        />
+      </div>
+    </div>
+  );
+};
 
 const Profile = () => {
   const { t } = useTranslation();
@@ -719,6 +783,11 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Sound Settings - For suppliers and restaurants */}
+            {isOwnProfile && (isSupplier || isRestaurant) && (
+              <SoundSettings />
             )}
 
             {/* Save Button */}

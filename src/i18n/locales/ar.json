@@ -1,4 +1,11 @@
 {
+  "profile": {
+    "soundSettings": "إعدادات الصوت",
+    "notificationSounds": "أصوات الإشعارات",
+    "notificationSoundsHint": "تشغيل صوت عند استلام إشعار جديد",
+    "soundEnabled": "تم تفعيل أصوات الإشعارات",
+    "soundDisabled": "تم إيقاف أصوات الإشعارات"
+  },
   "products": {
     "title": "المنتجات",
     "subtitle": "تصفح جميع المنتجات المتاحة",
