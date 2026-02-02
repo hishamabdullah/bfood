@@ -513,6 +513,7 @@
     "productCount": "product",
     "addProduct": "Add Product",
     "searchProduct": "Search for product...",
+    "searchProductOrSku": "Search by name or SKU...",
     "noProducts": "No Products",
     "startAddingProducts": "Start adding your products to display them to restaurants",
     "tableProduct": "Product",

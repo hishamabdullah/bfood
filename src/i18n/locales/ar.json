@@ -520,6 +520,7 @@
     "productCount": "منتج",
     "addProduct": "إضافة منتج",
     "searchProduct": "ابحث عن منتج...",
+    "searchProductOrSku": "ابحث بالاسم أو رقم المنتج (SKU)...",
     "noProducts": "لا توجد منتجات",
     "startAddingProducts": "ابدأ بإضافة منتجاتك لعرضها للمطاعم",
     "tableProduct": "المنتج",
