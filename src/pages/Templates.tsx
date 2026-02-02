@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 import { useOrderTemplates, useDeleteTemplate, type OrderTemplate } from "@/hooks/useOrderTemplates";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -18,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FileText, Loader2, Trash2, ShoppingCart, ArrowRight, Package } from "lucide-react";
+import { FileText, Loader2, Trash2, ShoppingCart, ArrowRight, Package, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Templates() {
@@ -26,15 +27,41 @@ export default function Templates() {
   const { user, userRole, loading: authLoading } = useAuth();
   const { addItem } = useCart();
   const navigate = useNavigate();
+  const { hasFeature, isLoading: featureLoading } = useHasFeature("can_use_templates");
   const { data: templates, isLoading } = useOrderTemplates();
   const deleteTemplate = useDeleteTemplate();
 
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
   // Redirect non-restaurants
-  if (!authLoading && (!user || userRole !== "restaurant")) {
-    navigate("/dashboard");
-    return null;
+  useEffect(() => {
+    if (!authLoading && (!user || userRole !== "restaurant")) {
+      navigate("/dashboard");
+    }
+  }, [authLoading, user, userRole, navigate]);
+
+  // Show feature disabled message
+  if (!authLoading && !featureLoading && !hasFeature) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center px-4">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+              <Lock className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">{t("subscription.featureDisabled")}</h2>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              {t("subscription.templatesDisabled")}
+            </p>
+            <Link to="/dashboard">
+              <Button variant="hero">{t("nav.dashboard")}</Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   const handleAddToCart = (template: OrderTemplate) => {
@@ -99,7 +126,7 @@ export default function Templates() {
     return i18n.language === "en" && product.name_en ? product.name_en : product.name;
   };
 
-  if (authLoading || isLoading) {
+  if (authLoading || isLoading || featureLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

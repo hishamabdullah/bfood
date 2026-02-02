@@ -1,10 +1,12 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { Loader2, TrendingUp, TrendingDown, Package, Truck, BarChart3, PieChart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, TrendingUp, TrendingDown, Package, Truck, BarChart3, PieChart, Lock } from "lucide-react";
 import { useRestaurantAnalytics } from "@/hooks/useRestaurantAnalytics";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
@@ -27,6 +29,7 @@ const COLORS = ["#00875A", "#0070F3", "#F5A623", "#E63946", "#8B5CF6", "#06B6D4"
 const Analytics = () => {
   const { t, i18n } = useTranslation();
   const { user, userRole, loading, isApproved } = useAuth();
+  const { hasFeature, isLoading: featureLoading } = useHasFeature("can_view_analytics");
   const navigate = useNavigate();
   const { data: analytics, isLoading } = useRestaurantAnalytics(6);
 
@@ -45,7 +48,7 @@ const Analytics = () => {
     }
   }, [user, loading, isApproved, userRole, navigate]);
 
-  if (loading || isLoading) {
+  if (loading || isLoading || featureLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -55,6 +58,30 @@ const Analytics = () => {
 
   if (!user || userRole !== "restaurant") {
     return null;
+  }
+
+  // Show feature disabled message
+  if (!hasFeature) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center px-4">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+              <Lock className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">{t("subscription.featureDisabled")}</h2>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              {t("subscription.analyticsDisabled")}
+            </p>
+            <Link to="/dashboard">
+              <Button variant="hero">{t("nav.dashboard")}</Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   const formatMonth = (monthStr: string) => {

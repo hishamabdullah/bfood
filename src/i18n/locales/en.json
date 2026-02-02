@@ -773,5 +773,14 @@
     "congratulations": "Congratulations!",
     "approved": "Your account has been approved successfully",
     "redirecting": "Redirecting you to the dashboard..."
+  },
+  "subscription": {
+    "featureDisabled": "Feature Not Available",
+    "templatesDisabled": "Order templates feature is not enabled in your current subscription. Contact support to upgrade.",
+    "branchesDisabled": "Branch management feature is not enabled in your current subscription. Contact support to upgrade.",
+    "analyticsDisabled": "Reports and analytics feature is not enabled in your current subscription. Contact support to upgrade.",
+    "favoritesDisabled": "Favorites feature is not enabled in your current subscription. Contact support to upgrade.",
+    "orderingDisabled": "Ordering feature is not enabled in your current subscription. Contact support to upgrade.",
+    "accountDisabled": "Your account has been disabled. Contact support for more information."
   }
 }
