@@ -37,6 +37,7 @@ export const useRestaurantOrders = () => {
               unit_price,
               status,
               delivery_fee,
+              invoice_url,
               product:products (
                 id,
                 name,

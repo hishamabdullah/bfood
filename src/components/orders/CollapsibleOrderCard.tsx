@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User } from "lucide-react";
+import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { PaymentDetailsDialog } from "@/components/cart/PaymentDetailsDialog";
@@ -20,6 +20,7 @@ interface OrderItem {
   delivery_fee?: number;
   status?: string;
   supplier_id: string;
+  invoice_url?: string | null;
   supplier_profile?: {
     business_name?: string;
     user_id?: string;
@@ -309,6 +310,30 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                         <span>{t("orders.supplierTotal")}</span>
                         <span className="text-primary">{supplierTotal.toFixed(2)} {t("common.sar")}</span>
                       </div>
+                      {/* Invoice Link - show if any item has invoice_url */}
+                      {(() => {
+                        const invoiceUrl = group.items.find(item => item.invoice_url)?.invoice_url;
+                        if (invoiceUrl) {
+                          return (
+                            <div className="flex justify-between items-center pt-1 border-t border-border">
+                              <span className="text-muted-foreground flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                {t("supplier.orderInvoice")}
+                              </span>
+                              <a
+                                href={invoiceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline flex items-center gap-1 text-xs font-medium"
+                              >
+                                {t("supplier.viewInvoice")}
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 );

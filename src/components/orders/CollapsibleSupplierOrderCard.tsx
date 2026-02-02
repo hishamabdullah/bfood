@@ -38,6 +38,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { InvoiceUploadDialog } from "@/components/supplier/InvoiceUploadDialog";
 
 interface OrderItem {
   id: string;
@@ -45,6 +46,7 @@ interface OrderItem {
   unit_price: number;
   delivery_fee?: number;
   status: string;
+  invoice_url?: string | null;
   product?: {
     id: string;
     name: string;
@@ -424,6 +426,15 @@ const CollapsibleSupplierOrderCard = memo(({
                 <div className="flex justify-between font-bold text-lg border-t pt-3">
                   <span>{t("orders.total")}:</span>
                   <span className="text-primary">{orderTotal.toFixed(2)} {t("common.sar")}</span>
+                </div>
+
+                {/* Invoice Upload */}
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <span className="text-sm font-medium">{t("supplier.orderInvoice")}:</span>
+                  <InvoiceUploadDialog
+                    orderId={order.orderId}
+                    currentInvoiceUrl={order.items[0]?.invoice_url}
+                  />
                 </div>
 
                 {/* Payment Status */}

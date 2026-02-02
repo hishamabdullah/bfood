@@ -200,6 +200,7 @@ export type Database = {
           created_at: string
           delivery_fee: number | null
           id: string
+          invoice_url: string | null
           order_id: string
           product_id: string
           quantity: number
@@ -211,6 +212,7 @@ export type Database = {
           created_at?: string
           delivery_fee?: number | null
           id?: string
+          invoice_url?: string | null
           order_id: string
           product_id: string
           quantity?: number
@@ -222,6 +224,7 @@ export type Database = {
           created_at?: string
           delivery_fee?: number | null
           id?: string
+          invoice_url?: string | null
           order_id?: string
           product_id?: string
           quantity?: number
