@@ -175,6 +175,26 @@ const Cart = () => {
       return;
     }
 
+    // التحقق من شروط التوصيل لكل مورد
+    for (const [supplierId, group] of Object.entries(groupedBySupplier)) {
+      const isSupplierPickup = supplierPickupStatus[supplierId] || false;
+      const deliveryOption = (group.supplierProfile as any)?.delivery_option || "with_fee";
+      const minimumOrderAmount = group.supplierProfile?.minimum_order_amount || 0;
+      const supplierSubtotal = group.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+
+      // إذا اختار التوصيل ولكن المورد لا يوفره
+      if (!isSupplierPickup && deliveryOption === "no_delivery") {
+        toast.error(t("cart.supplierNoDelivery", { name: group.supplierName }) || `المورد ${group.supplierName} لا يوفر خدمة التوصيل`);
+        return;
+      }
+
+      // إذا اختار التوصيل ولكن لم يتجاوز الحد الأدنى
+      if (!isSupplierPickup && deliveryOption === "minimum_only" && supplierSubtotal < minimumOrderAmount) {
+        toast.error(t("cart.supplierMinimumNotMet", { name: group.supplierName, amount: minimumOrderAmount }) || `يجب أن يتجاوز طلبك من ${group.supplierName} الحد الأدنى ${minimumOrderAmount} ريال للتوصيل`);
+        return;
+      }
+    }
+
     try {
       await createOrder.mutateAsync({
         items,

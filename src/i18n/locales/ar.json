@@ -56,6 +56,8 @@
     "minimumReached": "تم الوصول للحد الأدنى - التوصيل متاح",
     "pickupOnly": "استلام من المستودع فقط",
     "pickupOnlyDesc": "هذا المورد لا يوفر خدمة التوصيل، لكن يمكنه تجهيز طلبك للاستلام من المستودع",
+    "supplierNoDelivery": "المورد {{name}} لا يوفر خدمة التوصيل، يرجى اختيار الاستلام من المستودع",
+    "supplierMinimumNotMet": "يجب أن يتجاوز طلبك من {{name}} الحد الأدنى {{amount}} ريال للتوصيل",
     "supplierTotal": "إجمالي {name}",
     "deliveryFee": "رسوم التوصيل",
     "belowMinimum": "أقل من الحد الأدنى ({amount} ر.س)",
