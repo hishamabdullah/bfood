@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import i18n from "i18next";
@@ -28,19 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Switch } from "@/components/ui/switch";
 import {
   Accordion,
@@ -51,14 +38,12 @@ import {
 import { useCategories } from "@/hooks/useProducts";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useCreateProduct, useUpdateProduct, SupplierProduct, PriceTier } from "@/hooks/useSupplierProducts";
-import { Loader2, Globe, Tag, Upload, X, ImageIcon, Check, ChevronsUpDown } from "lucide-react";
+import { Loader2, Globe, Upload, X, ImageIcon, Tag } from "lucide-react";
 import PriceTiersEditor from "./PriceTiersEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
 
 const productSchema = z.object({
   name: z.string().min(2).max(100),
@@ -107,8 +92,6 @@ export default function ProductFormDialog({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [categoryOpen, setCategoryOpen] = useState(false);
-  const [subcategoryOpen, setSubcategoryOpen] = useState(false);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -133,19 +116,6 @@ export default function ProductFormDialog({
 
   const watchCategoryId = form.watch("category_id");
   const { data: subcategories } = useSubcategoriesByCategory(watchCategoryId || null);
-
-  // Get selected category name for display
-  const selectedCategory = useMemo(() => {
-    if (!watchCategoryId || !categories) return null;
-    return categories.find(cat => cat.id === watchCategoryId);
-  }, [watchCategoryId, categories]);
-
-  // Get selected subcategory name for display  
-  const selectedSubcategory = useMemo(() => {
-    const subcategoryId = form.watch("subcategory_id");
-    if (!subcategoryId || !subcategories) return null;
-    return subcategories.find(sub => sub.id === subcategoryId);
-  }, [form.watch("subcategory_id"), subcategories]);
 
   const watchUnlimitedStock = form.watch("unlimited_stock");
   const watchPrice = form.watch("price");
@@ -173,8 +143,6 @@ export default function ProductFormDialog({
       setPriceTiers(product.price_tiers || []);
       setImagePreview(product.image_url || null);
       setImageFile(null);
-      setCategoryOpen(false);
-      setSubcategoryOpen(false);
     } else {
       form.reset({
         name: "",
@@ -196,8 +164,6 @@ export default function ProductFormDialog({
       setPriceTiers([]);
       setImagePreview(null);
       setImageFile(null);
-      setCategoryOpen(false);
-      setSubcategoryOpen(false);
     }
   }, [product, form]);
 
@@ -483,119 +449,56 @@ export default function ProductFormDialog({
                 control={form.control}
                 name="category_id"
                 render={({ field }) => (
-                  <FormItem className={cn("flex flex-col", watchUnlimitedStock ? "col-span-2" : "")}>
+                  <FormItem className={watchUnlimitedStock ? "col-span-2" : ""}>
                     <FormLabel>{t("productForm.category")}</FormLabel>
-                    <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={categoryOpen}
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {selectedCategory
-                              ? getCategoryName(selectedCategory)
-                              : t("productForm.selectCategory")}
-                            <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder={t("productForm.searchCategory")} />
-                          <CommandList>
-                            <CommandEmpty>{t("common.noResults")}</CommandEmpty>
-                            <CommandGroup>
-                              {categories?.map((cat) => (
-                                <CommandItem
-                                  key={cat.id}
-                                  value={getCategoryName(cat)}
-                                  onSelect={() => {
-                                    field.onChange(cat.id);
-                                    form.setValue("subcategory_id", "");
-                                    setCategoryOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "me-2 h-4 w-4",
-                                      field.value === cat.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  {cat.icon} {getCategoryName(cat)}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <Select 
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        form.setValue("subcategory_id", "");
+                      }} 
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("productForm.selectCategory")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-background border shadow-lg z-50">
+                        {categories?.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.icon} {getCategoryName(cat)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
-            {/* Subcategory Field - Always show when category is selected */}
-            {watchCategoryId && (
+            {/* Subcategory Field - Optional, shown when category is selected */}
+            {watchCategoryId && subcategories && subcategories.length > 0 && (
               <FormField
                 control={form.control}
                 name="subcategory_id"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>{t("productForm.subcategory")}</FormLabel>
-                    <Popover open={subcategoryOpen} onOpenChange={setSubcategoryOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={subcategoryOpen}
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {selectedSubcategory
-                              ? getSubcategoryName(selectedSubcategory, i18n.language)
-                              : t("productForm.selectSubcategory")}
-                            <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder={t("productForm.searchSubcategory")} />
-                          <CommandList>
-                            <CommandEmpty>{t("common.noResults")}</CommandEmpty>
-                            <CommandGroup>
-                              {subcategories?.map((sub) => (
-                                <CommandItem
-                                  key={sub.id}
-                                  value={getSubcategoryName(sub, i18n.language)}
-                                  onSelect={() => {
-                                    field.onChange(sub.id);
-                                    setSubcategoryOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "me-2 h-4 w-4",
-                                      field.value === sub.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  {sub.icon} {getSubcategoryName(sub, i18n.language)}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("productForm.selectSubcategory")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-background border shadow-lg z-50">
+                        {subcategories.map((sub) => (
+                          <SelectItem key={sub.id} value={sub.id}>
+                            {sub.icon} {getSubcategoryName(sub, i18n.language)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <p className="text-xs text-muted-foreground">
                       {t("productForm.subcategoryHint")}
                     </p>
