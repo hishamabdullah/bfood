@@ -1,12 +1,4 @@
 {
-  "products": {
-    "title": "المنتجات",
-    "subtitle": "تصفح جميع المنتجات المتاحة",
-    "supplierProducts": "منتجات {{name}}",
-    "searchPlaceholder": "ابحث عن منتج...",
-    "searchCategories": "ابحث عن تصنيف",
-    "noSubcategories": "لا توجد أقسام فرعية"
-  },
   "admin": {
     "manageSubcategories": "إدارة الأقسام الفرعية",
     "addSubcategory": "إضافة قسم فرعي",
@@ -330,6 +322,8 @@
     "title": "المنتجات",
     "subtitle": "تصفح المنتجات من جميع الموردين",
     "searchPlaceholder": "ابحث عن منتج أو مورد...",
+    "searchCategories": "ابحث عن تصنيف",
+    "noSubcategories": "لا توجد أقسام فرعية",
     "addToCart": "أضف للسلة",
     "inStock": "متوفر",
     "outOfStock": "غير متوفر",
