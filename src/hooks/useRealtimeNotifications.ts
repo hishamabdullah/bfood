@@ -10,6 +10,8 @@ export const useRealtimeNotifications = () => {
   const bellAudioRef = useRef<HTMLAudioElement | null>(null);
   const toneAudioRef = useRef<HTMLAudioElement | null>(null);
   const paymentChimeRef = useRef<HTMLAudioElement | null>(null);
+  const lastPlayedRef = useRef<number>(0);
+  const processedNotificationsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     // Initialize audio elements
@@ -46,11 +48,40 @@ export const useRealtimeNotifications = () => {
         paymentChimeRef.current.src = "";
         paymentChimeRef.current = null;
       }
+      processedNotificationsRef.current.clear();
     };
   }, []);
 
   useEffect(() => {
     if (!user) return;
+
+    // إيقاف جميع الأصوات
+    const stopAllSounds = () => {
+      if (bellAudioRef.current) {
+        bellAudioRef.current.pause();
+        bellAudioRef.current.currentTime = 0;
+      }
+      if (toneAudioRef.current) {
+        toneAudioRef.current.pause();
+        toneAudioRef.current.currentTime = 0;
+      }
+      if (paymentChimeRef.current) {
+        paymentChimeRef.current.pause();
+        paymentChimeRef.current.currentTime = 0;
+      }
+    };
+
+    // تشغيل الصوت مع منع التكرار
+    const playSound = (audioRef: React.RefObject<HTMLAudioElement | null>) => {
+      const now = Date.now();
+      // منع تشغيل الصوت إذا تم تشغيله خلال آخر 500 مللي ثانية
+      if (now - lastPlayedRef.current < 500) {
+        return;
+      }
+      lastPlayedRef.current = now;
+      stopAllSounds();
+      audioRef.current?.play().catch(console.error);
+    };
 
     // الاستماع للإشعارات الجديدة
     const notificationsChannel = supabase
@@ -66,34 +97,28 @@ export const useRealtimeNotifications = () => {
         (payload) => {
           const notification = payload.new as any;
           
-          // إيقاف جميع الأصوات أولاً لمنع التداخل
-          const stopAllSounds = () => {
-            if (bellAudioRef.current) {
-              bellAudioRef.current.pause();
-              bellAudioRef.current.currentTime = 0;
-            }
-            if (toneAudioRef.current) {
-              toneAudioRef.current.pause();
-              toneAudioRef.current.currentTime = 0;
-            }
-            if (paymentChimeRef.current) {
-              paymentChimeRef.current.pause();
-              paymentChimeRef.current.currentTime = 0;
-            }
-          };
+          // تجاهل الإشعارات التي تمت معالجتها مسبقاً
+          if (processedNotificationsRef.current.has(notification.id)) {
+            return;
+          }
+          processedNotificationsRef.current.add(notification.id);
+          
+          // تنظيف الإشعارات القديمة من الذاكرة (الاحتفاظ بآخر 50 فقط)
+          if (processedNotificationsRef.current.size > 50) {
+            const entries = Array.from(processedNotificationsRef.current);
+            processedNotificationsRef.current = new Set(entries.slice(-50));
+          }
           
           // تشغيل الصوت حسب نوع المستخدم
           if (userRole === "supplier" && notification.type === "order") {
             // صوت الجرس للمورد عند طلب جديد
-            stopAllSounds();
-            bellAudioRef.current?.play().catch(console.error);
+            playSound(bellAudioRef);
             toast.success(notification.title, {
               description: notification.message,
             });
           } else if (userRole === "supplier" && notification.type === "payment") {
             // صوت أخف للمورد عند إشعار دفع
-            stopAllSounds();
-            paymentChimeRef.current?.play().catch(console.error);
+            playSound(paymentChimeRef);
             toast.success(notification.title, {
               description: notification.message,
             });
@@ -101,8 +126,7 @@ export const useRealtimeNotifications = () => {
             queryClient.invalidateQueries({ queryKey: ["supplier-payments", user.id] });
           } else if (userRole === "restaurant" && notification.type === "status_update") {
             // صوت النغمة للمطعم عند تغيير الحالة
-            stopAllSounds();
-            toneAudioRef.current?.play().catch(console.error);
+            playSound(toneAudioRef);
             toast.info(notification.title, {
               description: notification.message,
             });
