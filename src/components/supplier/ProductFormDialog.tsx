@@ -175,51 +175,63 @@ export default function ProductFormDialog({
     return subcategories.find((s) => s.id === subId);
   }, [form.watch("subcategory_id"), subcategories]);
 
+  // Reset form when dialog opens for a new product
   useEffect(() => {
-    if (product) {
-      form.reset({
-        name: product.name,
-        description: product.description || "",
-        price: product.price,
-        unit: product.unit,
-        category_id: product.category_id || "",
-        subcategory_id: (product as any).subcategory_id || "",
-        stock_quantity: product.stock_quantity || 0,
-        unlimited_stock: (product as any).unlimited_stock || false,
-        country_of_origin: product.country_of_origin || "السعودية",
-        in_stock: product.in_stock,
-        image_url: product.image_url || "",
-        delivery_fee: product.delivery_fee || 0,
-        name_en: (product as any).name_en || "",
-        description_en: (product as any).description_en || "",
-        sku: (product as any).sku || "",
-      });
-      setPriceTiers(product.price_tiers || []);
-      setImagePreview(product.image_url || null);
-      setImageFile(null);
-    } else {
-      form.reset({
-        name: "",
-        description: "",
-        price: 0,
-        unit: "kg",
-        category_id: "",
-        subcategory_id: "",
-        stock_quantity: 0,
-        unlimited_stock: false,
-        country_of_origin: "السعودية",
-        in_stock: true,
-        image_url: "",
-        delivery_fee: 0,
-        name_en: "",
-        description_en: "",
-        sku: "",
-      });
-      setPriceTiers([]);
-      setImagePreview(null);
-      setImageFile(null);
+    if (open) {
+      // Reset search states
+      setCategorySearch("");
+      setSubcategorySearch("");
+      
+      if (product) {
+        form.reset({
+          name: product.name,
+          description: product.description || "",
+          price: product.price,
+          unit: product.unit,
+          category_id: product.category_id || "",
+          subcategory_id: (product as any).subcategory_id || "",
+          stock_quantity: product.stock_quantity || 0,
+          unlimited_stock: (product as any).unlimited_stock || false,
+          country_of_origin: product.country_of_origin || "السعودية",
+          in_stock: product.in_stock,
+          image_url: product.image_url || "",
+          delivery_fee: product.delivery_fee || 0,
+          name_en: (product as any).name_en || "",
+          description_en: (product as any).description_en || "",
+          sku: (product as any).sku || "",
+        });
+        setPriceTiers(product.price_tiers || []);
+        setImagePreview(product.image_url || null);
+        setImageFile(null);
+      } else {
+        // Clear form completely for new product
+        form.reset({
+          name: "",
+          description: "",
+          price: 0,
+          unit: "kg",
+          category_id: "",
+          subcategory_id: "",
+          stock_quantity: 0,
+          unlimited_stock: false,
+          country_of_origin: "السعودية",
+          in_stock: true,
+          image_url: "",
+          delivery_fee: 0,
+          name_en: "",
+          description_en: "",
+          sku: "",
+        });
+        setPriceTiers([]);
+        setImagePreview(null);
+        setImageFile(null);
+        // Clear file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
     }
-  }, [product, form]);
+  }, [open, product, form]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
