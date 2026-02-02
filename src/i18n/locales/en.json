@@ -1,4 +1,11 @@
 {
+  "profile": {
+    "soundSettings": "Sound Settings",
+    "notificationSounds": "Notification Sounds",
+    "notificationSoundsHint": "Play a sound when receiving new notifications",
+    "soundEnabled": "Notification sounds enabled",
+    "soundDisabled": "Notification sounds disabled"
+  },
   "admin": {
     "manageSubcategories": "Manage Subcategories",
     "addSubcategory": "Add Subcategory",
