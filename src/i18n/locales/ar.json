@@ -60,7 +60,7 @@
     "supplierMinimumNotMet": "يجب أن يتجاوز طلبك من {{name}} الحد الأدنى {{amount}} ريال للتوصيل",
     "supplierTotal": "إجمالي {name}",
     "deliveryFee": "رسوم التوصيل",
-    "belowMinimum": "أقل من الحد الأدنى ({amount} ر.س)",
+    "belowMinimum": "أقل من الحد الأدنى ({{amount}} ر.س)",
     "freeDelivery": "توصيل مجاني!",
     "total": "الإجمالي",
     "notes": "ملاحظات",
