@@ -31,6 +31,7 @@ const Header = () => {
   const isRestaurant = userRole === "restaurant";
 
   // Feature checks for restaurant
+  const canOrder = features?.can_order ?? true;
   const canUseBranches = features?.can_use_branches ?? false;
   const canUseTemplates = features?.can_use_templates ?? false;
   const canViewAnalytics = features?.can_view_analytics ?? false;
@@ -116,7 +117,7 @@ const Header = () => {
           {/* جرس الإشعارات للموردين */}
           {isSupplier && <NotificationBell />}
           
-          {isRestaurant && (
+          {isRestaurant && canOrder && (
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -209,8 +210,8 @@ const Header = () => {
           {/* جرس الإشعارات للموردين */}
           {isSupplier && <NotificationBell />}
           
-          {/* السلة للمطاعم */}
-          {isRestaurant && (
+          {/* السلة للمطاعم - فقط إذا كانت ميزة الطلب مفعلة */}
+          {isRestaurant && canOrder && (
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />

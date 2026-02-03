@@ -49,6 +49,7 @@ import { BranchesManager } from "@/components/branches/BranchesManager";
 import { withTimeout } from "@/lib/withTimeout";
 import ServiceAreasSelector from "@/components/auth/ServiceAreasSelector";
 import { useUserSettings, useUpdateUserSettings } from "@/hooks/useUserSettings";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 
 // Sound Settings Component
 const SoundSettings = () => {
@@ -117,6 +118,9 @@ const Profile = () => {
   
   const isOwnProfile = !id || id === user?.id;
   const targetUserId = id || user?.id;
+  
+  // Feature check for branches
+  const { hasFeature: canUseBranches } = useHasFeature("can_use_branches");
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -877,8 +881,8 @@ const Profile = () => {
             )}
           </div>
 
-          {/* Branches Manager - For restaurants only */}
-          {isOwnProfile && isRestaurant && (
+          {/* Branches Manager - For restaurants only, if feature is enabled */}
+          {isOwnProfile && isRestaurant && canUseBranches && (
             <div className="mt-8">
               <BranchesManager />
             </div>

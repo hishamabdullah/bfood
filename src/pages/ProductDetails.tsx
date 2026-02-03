@@ -14,6 +14,7 @@ import { useRestaurantCustomPrice } from "@/hooks/useCustomPrices";
 import { useProductPriceTiers } from "@/hooks/useProductPriceTiers";
 import { ArrowRight, Minus, Plus, ShoppingCart, Package, MapPin, Scale, Store, Tag, Layers } from "lucide-react";
 import { toast } from "sonner";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +27,7 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const { data: customPrice } = useRestaurantCustomPrice(id || "");
   const { data: priceTiers = [] } = useProductPriceTiers(id || "");
+  const { hasFeature: canOrder } = useHasFeature("can_order");
 
   const hasCustomPrice = userRole === "restaurant" && customPrice !== null && customPrice !== undefined && customPrice !== product?.price;
   // Custom price takes priority over price tiers
@@ -315,16 +317,19 @@ const ProductDetails = () => {
                   <span className="font-bold text-primary">{(displayPrice * quantity).toFixed(2)} {t("common.sar")}</span>
                 </div>
 
-                <Button
-                  variant="hero"
-                  size="lg"
-                  className="w-full"
-                  disabled={!product.in_stock}
-                  onClick={handleAddToCart}
-                >
-                  <ShoppingCart className="h-5 w-5" />
-                  {t("products.addToCart")}
-                </Button>
+                {/* Hide add to cart button if ordering is disabled */}
+                {(userRole !== "restaurant" || canOrder) && (
+                  <Button
+                    variant="hero"
+                    size="lg"
+                    className="w-full"
+                    disabled={!product.in_stock}
+                    onClick={handleAddToCart}
+                  >
+                    <ShoppingCart className="h-5 w-5" />
+                    {t("products.addToCart")}
+                  </Button>
+                )}
               </div>
             </div>
           </div>

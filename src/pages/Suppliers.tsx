@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 
 interface SupplierCategory {
   id: string;
@@ -44,6 +45,7 @@ const Suppliers = () => {
   const { data: suppliers, isLoading } = useSuppliers(selectedRegion, selectedCity);
   const { data: favoriteSuppliers = [] } = useFavoriteSuppliers();
   const toggleFavorite = useToggleFavoriteSupplier();
+  const { hasFeature: canUseFavorites } = useHasFeature("can_use_favorites");
 
   // Fetch supplier categories
   const { data: supplierCategories = [] } = useQuery({
@@ -203,8 +205,8 @@ const Suppliers = () => {
                         <UserIcon className="h-8 w-8 text-muted-foreground" />
                       )}
                     </div>
-                    {/* Favorite Button */}
-                    {userRole === "restaurant" && (
+                    {/* Favorite Button - Only show if feature is enabled */}
+                    {userRole === "restaurant" && canUseFavorites && (
                       <button
                         onClick={() => handleToggleFavorite(supplier.user_id, favoriteSuppliers.includes(supplier.user_id))}
                         className="absolute top-4 left-4 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"

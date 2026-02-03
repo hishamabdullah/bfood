@@ -16,6 +16,7 @@ import { useBranches } from "@/hooks/useBranches";
 import { SupplierCartSection } from "@/components/cart/SupplierCartSection";
 import { SaveTemplateDialog } from "@/components/cart/SaveTemplateDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 
 const Cart = () => {
   const { t } = useTranslation();
@@ -23,6 +24,11 @@ const Cart = () => {
   const { user, userRole } = useAuth();
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
+  
+  // Feature checks
+  const { hasFeature: canUseBranches } = useHasFeature("can_use_branches");
+  const { hasFeature: canUseTemplates } = useHasFeature("can_use_templates");
+  
   const { data: branches = [] } = useBranches();
 
   const [selectedBranchId, setSelectedBranchId] = useState("");
@@ -317,14 +323,27 @@ const Cart = () => {
               <div className="bg-card rounded-2xl border border-border p-6 sticky top-24 space-y-6">
                 <h3 className="font-bold text-xl">{t("cart.orderSummary")}</h3>
 
-                {/* Branch Selector - Only show if any supplier has delivery */}
-                {anySupplierDelivery && (
+                {/* Branch Selector - Only show if any supplier has delivery AND feature is enabled */}
+                {anySupplierDelivery && canUseBranches && (
                   <BranchSelector
                     selectedBranchId={selectedBranchId}
                     onBranchChange={handleBranchChange}
                     customAddress={deliveryAddress}
                     onCustomAddressChange={setDeliveryAddress}
                   />
+                )}
+                
+                {/* Custom delivery address when branches disabled but delivery selected */}
+                {anySupplierDelivery && !canUseBranches && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">{t("cart.deliveryAddress")}</label>
+                    <Textarea
+                      placeholder={t("cart.deliveryAddressPlaceholder") || "أدخل عنوان التوصيل أو رابط خرائط جوجل"}
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
                 )}
 
                 {/* Notes */}
@@ -389,15 +408,17 @@ const Cart = () => {
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
 
-                {/* Save as Template Button */}
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowSaveTemplate(true)}
-                >
-                  <Save className="h-4 w-4 me-2" />
-                  {t("templates.saveAsTemplate")}
-                </Button>
+                {/* Save as Template Button - Only show if feature is enabled */}
+                {canUseTemplates && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setShowSaveTemplate(true)}
+                  >
+                    <Save className="h-4 w-4 me-2" />
+                    {t("templates.saveAsTemplate")}
+                  </Button>
+                )}
 
                 <p className="text-xs text-center text-muted-foreground">{t("cart.orderSplitNote")}</p>
               </div>

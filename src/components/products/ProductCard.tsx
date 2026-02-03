@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
 import { useFavoriteProducts, useToggleFavoriteProduct } from "@/hooks/useFavorites";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 
 interface ProductCardProps {
   product: Product;
@@ -27,6 +28,8 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
   const { getProductName } = useProductTranslation();
   const { data: favoriteProducts = [] } = useFavoriteProducts();
   const toggleFavorite = useToggleFavoriteProduct();
+  const { hasFeature: canUseFavorites } = useHasFeature("can_use_favorites");
+  const { hasFeature: canOrder } = useHasFeature("can_order");
   
   const isFavorite = favoriteProducts.includes(product.id);
   const hasCustomPrice = customPrice !== null && customPrice !== undefined && customPrice !== product.price;
@@ -93,8 +96,8 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
           ) : (
             <Package className="h-12 w-12 text-muted-foreground" />
           )}
-          {/* Favorite Button */}
-          {userRole === "restaurant" && (
+          {/* Favorite Button - Only show if feature is enabled */}
+          {userRole === "restaurant" && canUseFavorites && (
             <button
               onClick={handleToggleFavorite}
               className="absolute top-2 left-2 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
@@ -162,10 +165,13 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
                 </span>
               )}
             </div>
-            <Button size="sm" disabled={!product.in_stock} onClick={handleAddToCart}>
-              <Plus className="h-4 w-4" />
-              {t("products.addToCart")}
-            </Button>
+            {/* Hide add to cart button if ordering is disabled */}
+            {(!userRole || userRole !== "restaurant" || canOrder) && (
+              <Button size="sm" disabled={!product.in_stock} onClick={handleAddToCart}>
+                <Plus className="h-4 w-4" />
+                {t("products.addToCart")}
+              </Button>
+            )}
           </div>
         </div>
       </div>

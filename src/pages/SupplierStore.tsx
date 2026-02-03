@@ -23,6 +23,7 @@ import { useFavoriteSuppliers, useToggleFavoriteSupplier } from "@/hooks/useFavo
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 
 export default function SupplierStore() {
   const { supplierId } = useParams<{ supplierId: string }>();
@@ -36,8 +37,10 @@ export default function SupplierStore() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { data: favoriteSuppliers = [] } = useFavoriteSuppliers();
   const toggleFavorite = useToggleFavoriteSupplier();
+  const { hasFeature: canUseFavorites } = useHasFeature("can_use_favorites");
+  const { hasFeature: canOrderFeature } = useHasFeature("can_order");
 
-  const canOrder = user && userRole === "restaurant" && isApproved;
+  const canOrder = user && userRole === "restaurant" && isApproved && canOrderFeature;
   const isFavorite = supplierId ? favoriteSuppliers.includes(supplierId) : false;
 
   const handleToggleFavorite = () => {
@@ -184,8 +187,8 @@ export default function SupplierStore() {
                   )}
                 </div>
 
-                {/* Favorite Button for Restaurants */}
-                {userRole === "restaurant" && (
+                {/* Favorite Button for Restaurants - Only show if feature is enabled */}
+                {userRole === "restaurant" && canUseFavorites && (
                   <div className="flex items-center gap-3 mt-4 p-3 bg-card rounded-lg border">
                     <button
                       onClick={handleToggleFavorite}
