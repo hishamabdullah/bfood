@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { RotateCcw } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -86,6 +87,7 @@ const AdminRestaurantFeaturesManager = () => {
       can_use_favorites: restaurant.features?.can_use_favorites ?? true,
       can_view_analytics: restaurant.features?.can_view_analytics ?? false,
       can_use_custom_prices: restaurant.features?.can_use_custom_prices ?? false,
+      can_repeat_orders: restaurant.features?.can_repeat_orders ?? true,
       max_orders_per_month: restaurant.features?.max_orders_per_month ?? null,
       subscription_type: restaurant.features?.subscription_type ?? "basic",
       subscription_end_date: restaurant.features?.subscription_end_date ?? null,
@@ -125,7 +127,7 @@ const AdminRestaurantFeaturesManager = () => {
   };
 
   const getFeatureCount = (restaurant: RestaurantWithFeatures) => {
-    if (!restaurant.features) return 2; // القيم الافتراضية: can_order + can_use_favorites
+    if (!restaurant.features) return 3; // القيم الافتراضية: can_order + can_use_favorites + can_repeat_orders
     let count = 0;
     if (restaurant.features.can_order) count++;
     if (restaurant.features.can_use_templates) count++;
@@ -133,6 +135,7 @@ const AdminRestaurantFeaturesManager = () => {
     if (restaurant.features.can_use_favorites) count++;
     if (restaurant.features.can_view_analytics) count++;
     if (restaurant.features.can_use_custom_prices) count++;
+    if (restaurant.features.can_repeat_orders) count++;
     return count;
   };
 
@@ -438,6 +441,23 @@ const AdminRestaurantFeaturesManager = () => {
                     checked={editedFeatures.can_use_custom_prices ?? false}
                     onCheckedChange={(checked) =>
                       setEditedFeatures({ ...editedFeatures, can_use_custom_prices: checked })
+                    }
+                  />
+                </div>
+
+                {/* تكرار الطلب */}
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <RotateCcw className="h-5 w-5 text-cyan-500" />
+                    <div>
+                      <Label className="font-medium">تكرار الطلب</Label>
+                      <p className="text-sm text-muted-foreground">تكرار طلب سابق بنقرة واحدة</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={editedFeatures.can_repeat_orders ?? true}
+                    onCheckedChange={(checked) =>
+                      setEditedFeatures({ ...editedFeatures, can_repeat_orders: checked })
                     }
                   />
                 </div>

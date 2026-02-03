@@ -650,6 +650,7 @@ export type Database = {
       restaurant_features: {
         Row: {
           can_order: boolean
+          can_repeat_orders: boolean
           can_use_branches: boolean
           can_use_custom_prices: boolean
           can_use_favorites: boolean
@@ -668,6 +669,7 @@ export type Database = {
         }
         Insert: {
           can_order?: boolean
+          can_repeat_orders?: boolean
           can_use_branches?: boolean
           can_use_custom_prices?: boolean
           can_use_favorites?: boolean
@@ -686,6 +688,7 @@ export type Database = {
         }
         Update: {
           can_order?: boolean
+          can_repeat_orders?: boolean
           can_use_branches?: boolean
           can_use_custom_prices?: boolean
           can_use_favorites?: boolean

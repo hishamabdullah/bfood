@@ -12,6 +12,7 @@ export interface RestaurantFeatures {
   can_use_favorites: boolean;
   can_view_analytics: boolean;
   can_use_custom_prices: boolean;
+  can_repeat_orders: boolean;
   max_orders_per_month: number | null;
   subscription_type: string;
   subscription_start_date: string | null;

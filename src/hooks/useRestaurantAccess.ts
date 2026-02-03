@@ -10,6 +10,7 @@ export interface RestaurantAccessFeatures {
   can_use_favorites: boolean;
   can_view_analytics: boolean;
   can_use_custom_prices: boolean;
+  can_repeat_orders: boolean;
   max_orders_per_month: number | null;
   subscription_type: string;
   subscription_end_date: string | null;
@@ -23,6 +24,7 @@ const defaultFeatures: RestaurantAccessFeatures = {
   can_use_favorites: true,
   can_view_analytics: false,
   can_use_custom_prices: false,
+  can_repeat_orders: true,
   max_orders_per_month: null,
   subscription_type: "basic",
   subscription_end_date: null,
@@ -59,6 +61,7 @@ export const useRestaurantAccess = () => {
         can_use_favorites: data.can_use_favorites,
         can_view_analytics: data.can_view_analytics,
         can_use_custom_prices: data.can_use_custom_prices,
+        can_repeat_orders: data.can_repeat_orders,
         max_orders_per_month: data.max_orders_per_month,
         subscription_type: data.subscription_type,
         subscription_end_date: data.subscription_end_date,
