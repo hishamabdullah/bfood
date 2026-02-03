@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { userDataQueryOptions } from "@/lib/queryConfig";
+import { useHasFeature } from "@/hooks/useRestaurantAccess";
 
 interface OrderItem {
   id: string;
@@ -132,6 +133,7 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const currentLocale = i18n.language === "ar" ? ar : enUS;
+  const { hasFeature: canRepeatOrders, isLoading: featureLoading } = useHasFeature("can_repeat_orders");
 
   // Fetch payment details for this order - only when card is open
   const { data: payments } = useQuery({
@@ -398,7 +400,7 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                 </div>
 
                 {/* Repeat Order Button */}
-                {onRepeatOrder && (
+                {onRepeatOrder && canRepeatOrders && !featureLoading && (
                   <Button
                     variant="outline"
                     size="sm"
