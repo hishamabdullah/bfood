@@ -17,6 +17,7 @@ import { useRestaurantAllCustomPrices } from "@/hooks/useCustomPrices";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCard from "@/components/products/ProductCard";
 import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
+import { useSectionsBySubcategory, getSectionName } from "@/hooks/useSections";
 import { useProductsWithPriceTiers } from "@/hooks/useProductPriceTiers";
 import {
   Select,
@@ -37,10 +38,12 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedSubcategory, setSelectedSubcategory] = useState("all");
+  const [selectedSection, setSelectedSection] = useState("all");
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedCity, setSelectedCity] = useState("all");
   const [categorySearch, setCategorySearch] = useState("");
   const [subcategorySearch, setSubcategorySearch] = useState("");
+  const [sectionSearch, setSectionSearch] = useState("");
 
   const availableCities = useMemo(() => 
     selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [], 
@@ -57,6 +60,9 @@ const Products = () => {
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategoriesByCategory(
     selectedCategory !== "all" ? selectedCategory : null
+  );
+  const { data: sections, isLoading: sectionsLoading } = useSectionsBySubcategory(
+    selectedSubcategory !== "all" ? selectedSubcategory : null
   );
   const { data: supplierProfile } = useSupplierProfile(supplierId || "");
   const { data: customPrices } = useRestaurantAllCustomPrices();
@@ -80,6 +86,15 @@ const Products = () => {
     );
   }, [subcategories, subcategorySearch]);
 
+  // Filter sections based on search
+  const filteredSections = useMemo(() => {
+    if (!sections) return [];
+    if (!sectionSearch) return sections;
+    return sections.filter((sec) =>
+      getSectionName(sec, i18n.language).toLowerCase().includes(sectionSearch.toLowerCase())
+    );
+  }, [sections, sectionSearch]);
+
   // Flatten all pages of products
   const allProducts = useMemo(() => {
     return productsData?.pages.flatMap(page => page.products) || [];
@@ -90,6 +105,13 @@ const Products = () => {
     return allProducts.filter((product) => {
       if (supplierId && product.supplier_id !== supplierId) {
         return false;
+      }
+      
+      // Filter by section (third level)
+      if (selectedSection !== "all") {
+        if ((product as any).section_id !== selectedSection) {
+          return false;
+        }
       }
       
       // Filter by region - check service_regions first, then fallback to region
@@ -123,7 +145,7 @@ const Products = () => {
         product.supplier_profile?.business_name?.includes(searchQuery);
       return matchesSearch;
     });
-  }, [allProducts, supplierId, selectedRegion, selectedCity, searchQuery]);
+  }, [allProducts, supplierId, selectedSection, selectedRegion, selectedCity, searchQuery]);
 
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -270,8 +292,10 @@ const Products = () => {
                 onClick={() => {
                   setSelectedCategory("all");
                   setSelectedSubcategory("all");
+                  setSelectedSection("all");
                   setCategorySearch("");
                   setSubcategorySearch("");
+                  setSectionSearch("");
                 }}
                 className="whitespace-nowrap"
               >
@@ -290,7 +314,9 @@ const Products = () => {
                     onClick={() => {
                       setSelectedCategory(category.id);
                       setSelectedSubcategory("all");
+                      setSelectedSection("all");
                       setSubcategorySearch("");
+                      setSectionSearch("");
                     }}
                     className="whitespace-nowrap"
                   >
@@ -303,7 +329,7 @@ const Products = () => {
 
           {/* Subcategories */}
           {selectedCategory !== "all" && (
-            <div className="mb-8">
+            <div className="mb-4">
               {/* Subcategory Search */}
               {subcategories && subcategories.length > 3 && (
                 <div className="relative mb-3 max-w-xs">
@@ -330,7 +356,11 @@ const Products = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSelectedSubcategory("all")}
+                  onClick={() => {
+                    setSelectedSubcategory("all");
+                    setSelectedSection("all");
+                    setSectionSearch("");
+                  }}
                   className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
                     selectedSubcategory === "all" ? "bg-primary/25 font-semibold" : ""
                   }`}
@@ -347,7 +377,11 @@ const Products = () => {
                       key={subcategory.id}
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedSubcategory(subcategory.id)}
+                      onClick={() => {
+                        setSelectedSubcategory(subcategory.id);
+                        setSelectedSection("all");
+                        setSectionSearch("");
+                      }}
                       className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
                         selectedSubcategory === subcategory.id ? "bg-primary/25 font-semibold" : ""
                       }`}
@@ -358,6 +392,69 @@ const Products = () => {
                 ) : (
                   <span className="text-sm text-muted-foreground py-2">
                     {t("products.noSubcategories")}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Sections (Third Level) */}
+          {selectedSubcategory !== "all" && (
+            <div className="mb-8">
+              {/* Section Search */}
+              {sections && sections.length > 3 && (
+                <div className="relative mb-3 max-w-xs">
+                  <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t("products.searchCategories")}
+                    value={sectionSearch}
+                    onChange={(e) => setSectionSearch(e.target.value)}
+                    className="ps-9 h-9"
+                  />
+                  {sectionSearch && (
+                    <button
+                      onClick={() => setSectionSearch("")}
+                      className="absolute end-3 top-1/2 -translate-y-1/2"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              {/* Section Buttons */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedSection("all")}
+                  className={`whitespace-nowrap border-secondary text-secondary-foreground hover:bg-secondary/15 ${
+                    selectedSection === "all" ? "bg-secondary/25 font-semibold" : ""
+                  }`}
+                >
+                  {t("common.all")}
+                </Button>
+                {sectionsLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-9 w-16" />
+                  ))
+                ) : filteredSections.length > 0 ? (
+                  filteredSections.map((section) => (
+                    <Button
+                      key={section.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSection(section.id)}
+                      className={`whitespace-nowrap border-secondary text-secondary-foreground hover:bg-secondary/15 ${
+                        selectedSection === section.id ? "bg-secondary/25 font-semibold" : ""
+                      }`}
+                    >
+                      {getSectionName(section, i18n.language)}
+                    </Button>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground py-2">
+                    لا توجد أقسام داخلية
                   </span>
                 )}
               </div>
