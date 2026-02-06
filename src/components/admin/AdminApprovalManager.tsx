@@ -41,6 +41,7 @@ interface PendingUser {
   created_at: string;
   role?: string;
   email?: string | null;
+  customer_code?: string | null;
   commercial_registration_url?: string | null;
   license_url?: string | null;
   tax_certificate_url?: string | null;
@@ -142,7 +143,8 @@ const AdminApprovalManager = () => {
         u.full_name.toLowerCase().includes(query) ||
         u.business_name.toLowerCase().includes(query) ||
         u.phone?.includes(searchQuery) ||
-        u.email?.toLowerCase().includes(query)
+        u.email?.toLowerCase().includes(query) ||
+        u.customer_code?.includes(searchQuery)
     );
   };
 
@@ -160,6 +162,7 @@ const AdminApprovalManager = () => {
         <TableRow>
           <TableHead className="text-right">الاسم</TableHead>
           <TableHead className="text-right">اسم النشاط</TableHead>
+          <TableHead className="text-right">رقم العميل/المورد</TableHead>
           <TableHead className="text-right">البريد الإلكتروني</TableHead>
           <TableHead className="text-right">النوع</TableHead>
           <TableHead className="text-right">الهاتف</TableHead>
@@ -171,7 +174,7 @@ const AdminApprovalManager = () => {
       <TableBody>
         {filterUsers(usersList).length === 0 ? (
           <TableRow>
-            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
               لا توجد حسابات
             </TableCell>
           </TableRow>
@@ -180,6 +183,15 @@ const AdminApprovalManager = () => {
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.full_name}</TableCell>
               <TableCell>{user.business_name}</TableCell>
+              <TableCell>
+                {user.customer_code ? (
+                  <Badge variant="outline" className="font-mono">
+                    #{user.customer_code}
+                  </Badge>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
+              </TableCell>
               <TableCell dir="ltr" className="text-right text-sm text-muted-foreground">{user.email || "-"}</TableCell>
               <TableCell>
                 <Badge className={roleColors[user.role || ""] || "bg-gray-100"}>
@@ -268,7 +280,7 @@ const AdminApprovalManager = () => {
       <div className="relative max-w-md">
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="البحث بالاسم أو النشاط أو الهاتف أو البريد..."
+          placeholder="البحث بالاسم أو النشاط أو الهاتف أو البريد أو رقم العميل..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pr-10"
