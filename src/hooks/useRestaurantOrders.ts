@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
@@ -17,6 +18,51 @@ export type Order = Tables<"orders"> & {
 
 export const useRestaurantOrders = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Realtime subscription لتحديث البيانات فوراً بعد التعديل
+  useEffect(() => {
+    if (!user) return;
+
+    // الاستماع لتغييرات عناصر الطلبات
+    const orderItemsChannel = supabase
+      .channel('restaurant-order-items-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_items',
+        },
+        (payload) => {
+          console.log('Restaurant order items changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ["restaurant-orders"] });
+        }
+      )
+      .subscribe();
+
+    // الاستماع لتغييرات الطلبات الرئيسية
+    const ordersChannel = supabase
+      .channel('restaurant-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+        },
+        (payload) => {
+          console.log('Restaurant orders changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ["restaurant-orders"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(orderItemsChannel);
+      supabase.removeChannel(ordersChannel);
+    };
+  }, [user, queryClient]);
 
   return useQuery({
     queryKey: ["restaurant-orders", user?.id],
