@@ -47,6 +47,7 @@ const Orders = () => {
           updated_at: "",
           category_id: null,
           subcategory_id: null,
+          section_id: null,
           country_of_origin: null,
           description: null,
           stock_quantity: null,

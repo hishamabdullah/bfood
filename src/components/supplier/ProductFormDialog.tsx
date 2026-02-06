@@ -57,6 +57,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
+import { useSectionsBySubcategory, getSectionName } from "@/hooks/useSections";
 
 const productSchema = z.object({
   name: z.string().min(2).max(100),
@@ -65,6 +66,7 @@ const productSchema = z.object({
   unit: z.string().min(1),
   category_id: z.string().optional(),
   subcategory_id: z.string().optional(),
+  section_id: z.string().optional(),
   stock_quantity: z.coerce.number().min(0).default(0),
   unlimited_stock: z.boolean().default(false),
   country_of_origin: z.string().default("السعودية"),
@@ -106,11 +108,13 @@ export default function ProductFormDialog({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Category and subcategory popover states
+  // Category, subcategory and section popover states
   const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
   const [subcategoryPopoverOpen, setSubcategoryPopoverOpen] = useState(false);
+  const [sectionPopoverOpen, setSectionPopoverOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
   const [subcategorySearch, setSubcategorySearch] = useState("");
+  const [sectionSearch, setSectionSearch] = useState("");
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -121,6 +125,7 @@ export default function ProductFormDialog({
       unit: "kg",
       category_id: "",
       subcategory_id: "",
+      section_id: "",
       stock_quantity: 0,
       unlimited_stock: false,
       country_of_origin: "السعودية",
@@ -134,7 +139,9 @@ export default function ProductFormDialog({
   });
 
   const watchCategoryId = form.watch("category_id");
+  const watchSubcategoryId = form.watch("subcategory_id");
   const { data: subcategories } = useSubcategoriesByCategory(watchCategoryId || null);
+  const { data: sections } = useSectionsBySubcategory(watchSubcategoryId || null);
 
   const watchUnlimitedStock = form.watch("unlimited_stock");
   const watchPrice = form.watch("price");
@@ -162,7 +169,18 @@ export default function ProductFormDialog({
     );
   }, [subcategories, subcategorySearch]);
   
-  // Get selected category and subcategory info
+  // Filter sections based on search
+  const filteredSections = useMemo(() => {
+    if (!sections) return [];
+    if (!sectionSearch.trim()) return sections;
+    const search = sectionSearch.toLowerCase();
+    return sections.filter((sec) =>
+      sec.name?.toLowerCase().includes(search) ||
+      sec.name_en?.toLowerCase().includes(search)
+    );
+  }, [sections, sectionSearch]);
+  
+  // Get selected category, subcategory and section info
   const selectedCategory = useMemo(() => {
     const catId = form.watch("category_id");
     if (!catId || !categories) return null;
@@ -175,12 +193,19 @@ export default function ProductFormDialog({
     return subcategories.find((s) => s.id === subId);
   }, [form.watch("subcategory_id"), subcategories]);
 
+  const selectedSection = useMemo(() => {
+    const secId = form.watch("section_id");
+    if (!secId || !sections) return null;
+    return sections.find((s) => s.id === secId);
+  }, [form.watch("section_id"), sections]);
+
   // Reset form when dialog opens for a new product
   useEffect(() => {
     if (open) {
       // Reset search states
       setCategorySearch("");
       setSubcategorySearch("");
+      setSectionSearch("");
       
       if (product) {
         form.reset({
@@ -190,6 +215,7 @@ export default function ProductFormDialog({
           unit: product.unit,
           category_id: product.category_id || "",
           subcategory_id: (product as any).subcategory_id || "",
+          section_id: (product as any).section_id || "",
           stock_quantity: product.stock_quantity || 0,
           unlimited_stock: (product as any).unlimited_stock || false,
           country_of_origin: product.country_of_origin || "السعودية",
@@ -212,6 +238,7 @@ export default function ProductFormDialog({
           unit: "kg",
           category_id: "",
           subcategory_id: "",
+          section_id: "",
           stock_quantity: 0,
           unlimited_stock: false,
           country_of_origin: "السعودية",
@@ -304,6 +331,7 @@ export default function ProductFormDialog({
         unit: values.unit,
         category_id: values.category_id || null,
         subcategory_id: values.subcategory_id || null,
+        section_id: values.section_id || null,
         stock_quantity: values.unlimited_stock ? null : values.stock_quantity,
         unlimited_stock: values.unlimited_stock,
         country_of_origin: values.country_of_origin,
@@ -665,6 +693,91 @@ export default function ProductFormDialog({
               />
             )}
 
+            {/* Section Field - Optional, shown when subcategory is selected */}
+            {watchSubcategoryId && sections && sections.length > 0 && (
+              <FormField
+                control={form.control}
+                name="section_id"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>القسم الداخلي</FormLabel>
+                    <Popover open={sectionPopoverOpen} onOpenChange={setSectionPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {selectedSection ? (
+                              <span>{getSectionName(selectedSection, "ar")}</span>
+                            ) : (
+                              "اختر القسم الداخلي"
+                            )}
+                            <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder="ابحث عن قسم داخلي..."
+                            value={sectionSearch}
+                            onValueChange={setSectionSearch}
+                          />
+                          <CommandList className="max-h-[200px] overflow-y-auto">
+                            <CommandGroup>
+                              <CommandItem
+                                value="none"
+                                onSelect={() => {
+                                  field.onChange("");
+                                  setSectionPopoverOpen(false);
+                                  setSectionSearch("");
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "me-2 h-4 w-4",
+                                    !field.value ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span>بدون قسم داخلي</span>
+                              </CommandItem>
+                              {filteredSections.map((sec) => (
+                                <CommandItem
+                                  key={sec.id}
+                                  value={sec.id}
+                                  onSelect={() => {
+                                    field.onChange(sec.id);
+                                    setSectionPopoverOpen(false);
+                                    setSectionSearch("");
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "me-2 h-4 w-4",
+                                      field.value === sec.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <span>{getSectionName(sec, "ar")}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      اختيار القسم الداخلي يساعد في تنظيم المنتجات بشكل أفضل
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="country_of_origin"
