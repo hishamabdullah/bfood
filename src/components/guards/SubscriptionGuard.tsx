@@ -2,7 +2,6 @@ import { ReactNode, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurantSubscription } from "@/hooks/useRestaurantSubscription";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 interface SubscriptionGuardProps {
@@ -34,32 +33,14 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     location.pathname === path || location.pathname.startsWith(path + "/")
   );
 
-  // دالة تسجيل الخروج والتوجيه لصفحة انتهاء الاشتراك
-  const handleExpiredInteraction = useCallback(async () => {
+  // دالة التوجيه لصفحة انتهاء الاشتراك (بدون تسجيل خروج فوري)
+  const handleExpiredRedirect = useCallback(() => {
     if (isRedirectingRef.current) return;
     isRedirectingRef.current = true;
-
-    try {
-      // تسجيل الخروج
-      await supabase.auth.signOut();
-      
-      // تنظيف التخزين المحلي
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith("sb-")) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-      sessionStorage.clear();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    } finally {
-      // التوجيه لصفحة انتهاء الاشتراك
-      window.location.href = "/subscription-expired";
-    }
-  }, []);
+    
+    // التوجيه لصفحة انتهاء الاشتراك أولاً
+    navigate("/subscription-expired", { replace: true });
+  }, [navigate]);
 
   // اعتراض أي نقرة عند انتهاء الاشتراك
   useEffect(() => {
@@ -82,7 +63,7 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
 
       e.preventDefault();
       e.stopPropagation();
-      handleExpiredInteraction();
+      handleExpiredRedirect();
     };
 
     // إضافة المستمعين لجميع أنواع التفاعل
@@ -102,7 +83,7 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     userRole,
     subscription,
     isExemptPath,
-    handleExpiredInteraction,
+    handleExpiredRedirect,
   ]);
 
   // التوجيه التلقائي عند انتهاء الاشتراك
@@ -112,7 +93,7 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     if (isExemptPath) return;
 
     if (subscription && (subscription.isExpired || !subscription.isActive)) {
-      handleExpiredInteraction();
+      handleExpiredRedirect();
     }
   }, [
     authLoading,
@@ -121,7 +102,7 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     userRole,
     subscription,
     isExemptPath,
-    handleExpiredInteraction,
+    handleExpiredRedirect,
   ]);
 
   // إظهار التحميل فقط للمطاعم في الصفحات المحمية

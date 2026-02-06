@@ -11,11 +11,12 @@ import { useRestaurantSubscription } from "@/hooks/useRestaurantSubscription";
 const SubscriptionExpired = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { signOut, userRole } = useAuth();
+  const { signOut, user, userRole, loading: authLoading } = useAuth();
   const { data: subscription, refetch, isRefetching } = useRestaurantSubscription();
 
-  // إذا لم يكن المستخدم مطعم، أعد توجيهه
-  if (userRole !== "restaurant") {
+  // إذا لم يكن هناك مستخدم (تم تسجيل الخروج بالفعل)، اعرض الصفحة بدون تحويل
+  // إذا كان المستخدم مسجل وليس مطعم، حوّله للصفحة الرئيسية
+  if (!authLoading && user && userRole && userRole !== "restaurant") {
     navigate("/");
     return null;
   }
@@ -32,7 +33,6 @@ const SubscriptionExpired = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/login");
   };
 
   const formatDate = (dateString: string | null) => {
@@ -63,24 +63,26 @@ const SubscriptionExpired = () => {
           </CardHeader>
           
           <CardContent className="space-y-6">
-            {/* تفاصيل الاشتراك */}
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">نوع الاشتراك:</span>
-                <span className="font-medium">
-                  {subscription?.subscriptionType === "basic" && "أساسي"}
-                  {subscription?.subscriptionType === "standard" && "عادي"}
-                  {subscription?.subscriptionType === "premium" && "متميز"}
-                  {subscription?.subscriptionType === "enterprise" && "مؤسسات"}
-                </span>
+            {/* تفاصيل الاشتراك - تظهر فقط إذا كان المستخدم مسجل */}
+            {subscription && (
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">نوع الاشتراك:</span>
+                  <span className="font-medium">
+                    {subscription.subscriptionType === "basic" && "أساسي"}
+                    {subscription.subscriptionType === "standard" && "عادي"}
+                    {subscription.subscriptionType === "premium" && "متميز"}
+                    {subscription.subscriptionType === "enterprise" && "مؤسسات"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">تاريخ الانتهاء:</span>
+                  <span className="font-medium text-destructive">
+                    {formatDate(subscription.subscriptionEndDate || null)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">تاريخ الانتهاء:</span>
-                <span className="font-medium text-destructive">
-                  {formatDate(subscription?.subscriptionEndDate || null)}
-                </span>
-              </div>
-            </div>
+            )}
 
             {/* رسالة التواصل */}
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
@@ -89,11 +91,13 @@ const SubscriptionExpired = () => {
               </p>
               <div className="flex flex-col gap-2">
                 <a
-                  href="tel:+966500000000"
+                  href="https://wa.me/966505897171"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 text-sm text-primary hover:underline"
                 >
                   <Phone className="w-4 h-4" />
-                  <span dir="ltr">+966 50 000 0000</span>
+                  <span dir="ltr">+966 50 589 7171</span>
                 </a>
                 <a
                   href="mailto:support@bfood.sa"
@@ -107,25 +111,27 @@ const SubscriptionExpired = () => {
 
             {/* الأزرار */}
             <div className="flex flex-col gap-3">
-              <Button
-                onClick={handleRefresh}
-                disabled={isRefetching}
-                className="w-full"
-              >
-                {isRefetching ? (
-                  <RefreshCw className="w-4 h-4 ml-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 ml-2" />
-                )}
-                تحقق من حالة الاشتراك
-              </Button>
+              {user && (
+                <Button
+                  onClick={handleRefresh}
+                  disabled={isRefetching}
+                  className="w-full"
+                >
+                  {isRefetching ? (
+                    <RefreshCw className="w-4 h-4 ml-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 ml-2" />
+                  )}
+                  تحقق من حالة الاشتراك
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={handleSignOut}
                 className="w-full"
               >
                 <LogOut className="w-4 h-4 ml-2" />
-                تسجيل الخروج
+                {user ? "تسجيل الخروج" : "العودة لتسجيل الدخول"}
               </Button>
             </div>
           </CardContent>
