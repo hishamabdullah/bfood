@@ -1,7 +1,8 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurantSubscription } from "@/hooks/useRestaurantSubscription";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 interface SubscriptionGuardProps {
@@ -27,24 +28,91 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   const location = useLocation();
   const { user, userRole, loading: authLoading } = useAuth();
   const { data: subscription, isLoading: subscriptionLoading } = useRestaurantSubscription();
+  const isRedirectingRef = useRef(false);
 
   const isExemptPath = EXEMPT_PATHS.some(path => 
     location.pathname === path || location.pathname.startsWith(path + "/")
   );
 
+  // دالة تسجيل الخروج والتوجيه لصفحة انتهاء الاشتراك
+  const handleExpiredInteraction = useCallback(async () => {
+    if (isRedirectingRef.current) return;
+    isRedirectingRef.current = true;
+
+    try {
+      // تسجيل الخروج
+      await supabase.auth.signOut();
+      
+      // تنظيف التخزين المحلي
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("sb-")) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      sessionStorage.clear();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      // التوجيه لصفحة انتهاء الاشتراك
+      window.location.href = "/subscription-expired";
+    }
+  }, []);
+
+  // اعتراض أي نقرة عند انتهاء الاشتراك
   useEffect(() => {
-    // انتظر حتى ينتهي التحميل
     if (authLoading || subscriptionLoading) return;
-
-    // لا تتحقق إذا لم يكن هناك مستخدم أو ليس مطعم
     if (!user || userRole !== "restaurant") return;
-
-    // لا تتحقق في الصفحات المستثناة
     if (isExemptPath) return;
 
-    // إذا انتهى الاشتراك أو الحساب غير نشط، أعد التوجيه
+    const isExpired = subscription && (subscription.isExpired || !subscription.isActive);
+    
+    if (!isExpired) return;
+
+    const handleInteraction = (e: MouseEvent | TouchEvent | KeyboardEvent) => {
+      // السماح بالنقر على روابط صفحة انتهاء الاشتراك فقط
+      const target = e.target as HTMLElement;
+      const isExemptLink = target.closest('a[href*="subscription-expired"]') || 
+                           target.closest('a[href*="contact"]') ||
+                           target.closest('a[href*="profile"]');
+      
+      if (isExemptLink) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      handleExpiredInteraction();
+    };
+
+    // إضافة المستمعين لجميع أنواع التفاعل
+    document.addEventListener("click", handleInteraction, true);
+    document.addEventListener("touchstart", handleInteraction, true);
+    document.addEventListener("keydown", handleInteraction, true);
+
+    return () => {
+      document.removeEventListener("click", handleInteraction, true);
+      document.removeEventListener("touchstart", handleInteraction, true);
+      document.removeEventListener("keydown", handleInteraction, true);
+    };
+  }, [
+    authLoading,
+    subscriptionLoading,
+    user,
+    userRole,
+    subscription,
+    isExemptPath,
+    handleExpiredInteraction,
+  ]);
+
+  // التوجيه التلقائي عند انتهاء الاشتراك
+  useEffect(() => {
+    if (authLoading || subscriptionLoading) return;
+    if (!user || userRole !== "restaurant") return;
+    if (isExemptPath) return;
+
     if (subscription && (subscription.isExpired || !subscription.isActive)) {
-      navigate("/subscription-expired", { replace: true });
+      handleExpiredInteraction();
     }
   }, [
     authLoading,
@@ -53,7 +121,7 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     userRole,
     subscription,
     isExemptPath,
-    navigate,
+    handleExpiredInteraction,
   ]);
 
   // إظهار التحميل فقط للمطاعم في الصفحات المحمية
