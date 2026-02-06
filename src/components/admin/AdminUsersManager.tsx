@@ -78,7 +78,8 @@ const AdminUsersManager = () => {
         user.phone?.includes(searchQuery) ||
         user.full_name?.toLowerCase().includes(query) ||
         user.business_name?.toLowerCase().includes(query) ||
-        user.email?.toLowerCase().includes(query);
+        user.email?.toLowerCase().includes(query) ||
+        user.customer_code?.includes(searchQuery);
       return matchesRole && matchesSearch;
     }) || [];
   };
@@ -214,6 +215,7 @@ const AdminUsersManager = () => {
             <TableRow>
               <TableHead className="text-right">الاسم</TableHead>
               <TableHead className="text-right">المنشأة</TableHead>
+              <TableHead className="text-right">رقم العميل</TableHead>
               <TableHead className="text-right">البريد الإلكتروني</TableHead>
               <TableHead className="text-right">الهاتف</TableHead>
               {role === "supplier" && <TableHead className="text-right">المنطقة</TableHead>}
@@ -224,7 +226,7 @@ const AdminUsersManager = () => {
           <TableBody>
             {usersList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={role === "supplier" ? 7 : 6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={role === "supplier" ? 8 : 7} className="text-center text-muted-foreground py-8">
                   لا توجد نتائج
                 </TableCell>
               </TableRow>
@@ -233,6 +235,15 @@ const AdminUsersManager = () => {
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.full_name}</TableCell>
                   <TableCell>{user.business_name}</TableCell>
+                  <TableCell>
+                    {user.customer_code ? (
+                      <Badge variant="outline" className="font-mono">
+                        #{user.customer_code}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
                   <TableCell dir="ltr" className="text-right text-sm text-muted-foreground">{user.email || "-"}</TableCell>
                   <TableCell dir="ltr" className="text-right">{user.phone || "-"}</TableCell>
                   {role === "supplier" && <TableCell>{user.region || "-"}</TableCell>}
@@ -308,7 +319,7 @@ const AdminUsersManager = () => {
       <div className="relative">
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
-          placeholder="ابحث برقم الهاتف أو البريد أو اسم المنشأة..."
+          placeholder="ابحث برقم العميل أو الهاتف أو البريد أو اسم المنشأة..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pr-10"
