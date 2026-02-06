@@ -99,6 +99,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, userData: {
     fullName: string;
     businessName: string;
+    businessNameEn?: string;
     phone: string;
     role: UserRole;
     region?: string;
@@ -106,6 +107,10 @@ interface AuthContextType {
     supplyCategories?: string[];
     serviceRegions?: string[];
     serviceCities?: string[];
+    commercialRegistrationUrl?: string;
+    licenseUrl?: string;
+    taxCertificateUrl?: string;
+    nationalAddressUrl?: string;
   }) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -364,6 +369,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     userData: {
       fullName: string;
       businessName: string;
+      businessNameEn?: string;
       phone: string;
       role: UserRole;
       region?: string;
@@ -371,6 +377,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       supplyCategories?: string[];
       serviceRegions?: string[];
       serviceCities?: string[];
+      commercialRegistrationUrl?: string;
+      licenseUrl?: string;
+      taxCertificateUrl?: string;
+      nationalAddressUrl?: string;
     }
   ) => {
     const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -408,12 +418,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               user_id: data.user.id,
               full_name: userData.fullName,
               business_name: userData.businessName,
+              business_name_en: userData.businessNameEn || null,
               phone: userData.phone,
               region: userData.region || null,
               city: userData.city || null,
               supply_categories: userData.supplyCategories || null,
               service_regions: userData.serviceRegions || null,
               service_cities: userData.serviceCities || null,
+              commercial_registration_url: userData.commercialRegistrationUrl || null,
+              license_url: userData.licenseUrl || null,
+              tax_certificate_url: userData.taxCertificateUrl || null,
+              national_address_url: userData.nationalAddressUrl || null,
             } as any);
 
           if (profileError) throw profileError;
