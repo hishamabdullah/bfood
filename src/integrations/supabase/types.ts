@@ -826,6 +826,42 @@ export type Database = {
           },
         ]
       }
+      subscription_renewals: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          id: string
+          receipt_url: string | null
+          restaurant_id: string
+          status: string
+          subscription_type: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          receipt_url?: string | null
+          restaurant_id: string
+          status?: string
+          subscription_type?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          receipt_url?: string | null
+          restaurant_id?: string
+          status?: string
+          subscription_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       supplier_categories: {
         Row: {
           created_at: string
