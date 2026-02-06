@@ -178,20 +178,7 @@ const AdminApprovalManager = () => {
         ) : (
           filterUsers(usersList).map((user) => (
             <TableRow key={user.id}>
-              <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
-                  {user.full_name}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-primary"
-                    onClick={() => setViewingDocsUser(user)}
-                    title="عرض المستندات"
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
+              <TableCell className="font-medium">{user.full_name}</TableCell>
               <TableCell>{user.business_name}</TableCell>
               <TableCell dir="ltr" className="text-right text-sm text-muted-foreground">{user.email || "-"}</TableCell>
               <TableCell>
@@ -205,7 +192,16 @@ const AdminApprovalManager = () => {
               <TableCell>{user.region || "-"}</TableCell>
               <TableCell>{formatDate(user.created_at)}</TableCell>
               <TableCell>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-primary"
+                    onClick={() => setViewingDocsUser(user)}
+                    title="عرض المستندات"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
                   {showApproveButton ? (
                     <Button
                       size="sm"
