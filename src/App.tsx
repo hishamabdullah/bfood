@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { RealtimeNotificationProvider } from "@/components/RealtimeNotificationProvider";
 import DynamicFavicon from "@/components/layout/DynamicFavicon";
+import SubscriptionGuard from "@/components/guards/SubscriptionGuard";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -29,6 +30,7 @@ import TermsOfService from "./pages/TermsOfService";
 import ContactUs from "./pages/ContactUs";
 import Admin from "./pages/Admin";
 import PendingApproval from "./pages/PendingApproval";
+import SubscriptionExpired from "./pages/SubscriptionExpired";
 import Favorites from "./pages/Favorites";
 import Branches from "./pages/Branches";
 import Templates from "./pages/Templates";
@@ -47,36 +49,39 @@ const App = () => (
         <AuthProvider>
           <CartProvider>
             <RealtimeNotificationProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/pending-approval" element={<PendingApproval />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/products/:id" element={<ProductDetails />} />
-                <Route path="/suppliers" element={<Suppliers />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/favorites" element={<Favorites />} />
-                <Route path="/branches" element={<Branches />} />
-                <Route path="/templates" element={<Templates />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:id" element={<Profile />} />
-                <Route path="/supplier/products" element={<SupplierProducts />} />
-                <Route path="/supplier/orders" element={<SupplierOrders />} />
-                <Route path="/supplier/custom-prices" element={<SupplierCustomPrices />} />
-                <Route path="/supplier/custom-prices/:restaurantId" element={<SupplierRestaurantPrices />} />
-                <Route path="/store/:supplierId" element={<SupplierStore />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/contact" element={<ContactUs />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <SubscriptionGuard>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/pending-approval" element={<PendingApproval />} />
+                  <Route path="/subscription-expired" element={<SubscriptionExpired />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/products/:id" element={<ProductDetails />} />
+                  <Route path="/suppliers" element={<Suppliers />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/favorites" element={<Favorites />} />
+                  <Route path="/branches" element={<Branches />} />
+                  <Route path="/templates" element={<Templates />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/:id" element={<Profile />} />
+                  <Route path="/supplier/products" element={<SupplierProducts />} />
+                  <Route path="/supplier/orders" element={<SupplierOrders />} />
+                  <Route path="/supplier/custom-prices" element={<SupplierCustomPrices />} />
+                  <Route path="/supplier/custom-prices/:restaurantId" element={<SupplierRestaurantPrices />} />
+                  <Route path="/store/:supplierId" element={<SupplierStore />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/contact" element={<ContactUs />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </SubscriptionGuard>
             </RealtimeNotificationProvider>
           </CartProvider>
         </AuthProvider>
