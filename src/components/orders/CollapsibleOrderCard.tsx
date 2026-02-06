@@ -1,4 +1,4 @@
-import { useState, memo, useMemo } from "react";
+import { useState, memo, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -137,11 +137,16 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
   const currentLocale = i18n.language === "ar" ? ar : enUS;
   const { hasFeature: canRepeatOrders, isLoading: featureLoading } = useHasFeature("can_repeat_orders");
 
-  // التحقق من إمكانية التعديل (فقط للطلبات المعلقة)
-  const canEdit = useMemo(() => {
-    const allPending = order.order_items?.every(item => item.status === "pending");
-    return allPending;
+  // التحقق من إمكانية التعديل لكل مورد على حدة
+  const canEditOrder = useMemo(() => {
+    // الطلب قابل للتعديل إذا كان هناك عنصر واحد على الأقل معلق
+    return order.order_items?.some(item => item.status === "pending") || false;
   }, [order.order_items]);
+  
+  // دالة للتحقق إذا كان المورد قابل للتعديل
+  const canEditSupplier = useCallback((supplierItems: OrderItem[]) => {
+    return supplierItems.every(item => item.status === "pending");
+  }, []);
 
   // Fetch payment details for this order - only when card is open
   const { data: payments } = useQuery({
@@ -211,9 +216,15 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
               </div>
             </div>
 
-            {/* Left side - Total */}
-            <div className="text-left shrink-0">
+            {/* Left side - Total + Edit Indicator */}
+            <div className="text-left shrink-0 flex flex-col items-end gap-1">
               <p className="font-bold text-primary">{Number(order.total_amount).toFixed(2)} {t("common.sar")}</p>
+              {canEditOrder && (
+                <Badge variant="outline" className="text-xs gap-1 text-amber-600 border-amber-300">
+                  <Edit2 className="h-3 w-3" />
+                  {t("orders.canEdit", "قابل للتعديل")}
+                </Badge>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -274,7 +285,7 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                         </Link>
                       )}
                       {/* زر إلغاء طلب المورد - يظهر فقط للطلبات المعلقة */}
-                      {canEdit && group.status === "pending" && (
+                      {canEditSupplier(group.items) && (
                         <CancelSupplierDialog
                           orderId={order.id}
                           supplierId={group.items[0]?.supplier_id}
@@ -316,8 +327,8 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                             <p className="font-medium text-sm">
                               {(item.quantity * item.unit_price).toFixed(2)} {t("common.sar")}
                             </p>
-                            {/* زر التعديل - يظهر فقط للطلبات المعلقة */}
-                            {canEdit && group.status === "pending" && (
+                            {/* زر التعديل - يظهر فقط للعناصر المعلقة */}
+                            {item.status === "pending" && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -447,8 +458,8 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                   </Button>
                 )}
 
-                {/* زر إلغاء الطلب بالكامل - يظهر فقط للطلبات المعلقة */}
-                {canEdit && (
+                {/* زر إلغاء الطلب بالكامل - يظهر فقط إذا كان هناك عناصر معلقة */}
+                {canEditOrder && (
                   <CancelOrderDialog
                     orderId={order.id}
                     trigger={
