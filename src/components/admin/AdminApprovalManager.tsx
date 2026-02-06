@@ -24,20 +24,27 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Search, Clock, CheckCircle, Loader2, Building2, Truck } from "lucide-react";
+import { Check, X, Search, Clock, CheckCircle, Loader2, Building2, Truck, FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import UserDocumentsDialog from "./UserDocumentsDialog";
+import type { AdminUser } from "@/hooks/useAdminData";
 
 interface PendingUser {
   id: string;
   user_id: string;
   full_name: string;
   business_name: string;
+  business_name_en?: string | null;
   phone: string | null;
   region: string | null;
   is_approved: boolean;
   created_at: string;
   role?: string;
   email?: string | null;
+  commercial_registration_url?: string | null;
+  license_url?: string | null;
+  tax_certificate_url?: string | null;
+  national_address_url?: string | null;
 }
 
 const roleLabels: Record<string, string> = {
@@ -53,6 +60,7 @@ const roleColors: Record<string, string> = {
 const AdminApprovalManager = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [rejectingUserId, setRejectingUserId] = useState<string | null>(null);
+  const [viewingDocsUser, setViewingDocsUser] = useState<PendingUser | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -170,7 +178,20 @@ const AdminApprovalManager = () => {
         ) : (
           filterUsers(usersList).map((user) => (
             <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.full_name}</TableCell>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  {user.full_name}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-primary"
+                    onClick={() => setViewingDocsUser(user)}
+                    title="عرض المستندات"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
               <TableCell>{user.business_name}</TableCell>
               <TableCell dir="ltr" className="text-right text-sm text-muted-foreground">{user.email || "-"}</TableCell>
               <TableCell>
@@ -313,6 +334,13 @@ const AdminApprovalManager = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* User Documents Dialog */}
+      <UserDocumentsDialog
+        user={viewingDocsUser as AdminUser | null}
+        open={!!viewingDocsUser}
+        onOpenChange={(open) => !open && setViewingDocsUser(null)}
+      />
     </div>
   );
 };
