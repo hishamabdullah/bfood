@@ -57,21 +57,30 @@ CommandInput.displayName = CommandPrimitive.Input.displayName;
 const CommandList = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
+>(({ className, style, onWheelCapture, onTouchMoveCapture, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
+    data-radix-scroll-lock-scrollable
     className={cn(
       "max-h-[300px] overflow-y-auto overflow-x-hidden",
       // تحسين التمرير للجوال والماوس
       "overscroll-contain touch-pan-y",
-      // تمرير سلس
-      "scroll-smooth",
       // إظهار شريط التمرير
       "scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent",
       className
     )}
+    // منع انتقال تمرير عجلة الفأرة/اللمس إلى الحاويات الأب (Dialog/صفحة)
+    onWheelCapture={(e) => {
+      onWheelCapture?.(e);
+      e.stopPropagation();
+    }}
+    onTouchMoveCapture={(e) => {
+      onTouchMoveCapture?.(e);
+      e.stopPropagation();
+    }}
     style={{
       WebkitOverflowScrolling: "touch",
+      ...style,
     }}
     {...props}
   />

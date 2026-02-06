@@ -564,14 +564,19 @@ export default function ProductFormDialog({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0" align="start">
+                    <PopoverContent
+                      className="w-[300px] p-0"
+                      align="start"
+                      onWheelCapture={(e) => e.stopPropagation()}
+                      onTouchMoveCapture={(e) => e.stopPropagation()}
+                    >
                       <Command shouldFilter={false}>
                         <CommandInput
                           placeholder={t("productForm.searchCategory")}
                           value={categorySearch}
                           onValueChange={setCategorySearch}
                         />
-                        <CommandList className="max-h-[200px] overflow-y-auto">
+                        <CommandList className="max-h-[200px]">
                           {filteredCategories.length === 0 ? (
                             <CommandEmpty>{t("common.noResults")}</CommandEmpty>
                           ) : (
@@ -635,14 +640,19 @@ export default function ProductFormDialog({
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0" align="start">
+                      <PopoverContent
+                        className="w-[300px] p-0"
+                        align="start"
+                        onWheelCapture={(e) => e.stopPropagation()}
+                        onTouchMoveCapture={(e) => e.stopPropagation()}
+                      >
                         <Command shouldFilter={false}>
                           <CommandInput
                             placeholder={t("productForm.searchSubcategory")}
                             value={subcategorySearch}
                             onValueChange={setSubcategorySearch}
                           />
-                          <CommandList className="max-h-[200px] overflow-y-auto">
+                          <CommandList className="max-h-[200px]">
                             <CommandGroup>
                               <CommandItem
                                 value="none"
@@ -721,14 +731,19 @@ export default function ProductFormDialog({
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0" align="start">
+                      <PopoverContent
+                        className="w-[300px] p-0"
+                        align="start"
+                        onWheelCapture={(e) => e.stopPropagation()}
+                        onTouchMoveCapture={(e) => e.stopPropagation()}
+                      >
                         <Command shouldFilter={false}>
                           <CommandInput
                             placeholder="ابحث عن قسم داخلي..."
                             value={sectionSearch}
                             onValueChange={setSectionSearch}
                           />
-                          <CommandList className="max-h-[200px] overflow-y-auto">
+                          <CommandList className="max-h-[200px]">
                             <CommandGroup>
                               <CommandItem
                                 value="none"
