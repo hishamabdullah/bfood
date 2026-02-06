@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +16,67 @@ export type SupplierOrderItem = Tables<"order_items"> & {
 
 export const useSupplierOrders = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Realtime subscription للتحديثات الفورية
+  useEffect(() => {
+    if (!user) return;
+
+    // الاستماع لتغييرات عناصر الطلبات
+    const orderItemsChannel = supabase
+      .channel('supplier-order-items-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_items',
+          filter: `supplier_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Order items changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ["supplier-orders"] });
+          
+          // إظهار إشعار عند الحذف أو التعديل
+          if (payload.eventType === 'DELETE') {
+            toast.info("تم تعديل طلب من قبل المطعم");
+          } else if (payload.eventType === 'UPDATE') {
+            const oldData = payload.old as any;
+            const newData = payload.new as any;
+            if (oldData.quantity !== newData.quantity) {
+              toast.info("تم تعديل كمية في طلب");
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // الاستماع لتغييرات الطلبات الرئيسية
+    const ordersChannel = supabase
+      .channel('supplier-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+        },
+        (payload) => {
+          console.log('Orders changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ["supplier-orders"] });
+          
+          if (payload.eventType === 'DELETE') {
+            toast.info("تم إلغاء طلب من قبل المطعم");
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(orderItemsChannel);
+      supabase.removeChannel(ordersChannel);
+    };
+  }, [user, queryClient]);
 
   return useQuery({
     queryKey: ["supplier-orders", user?.id],

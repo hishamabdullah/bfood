@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, FileText } from "lucide-react";
+import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, FileText, Edit2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { PaymentDetailsDialog } from "@/components/cart/PaymentDetailsDialog";
@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { userDataQueryOptions } from "@/lib/queryConfig";
 import { useHasFeature } from "@/hooks/useRestaurantAccess";
+import { EditItemDialog, CancelSupplierDialog, CancelOrderDialog } from "./OrderEditActions";
 
 interface OrderItem {
   id: string;
@@ -132,8 +133,15 @@ const getStatusConfig = (status: string, t: (key: string) => string) => {
 const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCardProps) => {
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
   const currentLocale = i18n.language === "ar" ? ar : enUS;
   const { hasFeature: canRepeatOrders, isLoading: featureLoading } = useHasFeature("can_repeat_orders");
+
+  // التحقق من إمكانية التعديل (فقط للطلبات المعلقة)
+  const canEdit = useMemo(() => {
+    const allPending = order.order_items?.every(item => item.status === "pending");
+    return allPending;
+  }, [order.order_items]);
 
   // Fetch payment details for this order - only when card is open
   const { data: payments } = useQuery({
@@ -265,12 +273,26 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                           </Button>
                         </Link>
                       )}
+                      {/* زر إلغاء طلب المورد - يظهر فقط للطلبات المعلقة */}
+                      {canEdit && group.status === "pending" && (
+                        <CancelSupplierDialog
+                          orderId={order.id}
+                          supplierId={group.items[0]?.supplier_id}
+                          supplierName={group.supplier?.business_name || t("orders.unknownSupplier")}
+                          trigger={
+                            <Button variant="ghost" size="sm" className="text-destructive gap-1 h-7 text-xs">
+                              <X className="h-3 w-3" />
+                              {t("orders.cancelSupplier", "إلغاء")}
+                            </Button>
+                          }
+                        />
+                      )}
                     </div>
                     
                     {/* Items */}
                     <div className="divide-y">
                       {group.items.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between p-3">
+                        <div key={item.id} className="flex items-center justify-between p-3 group/item">
                           <div className="flex items-center gap-2">
                             {item.product?.image_url ? (
                               <img 
@@ -290,9 +312,22 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                               </p>
                             </div>
                           </div>
-                          <p className="font-medium text-sm">
-                            {(item.quantity * item.unit_price).toFixed(2)} {t("common.sar")}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm">
+                              {(item.quantity * item.unit_price).toFixed(2)} {t("common.sar")}
+                            </p>
+                            {/* زر التعديل - يظهر فقط للطلبات المعلقة */}
+                            {canEdit && group.status === "pending" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                onClick={() => setEditingItem(item)}
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -411,11 +446,38 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                     {t("orders.repeatOrder")}
                   </Button>
                 )}
+
+                {/* زر إلغاء الطلب بالكامل - يظهر فقط للطلبات المعلقة */}
+                {canEdit && (
+                  <CancelOrderDialog
+                    orderId={order.id}
+                    trigger={
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="w-full gap-2 mt-2"
+                      >
+                        <X className="h-4 w-4" />
+                        {t("orders.cancelOrder", "إلغاء الطلب بالكامل")}
+                      </Button>
+                    }
+                  />
+                )}
               </div>
             </div>
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Edit Item Dialog */}
+      {editingItem && (
+        <EditItemDialog
+          item={editingItem}
+          orderId={order.id}
+          open={!!editingItem}
+          onOpenChange={(open) => !open && setEditingItem(null)}
+        />
+      )}
     </Card>
   );
 });
