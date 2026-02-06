@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin, FileText, BarChart3 } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin, FileText, BarChart3, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -176,6 +176,12 @@ const Header = () => {
                         </Link>
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem asChild>
+                      <Link to="/my-subscription" className="cursor-pointer">
+                        <CreditCard className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                        {t("nav.mySubscription", "اشتراكي")}
+                      </Link>
+                    </DropdownMenuItem>
                   </>
                 )}
                 <DropdownMenuItem asChild>
@@ -340,6 +346,12 @@ const Header = () => {
                           </Button>
                         </Link>
                       )}
+                      <Link to="/my-subscription" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <CreditCard className="h-4 w-4" />
+                          {t("nav.mySubscription", "اشتراكي")}
+                        </Button>
+                      </Link>
                     </>
                   )}
                   <Link to="/profile" onClick={() => setIsMenuOpen(false)}>

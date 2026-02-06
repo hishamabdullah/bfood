@@ -118,6 +118,70 @@ export const useMyRenewalRequest = () => {
   });
 };
 
+// جلب جميع طلبات التجديد للمطعم
+export const useMyRenewalRequests = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["my-renewal-requests", user?.id],
+    queryFn: async (): Promise<SubscriptionRenewal[]> => {
+      if (!user?.id) return [];
+
+      const { data, error } = await supabase
+        .from("subscription_renewals")
+        .select("*")
+        .eq("restaurant_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as SubscriptionRenewal[];
+    },
+    enabled: !!user?.id,
+  });
+};
+
+// إنشاء طلب تجديد (للمطعم)
+export const useSubmitRenewalRequest = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      amount,
+      receiptUrl,
+    }: {
+      amount: number;
+      receiptUrl: string;
+    }) => {
+      if (!user?.id) throw new Error("غير مسجل");
+
+      const { data, error } = await supabase
+        .from("subscription_renewals")
+        .insert({
+          restaurant_id: user.id,
+          amount,
+          subscription_type: "monthly",
+          receipt_url: receiptUrl,
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-renewal-request"] });
+      queryClient.invalidateQueries({ queryKey: ["my-renewal-requests"] });
+      toast.success("تم إرسال طلب التجديد بنجاح");
+    },
+    onError: (error) => {
+      console.error("Error creating renewal request:", error);
+      toast.error("حدث خطأ أثناء إرسال الطلب");
+    },
+  });
+};
+
 // إنشاء طلب تجديد
 export const useCreateRenewalRequest = () => {
   const queryClient = useQueryClient();
