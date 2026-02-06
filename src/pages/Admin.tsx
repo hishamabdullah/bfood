@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags, Truck, UserCog, Layers, Crown, LayoutGrid } from "lucide-react";
+import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags, Truck, UserCog, Layers, Crown, LayoutGrid, CreditCard } from "lucide-react";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOrdersTable from "@/components/admin/AdminOrdersTable";
 import AdminCategoriesManager from "@/components/admin/AdminCategoriesManager";
@@ -18,6 +18,7 @@ import AdminSupplierCategoriesManager from "@/components/admin/AdminSupplierCate
 import AdminDeliveryOrders from "@/components/admin/AdminDeliveryOrders";
 import AdminModeratorsManager from "@/components/admin/AdminModeratorsManager";
 import AdminRestaurantFeaturesManager from "@/components/admin/AdminRestaurantFeaturesManager";
+import AdminSubscriptionManager from "@/components/admin/AdminSubscriptionManager";
 
 const Admin = () => {
   const { user, userRole, loading } = useAuth();
@@ -111,7 +112,11 @@ const Admin = () => {
               </TabsTrigger>
               <TabsTrigger value="subscriptions" className="flex items-center gap-2">
                 <Crown className="h-4 w-4" />
-                الاشتراكات
+                ميزات المطاعم
+              </TabsTrigger>
+              <TabsTrigger value="renewals" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                التجديدات
               </TabsTrigger>
             </TabsList>
 
@@ -161,6 +166,10 @@ const Admin = () => {
 
             <TabsContent value="subscriptions">
               <AdminRestaurantFeaturesManager />
+            </TabsContent>
+
+            <TabsContent value="renewals">
+              <AdminSubscriptionManager />
             </TabsContent>
           </Tabs>
         </div>
