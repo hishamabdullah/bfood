@@ -13,12 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck, Loader2, MapPin } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Store, Truck, Loader2, MapPin, Building2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { saudiRegions, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
 import { useSupplierCategories, getSupplierCategoryName } from "@/hooks/useSupplierCategories";
 import ServiceAreasSelector from "@/components/auth/ServiceAreasSelector";
+import DocumentUploadSection from "@/components/auth/DocumentUploadSection";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type UserType = "restaurant" | "supplier";
@@ -34,11 +35,18 @@ const Register = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [serviceRegions, setServiceRegions] = useState<string[]>([]);
   const [serviceCities, setServiceCities] = useState<string[]>([]);
+  const [documentUrls, setDocumentUrls] = useState<{
+    commercialRegistrationUrl?: string;
+    licenseUrl?: string;
+    taxCertificateUrl?: string;
+    nationalAddressUrl?: string;
+  }>({});
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     businessName: "",
+    businessNameEn: "",
     password: "",
     region: "",
     city: "",
@@ -85,6 +93,33 @@ const Register = () => {
       return;
     }
 
+    // Validate documents
+    const missingDocs = [];
+    if (!documentUrls.commercialRegistrationUrl) missingDocs.push(i18n.language === "ar" ? "السجل التجاري" : "Commercial Registration");
+    if (!documentUrls.licenseUrl) missingDocs.push(i18n.language === "ar" ? "الرخصة" : "License");
+    if (!documentUrls.taxCertificateUrl) missingDocs.push(i18n.language === "ar" ? "شهادة الضريبة" : "Tax Certificate");
+    if (!documentUrls.nationalAddressUrl) missingDocs.push(i18n.language === "ar" ? "العنوان الوطني" : "National Address");
+
+    if (missingDocs.length > 0) {
+      toast({
+        title: i18n.language === "ar" ? "الوثائق مطلوبة" : "Documents required",
+        description: i18n.language === "ar" 
+          ? `يرجى رفع: ${missingDocs.join("، ")}` 
+          : `Please upload: ${missingDocs.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.businessNameEn.trim()) {
+      toast({
+        title: i18n.language === "ar" ? "اسم المنشأة بالإنجليزي مطلوب" : "English business name required",
+        description: i18n.language === "ar" ? "يرجى إدخال اسم المنشأة بالإنجليزي" : "Please enter the business name in English",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (userType === "supplier" && serviceCities.length === 0) {
       toast({
         title: i18n.language === "en" ? "Service areas required" : "مناطق الخدمة مطلوبة",
@@ -108,6 +143,7 @@ const Register = () => {
     const { error } = await signUp(formData.email, formData.password, {
       fullName: formData.name,
       businessName: formData.businessName,
+      businessNameEn: formData.businessNameEn,
       phone: formData.phone,
       role: userType,
       region: userType === "supplier" && serviceRegions.length > 0 ? serviceRegions[0] : undefined,
@@ -115,6 +151,10 @@ const Register = () => {
       supplyCategories: userType === "supplier" ? selectedCategories : undefined,
       serviceRegions: userType === "supplier" ? serviceRegions : undefined,
       serviceCities: userType === "supplier" ? serviceCities : undefined,
+      commercialRegistrationUrl: documentUrls.commercialRegistrationUrl,
+      licenseUrl: documentUrls.licenseUrl,
+      taxCertificateUrl: documentUrls.taxCertificateUrl,
+      nationalAddressUrl: documentUrls.nationalAddressUrl,
     });
 
     if (error) {
@@ -130,7 +170,7 @@ const Register = () => {
       });
       // الموردين يذهبون للداشبورد مباشرة، المطاعم لصفحة انتظار الموافقة
       if (userType === "supplier") {
-        navigate("/dashboard");
+        navigate("/pending-approval");
       } else {
         navigate("/pending-approval");
       }
@@ -229,6 +269,34 @@ const Register = () => {
                 />
               </div>
             </div>
+
+            {/* Business Name English */}
+            <div className="space-y-2">
+              <Label htmlFor="businessNameEn">
+                {i18n.language === "ar" ? "اسم المنشأة بالإنجليزي" : "Business Name (English)"}
+                <span className="text-destructive ms-1">*</span>
+              </Label>
+              <div className="relative">
+                <Building2 className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="businessNameEn"
+                  name="businessNameEn"
+                  placeholder={i18n.language === "ar" ? "Business Name" : "Enter business name in English"}
+                  className="ps-10"
+                  dir="ltr"
+                  value={formData.businessNameEn}
+                  onChange={handleChange}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {/* Document Upload Section */}
+            <DocumentUploadSection
+              disabled={isLoading}
+              onDocumentsChange={setDocumentUrls}
+            />
 
             {/* Supplier Service Areas */}
             {userType === "supplier" && (

@@ -15,6 +15,11 @@ export type AdminOrder = Tables<"orders"> & {
 export type AdminUser = Tables<"profiles"> & {
   role?: string;
   email?: string;
+  business_name_en?: string;
+  commercial_registration_url?: string;
+  license_url?: string;
+  tax_certificate_url?: string;
+  national_address_url?: string;
 };
 
 // جلب جميع الطلبات للمدير

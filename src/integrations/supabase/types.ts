@@ -577,7 +577,9 @@ export type Database = {
           bank_name: string | null
           bio: string | null
           business_name: string
+          business_name_en: string | null
           city: string | null
+          commercial_registration_url: string | null
           created_at: string
           customer_code: string | null
           default_delivery_fee: number | null
@@ -586,12 +588,15 @@ export type Database = {
           google_maps_url: string | null
           id: string
           is_approved: boolean
+          license_url: string | null
           minimum_order_amount: number | null
+          national_address_url: string | null
           phone: string | null
           region: string | null
           service_cities: string[] | null
           service_regions: string[] | null
           supply_categories: string[] | null
+          tax_certificate_url: string | null
           updated_at: string
           user_id: string
         }
@@ -602,7 +607,9 @@ export type Database = {
           bank_name?: string | null
           bio?: string | null
           business_name: string
+          business_name_en?: string | null
           city?: string | null
+          commercial_registration_url?: string | null
           created_at?: string
           customer_code?: string | null
           default_delivery_fee?: number | null
@@ -611,12 +618,15 @@ export type Database = {
           google_maps_url?: string | null
           id?: string
           is_approved?: boolean
+          license_url?: string | null
           minimum_order_amount?: number | null
+          national_address_url?: string | null
           phone?: string | null
           region?: string | null
           service_cities?: string[] | null
           service_regions?: string[] | null
           supply_categories?: string[] | null
+          tax_certificate_url?: string | null
           updated_at?: string
           user_id: string
         }
@@ -627,7 +637,9 @@ export type Database = {
           bank_name?: string | null
           bio?: string | null
           business_name?: string
+          business_name_en?: string | null
           city?: string | null
+          commercial_registration_url?: string | null
           created_at?: string
           customer_code?: string | null
           default_delivery_fee?: number | null
@@ -636,12 +648,15 @@ export type Database = {
           google_maps_url?: string | null
           id?: string
           is_approved?: boolean
+          license_url?: string | null
           minimum_order_amount?: number | null
+          national_address_url?: string | null
           phone?: string | null
           region?: string | null
           service_cities?: string[] | null
           service_regions?: string[] | null
           supply_categories?: string[] | null
+          tax_certificate_url?: string | null
           updated_at?: string
           user_id?: string
         }

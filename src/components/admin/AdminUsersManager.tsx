@@ -2,7 +2,7 @@ import { useState } from "react";
 import i18n from "i18next";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Loader2, Plus, Store, Truck, Search, Pencil, Trash2, Mail } from "lucide-react";
+import { Loader2, Plus, Store, Truck, Search, Pencil, Trash2, Mail, FileText } from "lucide-react";
 import { useAdminUsers, useAdminCreateUser, useAdminUpdateUser, useAdminDeleteUser, useAdminUpdateUserEmail, AdminUser } from "@/hooks/useAdminData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { saudiRegions, supplyCategories, getSupplyCategoryName, getRegionName } from "@/data/saudiRegions";
+import UserDocumentsDialog from "./UserDocumentsDialog";
 
 const AdminUsersManager = () => {
   const { data: users, isLoading } = useAdminUsers();
@@ -55,6 +56,7 @@ const AdminUsersManager = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [editingEmailUser, setEditingEmailUser] = useState<AdminUser | null>(null);
+  const [viewingDocsUser, setViewingDocsUser] = useState<AdminUser | null>(null);
   const [newEmail, setNewEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState<"restaurant" | "supplier">("restaurant");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -242,6 +244,15 @@ const AdminUsersManager = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => setViewingDocsUser(user)}
+                        title="عرض الوثائق"
+                        className="text-primary"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleOpenEdit(user)}
                         title="تعديل البيانات"
                       >
@@ -252,7 +263,7 @@ const AdminUsersManager = () => {
                         size="icon"
                         onClick={() => handleOpenEditEmail(user)}
                         title="تغيير البريد الإلكتروني"
-                        className="text-blue-600 hover:text-blue-700"
+                        className="text-primary"
                       >
                         <Mail className="h-4 w-4" />
                       </Button>
@@ -573,6 +584,13 @@ const AdminUsersManager = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* User Documents Dialog */}
+      <UserDocumentsDialog
+        user={viewingDocsUser}
+        open={!!viewingDocsUser}
+        onOpenChange={(open) => !open && setViewingDocsUser(null)}
+      />
     </div>
   );
 };
