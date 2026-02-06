@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface RestaurantFeatures {
   id: string;
@@ -32,6 +33,28 @@ export interface RestaurantWithFeatures {
   created_at: string;
   features: RestaurantFeatures | null;
 }
+
+// جلب ميزات المطعم الحالي
+export const useMyRestaurantFeatures = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["my-restaurant-features", user?.id],
+    queryFn: async (): Promise<RestaurantFeatures | null> => {
+      if (!user?.id) return null;
+
+      const { data, error } = await supabase
+        .from("restaurant_features")
+        .select("*")
+        .eq("restaurant_id", user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as RestaurantFeatures | null;
+    },
+    enabled: !!user?.id,
+  });
+};
 
 // جلب جميع المطاعم مع ميزاتها (للمدير)
 export const useAllRestaurantsWithFeatures = () => {
