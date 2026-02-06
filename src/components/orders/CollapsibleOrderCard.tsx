@@ -439,41 +439,46 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                   </div>
                 )}
 
-                {/* Total */}
-                <div className="flex justify-between font-bold text-lg border-t pt-3 mt-3">
-                  <span>{t("orders.total")}:</span>
-                  <span className="text-primary">{Number(order.total_amount).toFixed(2)} {t("common.sar")}</span>
-                </div>
-
-                {/* Repeat Order Button */}
-                {onRepeatOrder && canRepeatOrders && !featureLoading && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onRepeatOrder(order)}
-                    className="w-full gap-2 mt-2"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {t("orders.repeatOrder")}
-                  </Button>
-                )}
-
-                {/* زر إلغاء الطلب بالكامل - يظهر فقط إذا كان هناك عناصر معلقة */}
-                {canEditOrder && (
-                  <CancelOrderDialog
-                    orderId={order.id}
-                    trigger={
+                {/* Total + Actions Row */}
+                <div className="flex items-center justify-between border-t pt-3 mt-3">
+                  <div className="flex items-center gap-2">
+                    {/* Repeat Order Button */}
+                    {onRepeatOrder && canRepeatOrders && !featureLoading && (
                       <Button
-                        variant="destructive"
+                        variant="ghost"
                         size="sm"
-                        className="w-full gap-2 mt-2"
+                        onClick={() => onRepeatOrder(order)}
+                        className="gap-1.5 h-8 text-xs text-muted-foreground hover:text-primary"
                       >
-                        <X className="h-4 w-4" />
-                        {t("orders.cancelOrder", "إلغاء الطلب بالكامل")}
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        {t("orders.repeatOrder")}
                       </Button>
-                    }
-                  />
-                )}
+                    )}
+
+                    {/* زر إلغاء الطلب بالكامل */}
+                    {canEditOrder && (
+                      <CancelOrderDialog
+                        orderId={order.id}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            {t("orders.cancelOrder", "إلغاء الطلب")}
+                          </Button>
+                        }
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Total */}
+                  <div className="text-left">
+                    <span className="text-sm text-muted-foreground">{t("orders.total")}</span>
+                    <p className="font-bold text-lg text-primary">{Number(order.total_amount).toFixed(2)} {t("common.sar")}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
