@@ -50,18 +50,22 @@ export const useRestaurantSubscription = () => {
       let daysRemaining: number | null = null;
 
       if (data.subscription_end_date) {
+        // تاريخ الانتهاء - الاشتراك ينتهي في بداية هذا اليوم
         const endDate = new Date(data.subscription_end_date);
-        const now = new Date();
+        endDate.setHours(0, 0, 0, 0);
         
-        // تعيين الوقت إلى منتصف الليل للمقارنة بالتاريخ فقط
-        endDate.setHours(23, 59, 59, 999);
+        // التاريخ الحالي بدون وقت
+        const now = new Date();
         now.setHours(0, 0, 0, 0);
 
-        isExpired = now > endDate;
+        // الاشتراك منتهي إذا كان اليوم الحالي >= تاريخ الانتهاء
+        isExpired = now >= endDate;
         
         if (!isExpired) {
           const diffTime = endDate.getTime() - now.getTime();
           daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        } else {
+          daysRemaining = 0;
         }
       }
 
