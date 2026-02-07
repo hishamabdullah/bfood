@@ -9,6 +9,7 @@ import ProductSkeleton from "@/components/products/ProductSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, X, Store, MapPin, Loader2 } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
+import { useProductsByIds } from "@/hooks/useProductsByIds";
 import { useSupplierProfile } from "@/hooks/useSuppliers";
 import { saudiRegions, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
 import i18n from "i18next";
@@ -44,13 +45,15 @@ const Products = () => {
   const favoriteSupplierIds = favoriteSuppliersQuery.data ?? [];
 
   // التحقق من تفعيل تصفية المفضلة للمستخدم الفرعي
-  const shouldFilterByFavoriteProducts = isSubUser && !!subUserPermissions?.can_see_favorite_products_only;
-  const shouldFilterByFavoriteSuppliers = isSubUser && !!subUserPermissions?.can_see_favorite_suppliers_only;
+  // مهم: في صفحة المنتجات، "المنتجات المفضلة فقط" يجب أن يعمل حتى لو لم يتم تفضيل المورد.
+  const favoritesOnlyProducts = isSubUser && !!subUserPermissions?.can_see_favorite_products_only;
+  const favoritesOnlySuppliers =
+    isSubUser && !favoritesOnlyProducts && !!subUserPermissions?.can_see_favorite_suppliers_only;
 
-  // مهم: لا نطبق فلتر المفضلة قبل أن تُحمّل قائمة المفضلة حتى لا يظهر للمستخدم أن "لا توجد منتجات"
+  // مهم: لا نطبق فلتر المفضلة قبل أن تُحمّل القائمة حتى لا يظهر للمستخدم أن "لا توجد منتجات"
   const favoritesLoading =
-    (shouldFilterByFavoriteProducts && favoriteProductsQuery.isLoading) ||
-    (shouldFilterByFavoriteSuppliers && favoriteSuppliersQuery.isLoading);
+    (favoritesOnlyProducts && favoriteProductsQuery.isLoading) ||
+    (favoritesOnlySuppliers && favoriteSuppliersQuery.isLoading);
 
   const { getCategoryName } = useCategoryTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -77,9 +80,15 @@ const Products = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useProducts(selectedCategory, selectedSubcategory);
+  } = useProducts(selectedCategory, selectedSubcategory, !favoritesOnlyProducts);
 
-  const isPageLoading = productsLoading || favoritesLoading;
+  // في وضع (المنتجات المفضلة فقط) نجلب منتجات المفضلة مباشرة بدون pagination
+  const favoriteOnlyProductsQuery = useProductsByIds(favoritesOnlyProducts ? favoriteProductIds : []);
+
+  const isPageLoading =
+    productsLoading ||
+    favoritesLoading ||
+    (favoritesOnlyProducts && favoriteProductIds.length > 0 && favoriteOnlyProductsQuery.isLoading);
 
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategoriesByCategory(
@@ -119,35 +128,39 @@ const Products = () => {
     );
   }, [sections, sectionSearch]);
 
-  // Flatten all pages of products
+  // Flatten products (في وضع المفضلة فقط نستخدم بيانات المفضلة مباشرة بدون pagination)
   const allProducts = useMemo(() => {
-    return productsData?.pages.flatMap(page => page.products) || [];
-  }, [productsData]);
+    if (favoritesOnlyProducts) {
+      return favoriteOnlyProductsQuery.data ?? [];
+    }
+    return productsData?.pages.flatMap((page) => page.products) || [];
+  }, [favoritesOnlyProducts, favoriteOnlyProductsQuery.data, productsData]);
 
   // Memoize filtered products to prevent recalculation on every render
   const filteredProducts = useMemo(() => {
     return allProducts.filter((product) => {
-      // تصفية المنتجات المفضلة للمستخدم الفرعي
-      if (shouldFilterByFavoriteProducts && !favoriteProductIds.includes(product.id)) {
+      // في صفحة المنتجات:
+      // - إذا كانت الصلاحية (منتجات المفضلة فقط) مفعّلة: اعرض فقط منتجات المفضلة
+      // - إذا لم تكن مفعّلة وكانت (موردين المفضلة فقط) مفعّلة: اعرض منتجات الموردين المفضلين
+      if (favoritesOnlyProducts && !favoriteProductIds.includes(product.id)) {
         return false;
       }
-      
-      // تصفية الموردين المفضلين للمستخدم الفرعي
-      if (shouldFilterByFavoriteSuppliers && !favoriteSupplierIds.includes(product.supplier_id)) {
+
+      if (!favoritesOnlyProducts && favoritesOnlySuppliers && !favoriteSupplierIds.includes(product.supplier_id)) {
         return false;
       }
-      
+
       if (supplierId && product.supplier_id !== supplierId) {
         return false;
       }
-      
+
       // Filter by section (third level)
       if (selectedSection !== "all") {
         if ((product as any).section_id !== selectedSection) {
           return false;
         }
       }
-      
+
       // Filter by region - check service_regions first, then fallback to region
       if (selectedRegion !== "all") {
         const supplierProfile = product.supplier_profile as any;
@@ -173,18 +186,31 @@ const Products = () => {
           return false;
         }
       }
-      
-      const matchesSearch = 
+
+      const matchesSearch =
         product.name.includes(searchQuery) ||
         product.supplier_profile?.business_name?.includes(searchQuery);
       return matchesSearch;
     });
-  }, [allProducts, supplierId, selectedSection, selectedRegion, selectedCity, searchQuery, shouldFilterByFavoriteProducts, shouldFilterByFavoriteSuppliers, favoriteProductIds, favoriteSupplierIds]);
+  }, [
+    allProducts,
+    supplierId,
+    selectedSection,
+    selectedRegion,
+    selectedCity,
+    searchQuery,
+    favoritesOnlyProducts,
+    favoritesOnlySuppliers,
+    favoriteProductIds,
+    favoriteSupplierIds,
+  ]);
 
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (favoritesOnlyProducts) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -199,7 +225,7 @@ const Products = () => {
     }
 
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [favoritesOnlyProducts, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const clearSupplierFilter = useCallback(() => {
     searchParams.delete("supplier");
