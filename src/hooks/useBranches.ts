@@ -36,6 +36,38 @@ export const useBranches = () => {
   });
 };
 
+// Hook to get max branches limit from restaurant features
+export const useMaxBranchesLimit = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["max-branches-limit", user?.id],
+    queryFn: async () => {
+      if (!user) return { maxBranches: 1, currentCount: 0 };
+      
+      // Get restaurant features to check max_branches
+      const { data: features } = await supabase
+        .from("restaurant_features")
+        .select("max_branches")
+        .eq("restaurant_id", user.id)
+        .single();
+
+      // Get current branch count
+      const { count } = await supabase
+        .from("branches")
+        .select("*", { count: "exact", head: true })
+        .eq("restaurant_id", user.id);
+
+      return {
+        maxBranches: features?.max_branches ?? 1,
+        currentCount: count ?? 0,
+      };
+    },
+    enabled: !!user,
+    ...userDataQueryOptions,
+  });
+};
+
 export const useCreateBranch = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -43,6 +75,25 @@ export const useCreateBranch = () => {
   return useMutation({
     mutationFn: async (params: CreateBranchParams) => {
       if (!user) throw new Error("يجب تسجيل الدخول أولاً");
+
+      // Check branch limit before creating
+      const { data: features } = await supabase
+        .from("restaurant_features")
+        .select("max_branches")
+        .eq("restaurant_id", user.id)
+        .single();
+
+      const { count } = await supabase
+        .from("branches")
+        .select("*", { count: "exact", head: true })
+        .eq("restaurant_id", user.id);
+
+      const maxBranches = features?.max_branches ?? 1;
+      const currentCount = count ?? 0;
+
+      if (currentCount >= maxBranches) {
+        throw new Error(`خطتك تسمح بحد أقصى ${maxBranches} فروع فقط`);
+      }
 
       // إذا كان هذا الفرع الافتراضي، نلغي الافتراضي من الفروع الأخرى
       if (params.is_default) {
@@ -69,6 +120,7 @@ export const useCreateBranch = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["branches"] });
+      queryClient.invalidateQueries({ queryKey: ["max-branches-limit"] });
     },
   });
 };
@@ -121,6 +173,7 @@ export const useDeleteBranch = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["branches"] });
+      queryClient.invalidateQueries({ queryKey: ["max-branches-limit"] });
     },
   });
 };
