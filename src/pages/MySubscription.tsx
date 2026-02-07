@@ -286,7 +286,7 @@ const MySubscription = () => {
                 <div className="bg-primary/10 rounded-xl p-6 text-center">
                   <p className="text-muted-foreground mb-2">قيمة الاشتراك الشهري</p>
                   <p className="text-4xl font-bold text-primary">
-                    {settings?.subscription_price || "---"} <span className="text-xl">ر.س</span>
+                    {currentPlan?.price || settings?.subscription_price || "---"} <span className="text-xl">ر.س</span>
                   </p>
                 </div>
 
