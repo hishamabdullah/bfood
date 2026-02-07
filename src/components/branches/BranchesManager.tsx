@@ -49,8 +49,9 @@ export const BranchesManager = () => {
     try {
       await deleteBranch.mutateAsync(deletingBranchId);
       toast.success("تم حذف الفرع بنجاح");
-    } catch (error) {
-      toast.error("حدث خطأ أثناء حذف الفرع");
+    } catch (error: any) {
+      console.error("Delete branch error:", error);
+      toast.error(error?.message || "حدث خطأ أثناء حذف الفرع");
     } finally {
       setDeletingBranchId(null);
     }
