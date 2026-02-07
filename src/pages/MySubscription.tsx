@@ -32,6 +32,7 @@ import {
   useMyRenewalRequests,
   useSubmitRenewalRequest,
 } from "@/hooks/useSubscriptionRenewals";
+import { useSubscriptionPlan } from "@/hooks/useSubscriptionPlans";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -44,6 +45,7 @@ const MySubscription = () => {
   const { data: settings, isLoading: settingsLoading } = useSubscriptionSettings();
   const { data: renewals, isLoading: renewalsLoading, refetch: refetchRenewals } = useMyRenewalRequests();
   const submitRenewal = useSubmitRenewalRequest();
+  const { data: currentPlan } = useSubscriptionPlan(features?.plan_id || null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -172,6 +174,38 @@ const MySubscription = () => {
           </div>
 
           <div className="grid gap-6">
+            {/* معلومات الخطة الحالية */}
+            {currentPlan && (
+              <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-primary" />
+                    خطتك الحالية
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-primary">{currentPlan.name}</span>
+                    <Badge variant="secondary" className="text-lg px-4 py-1">
+                      {currentPlan.price} ر.س
+                    </Badge>
+                  </div>
+                  {currentPlan.description && (
+                    <p className="text-muted-foreground">{currentPlan.description}</p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {currentPlan.can_order && <Badge variant="outline">الطلب</Badge>}
+                    {currentPlan.can_use_templates && <Badge variant="outline">قوالب الطلب</Badge>}
+                    {currentPlan.can_use_branches && <Badge variant="outline">الفروع</Badge>}
+                    {currentPlan.can_use_favorites && <Badge variant="outline">المفضلة</Badge>}
+                    {currentPlan.can_view_analytics && <Badge variant="outline">التحليلات</Badge>}
+                    {currentPlan.can_use_custom_prices && <Badge variant="outline">أسعار مخصصة</Badge>}
+                    {currentPlan.can_repeat_orders && <Badge variant="outline">إعادة الطلب</Badge>}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* حالة الاشتراك */}
             <Card className={isExpired ? "border-destructive" : isExpiringSoon ? "border-amber-500" : ""}>
               <CardHeader>

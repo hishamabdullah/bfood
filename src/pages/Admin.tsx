@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags, Truck, UserCog, Layers, Crown, LayoutGrid, CreditCard } from "lucide-react";
+import { Shield, ShoppingBag, Users, FolderTree, Loader2, UserCheck, Package, Settings, Tags, Truck, UserCog, Layers, Crown, LayoutGrid, CreditCard, Sparkles } from "lucide-react";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOrdersTable from "@/components/admin/AdminOrdersTable";
 import AdminCategoriesManager from "@/components/admin/AdminCategoriesManager";
@@ -19,6 +19,7 @@ import AdminDeliveryOrders from "@/components/admin/AdminDeliveryOrders";
 import AdminModeratorsManager from "@/components/admin/AdminModeratorsManager";
 import AdminRestaurantFeaturesManager from "@/components/admin/AdminRestaurantFeaturesManager";
 import AdminSubscriptionManager from "@/components/admin/AdminSubscriptionManager";
+import AdminSubscriptionPlansManager from "@/components/admin/AdminSubscriptionPlansManager";
 
 const Admin = () => {
   const { user, userRole, loading } = useAuth();
@@ -110,6 +111,10 @@ const Admin = () => {
                 <UserCog className="h-4 w-4" />
                 المشرفين
               </TabsTrigger>
+              <TabsTrigger value="plans" className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                خطط الاشتراك
+              </TabsTrigger>
               <TabsTrigger value="subscriptions" className="flex items-center gap-2">
                 <Crown className="h-4 w-4" />
                 ميزات المطاعم
@@ -162,6 +167,10 @@ const Admin = () => {
 
             <TabsContent value="moderators">
               <AdminModeratorsManager />
+            </TabsContent>
+
+            <TabsContent value="plans">
+              <AdminSubscriptionPlansManager />
             </TabsContent>
 
             <TabsContent value="subscriptions">

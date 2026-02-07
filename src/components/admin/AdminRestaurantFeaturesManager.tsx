@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { RotateCcw, Users } from "lucide-react";
+import { RotateCcw, Users, Sparkles } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -51,6 +51,7 @@ import {
   RestaurantWithFeatures,
   RestaurantFeatures,
 } from "@/hooks/useRestaurantFeatures";
+import AssignPlanDialog from "./AssignPlanDialog";
 
 const subscriptionTypes = [
   { value: "basic", label: "أساسي", color: "bg-gray-500" },
@@ -64,6 +65,7 @@ const AdminRestaurantFeaturesManager = () => {
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantWithFeatures | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editedFeatures, setEditedFeatures] = useState<Partial<RestaurantFeatures>>({});
+  const [assignPlanRestaurant, setAssignPlanRestaurant] = useState<RestaurantWithFeatures | null>(null);
 
   const { data: restaurants, isLoading } = useAllRestaurantsWithFeatures();
   const updateFeatures = useUpdateRestaurantFeatures();
@@ -229,6 +231,15 @@ const AdminRestaurantFeaturesManager = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => setAssignPlanRestaurant(restaurant)}
+                              className="bg-primary hover:bg-primary/90"
+                            >
+                              <Sparkles className="h-4 w-4 ml-1" />
+                              تعيين خطة
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
@@ -552,6 +563,14 @@ const AdminRestaurantFeaturesManager = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Assign Plan Dialog */}
+      <AssignPlanDialog
+        open={!!assignPlanRestaurant}
+        onOpenChange={(open) => !open && setAssignPlanRestaurant(null)}
+        restaurantId={assignPlanRestaurant?.user_id || ""}
+        restaurantName={assignPlanRestaurant?.business_name || ""}
+      />
     </div>
   );
 };
