@@ -860,6 +860,7 @@ export type Database = {
           can_see_order_totals: boolean | null
           can_see_prices: boolean | null
           can_view_analytics: boolean | null
+          can_view_subscription: boolean | null
           created_at: string | null
           id: string
           sub_user_id: string
@@ -876,6 +877,7 @@ export type Database = {
           can_see_order_totals?: boolean | null
           can_see_prices?: boolean | null
           can_view_analytics?: boolean | null
+          can_view_subscription?: boolean | null
           created_at?: string | null
           id?: string
           sub_user_id: string
@@ -892,6 +894,7 @@ export type Database = {
           can_see_order_totals?: boolean | null
           can_see_prices?: boolean | null
           can_view_analytics?: boolean | null
+          can_view_subscription?: boolean | null
           created_at?: string | null
           id?: string
           sub_user_id?: string
@@ -1268,6 +1271,7 @@ export type Database = {
           can_see_order_totals: boolean
           can_see_prices: boolean
           can_view_analytics: boolean
+          can_view_subscription: boolean
         }[]
       }
       get_user_role: {

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useRestaurantAccess } from "@/hooks/useRestaurantAccess";
+import { useSubUserContext } from "@/hooks/useSubUserContext";
 import NotificationBell from "./NotificationBell";
 import LanguageSwitcher from "./LanguageSwitcher";
 import {
@@ -23,20 +24,26 @@ const Header = () => {
   const { getItemCount } = useCart();
   const { data: siteSettings } = useSiteSettings();
   const { data: features } = useRestaurantAccess();
+  const { data: subUserContext } = useSubUserContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const itemCount = getItemCount();
   
   const isSupplier = userRole === "supplier";
   const isRestaurant = userRole === "restaurant";
+  const isSubUser = subUserContext?.isSubUser ?? false;
 
-  // Feature checks for restaurant
+  // Feature checks for restaurant - considering sub-user permissions
   const canOrder = features?.can_order ?? true;
-  const canUseBranches = features?.can_use_branches ?? false;
-  const canUseTemplates = features?.can_use_templates ?? false;
-  const canViewAnalytics = features?.can_view_analytics ?? false;
+  const canUseBranches = (features?.can_use_branches ?? false) && 
+    (!isSubUser || (subUserContext?.permissions?.can_manage_branches ?? false));
+  const canUseTemplates = (features?.can_use_templates ?? false) && 
+    (!isSubUser || (subUserContext?.permissions?.can_manage_templates ?? false));
+  const canViewAnalytics = (features?.can_view_analytics ?? false) && 
+    (!isSubUser || (subUserContext?.permissions?.can_view_analytics ?? false));
   const canUseFavorites = features?.can_use_favorites ?? true;
-  const canManageSubUsers = features?.can_manage_sub_users ?? false;
+  const canManageSubUsers = (features?.can_manage_sub_users ?? false) && !isSubUser;
+  const canViewSubscription = !isSubUser || (subUserContext?.permissions?.can_view_subscription ?? false);
 
   const handleSignOut = async () => {
     try {
@@ -177,17 +184,18 @@ const Header = () => {
                         </Link>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem asChild>
-                      <Link to="/my-subscription" className="cursor-pointer">
-                        <CreditCard className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                        {t("nav.mySubscription", "اشتراكي")}
-                      </Link>
-                    </DropdownMenuItem>
+                    {canViewSubscription && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/my-subscription" className="cursor-pointer">
+                          <CreditCard className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                          {t("nav.mySubscription", "اشتراكي")}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {canManageSubUsers && (
                       <DropdownMenuItem asChild>
                         <Link to="/sub-users" className="cursor-pointer">
                           <Users className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                          {t("nav.subUsers", "المستخدمين الفرعيين")}
                         </Link>
                       </DropdownMenuItem>
                     )}
@@ -355,17 +363,18 @@ const Header = () => {
                           </Button>
                         </Link>
                       )}
-                      <Link to="/my-subscription" onClick={() => setIsMenuOpen(false)}>
-                        <Button variant="outline" className="w-full gap-2">
-                          <CreditCard className="h-4 w-4" />
-                          {t("nav.mySubscription", "اشتراكي")}
-                        </Button>
-                      </Link>
+                      {canViewSubscription && (
+                        <Link to="/my-subscription" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" className="w-full gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            {t("nav.mySubscription", "اشتراكي")}
+                          </Button>
+                        </Link>
+                      )}
                       {canManageSubUsers && (
                         <Link to="/sub-users" onClick={() => setIsMenuOpen(false)}>
                           <Button variant="outline" className="w-full gap-2">
                             <Users className="h-4 w-4" />
-                            {t("nav.subUsers", "المستخدمين الفرعيين")}
                           </Button>
                         </Link>
                       )}

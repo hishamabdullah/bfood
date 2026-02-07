@@ -17,6 +17,7 @@ export interface SubUserContext {
     can_view_analytics: boolean;
     can_manage_branches: boolean;
     can_manage_templates: boolean;
+    can_view_subscription: boolean;
   } | null;
   allowedBranchIds: string[];
 }
@@ -75,6 +76,7 @@ export const useSubUserContext = () => {
             can_view_analytics: (permData as any).can_view_analytics ?? false,
             can_manage_branches: (permData as any).can_manage_branches ?? false,
             can_manage_templates: (permData as any).can_manage_templates ?? false,
+            can_view_subscription: (permData as any).can_view_subscription ?? false,
           }
         : null;
 
