@@ -350,6 +350,85 @@ const Profile = () => {
   const isSupplier = targetRole === "supplier";
   const isRestaurant = targetRole === "restaurant";
 
+  // عرض واجهة مبسطة للمستخدم الفرعي
+  if (isSubUser && isOwnProfile) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1">
+          <div className="container py-8 max-w-2xl">
+            {/* Header */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Store className="h-8 w-8 text-primary" />
+                <h1 className="text-3xl font-bold">{t("profile.title")}</h1>
+                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                  {t("dashboard.staff")}
+                </Badge>
+              </div>
+            </div>
+
+            {/* معلومات مدير الحساب */}
+            {subUserInfo?.restaurant_id && (
+              <div className="mb-6">
+                <AccountManagerInfo restaurantId={subUserInfo.restaurant_id} />
+              </div>
+            )}
+
+            {/* بيانات المستخدم الفرعي */}
+            <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
+              {/* اسم المستخدم */}
+              <div className="space-y-2">
+                <Label>{t("profile.fullName")}</Label>
+                <div className="relative">
+                  <User className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    value={subUserInfo?.full_name || ""}
+                    className="ps-10 bg-muted"
+                    disabled
+                  />
+                </div>
+              </div>
+
+              {/* البريد الإلكتروني */}
+              {user?.email && (
+                <div className="space-y-2">
+                  <Label>{t("profile.email")}</Label>
+                  <div className="relative">
+                    <Mail className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      value={user.email}
+                      className="ps-10 bg-muted"
+                      disabled
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* اسم المطعم */}
+              <div className="space-y-2">
+                <Label>{t("profile.restaurantName")}</Label>
+                <div className="relative">
+                  <Store className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    value={authProfile?.business_name || ""}
+                    className="ps-10 bg-muted"
+                    disabled
+                  />
+                </div>
+              </div>
+
+              {/* إعدادات الصوت */}
+              <SoundSettings />
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -382,13 +461,6 @@ const Profile = () => {
               {isOwnProfile ? t("profile.updateInfo") : `${isSupplier ? t("auth.supplier") : t("auth.restaurant")}`}
             </p>
           </div>
-
-          {/* معلومات مدير الحساب للمستخدم الفرعي */}
-          {isSubUser && subUserInfo?.restaurant_id && isOwnProfile && (
-            <div className="mb-6">
-              <AccountManagerInfo restaurantId={subUserInfo.restaurant_id} />
-            </div>
-          )}
 
           {/* Profile Card */}
           <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
