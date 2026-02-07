@@ -18,6 +18,7 @@ interface CreateSubUserRequest {
     can_view_analytics: boolean;
     can_manage_branches: boolean;
     can_manage_templates: boolean;
+    can_view_subscription: boolean;
   };
 }
 
@@ -191,6 +192,7 @@ Deno.serve(async (req) => {
         can_view_analytics: (permissions as any)?.can_view_analytics ?? false,
         can_manage_branches: (permissions as any)?.can_manage_branches ?? false,
         can_manage_templates: (permissions as any)?.can_manage_templates ?? false,
+        can_view_subscription: (permissions as any)?.can_view_subscription ?? false,
       });
 
     if (permError) {

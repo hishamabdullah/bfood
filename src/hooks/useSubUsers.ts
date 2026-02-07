@@ -27,6 +27,7 @@ export interface SubUserPermissions {
   can_view_analytics: boolean;
   can_manage_branches: boolean;
   can_manage_templates: boolean;
+  can_view_subscription: boolean;
 }
 
 export interface SubUser {
@@ -107,6 +108,7 @@ export const useSubUsers = () => {
               can_view_analytics: (permissionsMap.get(su.id) as any)?.can_view_analytics ?? false,
               can_manage_branches: (permissionsMap.get(su.id) as any)?.can_manage_branches ?? false,
               can_manage_templates: (permissionsMap.get(su.id) as any)?.can_manage_templates ?? false,
+              can_view_subscription: (permissionsMap.get(su.id) as any)?.can_view_subscription ?? false,
             }
           : null,
         branch_ids: branchesMap.get(su.id) || [],

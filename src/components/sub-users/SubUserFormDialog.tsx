@@ -42,6 +42,7 @@ const formSchema = z.object({
   can_view_analytics: z.boolean(),
   can_manage_branches: z.boolean(),
   can_manage_templates: z.boolean(),
+  can_view_subscription: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -82,6 +83,7 @@ const SubUserFormDialog = ({
       can_view_analytics: false,
       can_manage_branches: false,
       can_manage_templates: false,
+      can_view_subscription: false,
     },
   });
 
@@ -105,6 +107,7 @@ const SubUserFormDialog = ({
         can_view_analytics: subUser.permissions?.can_view_analytics ?? false,
         can_manage_branches: subUser.permissions?.can_manage_branches ?? false,
         can_manage_templates: subUser.permissions?.can_manage_templates ?? false,
+        can_view_subscription: subUser.permissions?.can_view_subscription ?? false,
       });
     } else {
       form.reset({
@@ -123,6 +126,7 @@ const SubUserFormDialog = ({
         can_view_analytics: false,
         can_manage_branches: false,
         can_manage_templates: false,
+        can_view_subscription: false,
       });
     }
   }, [subUser, form]);
@@ -139,6 +143,7 @@ const SubUserFormDialog = ({
       can_view_analytics: data.can_view_analytics,
       can_manage_branches: data.can_manage_branches,
       can_manage_templates: data.can_manage_templates,
+      can_view_subscription: data.can_view_subscription,
     };
 
     try {
@@ -484,6 +489,27 @@ const SubUserFormDialog = ({
                           <FormLabel>قوالب الطلبات</FormLabel>
                           <FormDescription>
                             إنشاء واستخدام قوالب الطلبات
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="can_view_subscription"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between">
+                        <div>
+                          <FormLabel>رؤية الاشتراك</FormLabel>
+                          <FormDescription>
+                            الوصول لصفحة معلومات الاشتراك
                           </FormDescription>
                         </div>
                         <FormControl>
