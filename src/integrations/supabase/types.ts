@@ -411,6 +411,8 @@ export type Database = {
         Row: {
           branch_id: string | null
           created_at: string
+          created_by_name: string | null
+          created_by_user_id: string | null
           delivery_address: string | null
           delivery_fee: number
           id: string
@@ -424,6 +426,8 @@ export type Database = {
         Insert: {
           branch_id?: string | null
           created_at?: string
+          created_by_name?: string | null
+          created_by_user_id?: string | null
           delivery_address?: string | null
           delivery_fee?: number
           id?: string
@@ -437,6 +441,8 @@ export type Database = {
         Update: {
           branch_id?: string | null
           created_at?: string
+          created_by_name?: string | null
+          created_by_user_id?: string | null
           delivery_address?: string | null
           delivery_fee?: number
           id?: string
@@ -847,10 +853,13 @@ export type Database = {
           can_approve_order: boolean | null
           can_cancel_order: boolean | null
           can_edit_order: boolean | null
+          can_manage_branches: boolean | null
+          can_manage_templates: boolean | null
           can_see_favorite_products_only: boolean | null
           can_see_favorite_suppliers_only: boolean | null
           can_see_order_totals: boolean | null
           can_see_prices: boolean | null
+          can_view_analytics: boolean | null
           created_at: string | null
           id: string
           sub_user_id: string
@@ -860,10 +869,13 @@ export type Database = {
           can_approve_order?: boolean | null
           can_cancel_order?: boolean | null
           can_edit_order?: boolean | null
+          can_manage_branches?: boolean | null
+          can_manage_templates?: boolean | null
           can_see_favorite_products_only?: boolean | null
           can_see_favorite_suppliers_only?: boolean | null
           can_see_order_totals?: boolean | null
           can_see_prices?: boolean | null
+          can_view_analytics?: boolean | null
           created_at?: string | null
           id?: string
           sub_user_id: string
@@ -873,10 +885,13 @@ export type Database = {
           can_approve_order?: boolean | null
           can_cancel_order?: boolean | null
           can_edit_order?: boolean | null
+          can_manage_branches?: boolean | null
+          can_manage_templates?: boolean | null
           can_see_favorite_products_only?: boolean | null
           can_see_favorite_suppliers_only?: boolean | null
           can_see_order_totals?: boolean | null
           can_see_prices?: boolean | null
+          can_view_analytics?: boolean | null
           created_at?: string | null
           id?: string
           sub_user_id?: string
@@ -1246,10 +1261,13 @@ export type Database = {
           can_approve_order: boolean
           can_cancel_order: boolean
           can_edit_order: boolean
+          can_manage_branches: boolean
+          can_manage_templates: boolean
           can_see_favorite_products_only: boolean
           can_see_favorite_suppliers_only: boolean
           can_see_order_totals: boolean
           can_see_prices: boolean
+          can_view_analytics: boolean
         }[]
       }
       get_user_role: {

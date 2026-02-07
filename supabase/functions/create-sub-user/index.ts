@@ -15,6 +15,9 @@ interface CreateSubUserRequest {
     can_cancel_order: boolean;
     can_approve_order: boolean;
     can_see_order_totals: boolean;
+    can_view_analytics: boolean;
+    can_manage_branches: boolean;
+    can_manage_templates: boolean;
   };
 }
 
@@ -185,6 +188,9 @@ Deno.serve(async (req) => {
         can_cancel_order: (permissions as any)?.can_cancel_order ?? true,
         can_approve_order: (permissions as any)?.can_approve_order ?? false,
         can_see_order_totals: (permissions as any)?.can_see_order_totals ?? true,
+        can_view_analytics: (permissions as any)?.can_view_analytics ?? false,
+        can_manage_branches: (permissions as any)?.can_manage_branches ?? false,
+        can_manage_templates: (permissions as any)?.can_manage_templates ?? false,
       });
 
     if (permError) {

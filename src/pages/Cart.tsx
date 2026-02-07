@@ -17,6 +17,7 @@ import { SupplierCartSection } from "@/components/cart/SupplierCartSection";
 import { SaveTemplateDialog } from "@/components/cart/SaveTemplateDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useHasFeature, useMaxNotesChars } from "@/hooks/useRestaurantAccess";
+import { useSubUserContext, useEffectiveRestaurantId } from "@/hooks/useSubUserContext";
 
 const Cart = () => {
   const { t } = useTranslation();
@@ -24,6 +25,8 @@ const Cart = () => {
   const { user, userRole } = useAuth();
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
+  const { data: subUserContext } = useSubUserContext();
+  const { restaurantId: effectiveRestaurantId } = useEffectiveRestaurantId();
   
   // Feature checks
   const { hasFeature: canUseBranches } = useHasFeature("can_use_branches");
@@ -31,6 +34,22 @@ const Cart = () => {
   const { maxChars: maxNotesChars } = useMaxNotesChars();
   
   const { data: branches = [] } = useBranches();
+
+  // جلب اسم الموظف إذا كان موظفاً
+  const { data: subUserName } = useQuery({
+    queryKey: ["sub-user-name", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("restaurant_sub_users")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      return data?.full_name || null;
+    },
+    enabled: !!subUserContext?.isSubUser && !!user?.id,
+  });
 
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
@@ -253,6 +272,9 @@ const Cart = () => {
         branchId: allSuppliersPickup ? undefined : selectedBranchId || undefined,
         supplierDeliveryFees,
         supplierPickupStatus,
+        // إضافة معلومات منشئ الطلب إذا كان موظفاً
+        createdByUserId: subUserContext?.isSubUser ? user?.id : undefined,
+        createdByName: subUserContext?.isSubUser ? subUserName || undefined : undefined,
       });
 
       clearCart();

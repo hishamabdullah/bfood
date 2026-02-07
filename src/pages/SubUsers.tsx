@@ -109,6 +109,9 @@ const SubUsersPage = () => {
     if (permissions.can_cancel_order) summary.push("إلغاء الطلبات");
     if (permissions.can_see_favorite_suppliers_only) summary.push("موردين مفضلين فقط");
     if (permissions.can_see_favorite_products_only) summary.push("منتجات مفضلة فقط");
+    if (permissions.can_view_analytics) summary.push("رؤية التقارير");
+    if (permissions.can_manage_branches) summary.push("إدارة الفروع");
+    if (permissions.can_manage_templates) summary.push("قوالب الطلبات");
     return summary;
   };
 
