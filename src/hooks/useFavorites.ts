@@ -4,13 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { userDataQueryOptions } from "@/lib/queryConfig";
 import { useEffect } from "react";
+import { useRestaurantOwnerId } from "@/hooks/useRestaurantOwnerId";
 
 export const useFavoriteProducts = () => {
-  const { user, isSubUser, subUserInfo } = useAuth();
+  const { user } = useAuth();
+  const { data: ownerId } = useRestaurantOwnerId();
   const queryClient = useQueryClient();
-  
-  // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
-  const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   // الاشتراك في التحديثات الفورية
   useEffect(() => {
@@ -56,11 +55,9 @@ export const useFavoriteProducts = () => {
 };
 
 export const useFavoriteSuppliers = () => {
-  const { user, isSubUser, subUserInfo } = useAuth();
+  const { user } = useAuth();
+  const { data: ownerId } = useRestaurantOwnerId();
   const queryClient = useQueryClient();
-  
-  // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
-  const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   // الاشتراك في التحديثات الفورية
   useEffect(() => {
@@ -105,11 +102,9 @@ export const useFavoriteSuppliers = () => {
 };
 
 export const useToggleFavoriteProduct = () => {
-  const { user, isSubUser, subUserInfo } = useAuth();
+  const { user } = useAuth();
+  const { data: ownerId } = useRestaurantOwnerId();
   const queryClient = useQueryClient();
-  
-  // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
-  const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   return useMutation({
     mutationFn: async ({
@@ -137,6 +132,7 @@ export const useToggleFavoriteProduct = () => {
     },
     onSuccess: (_, { isFavorite }) => {
       queryClient.invalidateQueries({ queryKey: ["favorite-products"] });
+      if (ownerId) queryClient.invalidateQueries({ queryKey: ["favorite-products", ownerId] });
       toast.success(isFavorite ? "تمت الإزالة من المفضلة" : "تمت الإضافة للمفضلة");
     },
     onError: () => {
@@ -146,11 +142,9 @@ export const useToggleFavoriteProduct = () => {
 };
 
 export const useToggleFavoriteSupplier = () => {
-  const { user, isSubUser, subUserInfo } = useAuth();
+  const { user } = useAuth();
+  const { data: ownerId } = useRestaurantOwnerId();
   const queryClient = useQueryClient();
-  
-  // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
-  const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   return useMutation({
     mutationFn: async ({
@@ -178,6 +172,7 @@ export const useToggleFavoriteSupplier = () => {
     },
     onSuccess: (_, { isFavorite }) => {
       queryClient.invalidateQueries({ queryKey: ["favorite-suppliers"] });
+      if (ownerId) queryClient.invalidateQueries({ queryKey: ["favorite-suppliers", ownerId] });
       toast.success(isFavorite ? "تمت الإزالة من المفضلة" : "تمت الإضافة للمفضلة");
     },
     onError: () => {
