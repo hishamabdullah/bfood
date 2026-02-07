@@ -16,7 +16,7 @@ import { useBranches } from "@/hooks/useBranches";
 import { SupplierCartSection } from "@/components/cart/SupplierCartSection";
 import { SaveTemplateDialog } from "@/components/cart/SaveTemplateDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { useHasFeature } from "@/hooks/useRestaurantAccess";
+import { useHasFeature, useMaxNotesChars } from "@/hooks/useRestaurantAccess";
 
 const Cart = () => {
   const { t } = useTranslation();
@@ -28,6 +28,7 @@ const Cart = () => {
   // Feature checks
   const { hasFeature: canUseBranches } = useHasFeature("can_use_branches");
   const { hasFeature: canUseTemplates } = useHasFeature("can_use_templates");
+  const { maxChars: maxNotesChars } = useMaxNotesChars();
   
   const { data: branches = [] } = useBranches();
 
@@ -333,26 +334,23 @@ const Cart = () => {
                   />
                 )}
                 
-                {/* Custom delivery address when branches disabled but delivery selected */}
-                {anySupplierDelivery && !canUseBranches && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">{t("cart.deliveryAddress")}</label>
-                    <Textarea
-                      placeholder={t("cart.deliveryAddressPlaceholder") || "أدخل عنوان التوصيل أو رابط خرائط جوجل"}
-                      value={deliveryAddress}
-                      onChange={(e) => setDeliveryAddress(e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-                )}
-
                 {/* Notes */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">{t("cart.notes")}</label>
+                  <label className="block text-sm font-medium mb-2">
+                    {t("cart.notes")}
+                    <span className="text-muted-foreground text-xs ms-2">
+                      ({notes.length}/{maxNotesChars})
+                    </span>
+                  </label>
                   <Textarea
                     placeholder={t("cart.notesPlaceholder")}
                     value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value.length <= maxNotesChars) {
+                        setNotes(e.target.value);
+                      }
+                    }}
+                    maxLength={maxNotesChars}
                     rows={3}
                   />
                 </div>

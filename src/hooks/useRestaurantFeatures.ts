@@ -16,6 +16,7 @@ export interface RestaurantFeatures {
   can_repeat_orders: boolean;
   can_manage_sub_users: boolean;
   max_orders_per_month: number | null;
+  max_notes_chars: number | null;
   max_sub_users: number;
   subscription_type: string;
   subscription_start_date: string | null;
