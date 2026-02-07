@@ -895,6 +895,7 @@ export type Database = {
       restaurant_sub_users: {
         Row: {
           created_at: string | null
+          email: string | null
           full_name: string
           id: string
           is_active: boolean | null
@@ -905,6 +906,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          email?: string | null
           full_name: string
           id?: string
           is_active?: boolean | null
@@ -915,6 +917,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          email?: string | null
           full_name?: string
           id?: string
           is_active?: boolean | null

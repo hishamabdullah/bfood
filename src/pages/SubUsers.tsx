@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Users, Pencil, Trash2, Power, PowerOff } from "lucide-react";
+import { Plus, Users, Pencil, Trash2, Power, PowerOff, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -164,6 +164,12 @@ const SubUsersPage = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-lg">{subUser.full_name}</CardTitle>
+                      {subUser.email && (
+                        <CardDescription className="flex items-center gap-1 text-xs" dir="ltr">
+                          <Mail className="h-3 w-3" />
+                          {subUser.email}
+                        </CardDescription>
+                      )}
                       <CardDescription>
                         {subUser.phone || "بدون رقم هاتف"}
                       </CardDescription>
