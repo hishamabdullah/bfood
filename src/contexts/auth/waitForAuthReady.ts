@@ -11,7 +11,7 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 export async function waitForAuthReady(
   userId: string,
   {
-    timeoutMs = 2500,
+    timeoutMs = 6000,
     intervalMs = 150,
   }: { timeoutMs?: number; intervalMs?: number } = {}
 ): Promise<boolean> {
@@ -21,7 +21,7 @@ export async function waitForAuthReady(
     try {
       const { data } = await withTimeout(
         supabase.auth.getSession(),
-        800,
+        1500,
         "waitForAuthReady getSession timeout"
       );
       if (data.session?.user?.id === userId) return true;

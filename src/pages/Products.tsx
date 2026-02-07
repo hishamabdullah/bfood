@@ -35,13 +35,23 @@ const Products = () => {
   const { userRole, isSubUser } = useAuth();
   
   // صلاحيات المستخدم الفرعي
-  const { data: subUserPermissions } = useSubUserPermissions();
-  const { data: favoriteProductIds = [] } = useFavoriteProducts();
-  const { data: favoriteSupplierIds = [] } = useFavoriteSuppliers();
-  
+  const subUserPermissionsQuery = useSubUserPermissions();
+  const favoriteProductsQuery = useFavoriteProducts();
+  const favoriteSuppliersQuery = useFavoriteSuppliers();
+
+  const subUserPermissions = subUserPermissionsQuery.data;
+  const favoriteProductIds = favoriteProductsQuery.data ?? [];
+  const favoriteSupplierIds = favoriteSuppliersQuery.data ?? [];
+
   // التحقق من تفعيل تصفية المفضلة للمستخدم الفرعي
-  const shouldFilterByFavoriteProducts = isSubUser && subUserPermissions?.can_see_favorite_products_only;
-  const shouldFilterByFavoriteSuppliers = isSubUser && subUserPermissions?.can_see_favorite_suppliers_only;
+  const shouldFilterByFavoriteProducts = isSubUser && !!subUserPermissions?.can_see_favorite_products_only;
+  const shouldFilterByFavoriteSuppliers = isSubUser && !!subUserPermissions?.can_see_favorite_suppliers_only;
+
+  // مهم: لا نطبق فلتر المفضلة قبل أن تُحمّل قائمة المفضلة حتى لا يظهر للمستخدم أن "لا توجد منتجات"
+  const favoritesLoading =
+    (shouldFilterByFavoriteProducts && favoriteProductsQuery.isLoading) ||
+    (shouldFilterByFavoriteSuppliers && favoriteSuppliersQuery.isLoading);
+
   const { getCategoryName } = useCategoryTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const supplierId = searchParams.get("supplier");
@@ -68,6 +78,9 @@ const Products = () => {
     hasNextPage,
     isFetchingNextPage,
   } = useProducts(selectedCategory, selectedSubcategory);
+
+  const isPageLoading = productsLoading || favoritesLoading;
+
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategoriesByCategory(
     selectedCategory !== "all" ? selectedCategory : null
@@ -486,7 +499,7 @@ const Products = () => {
           {selectedCategory === "all" && <div className="mb-4" />}
 
           {/* Products Grid */}
-          {productsLoading ? (
+          {isPageLoading ? (
             <ProductSkeleton count={12} />
           ) : (
             <>
@@ -515,7 +528,7 @@ const Products = () => {
           )}
 
           {/* Empty State */}
-          {!productsLoading && filteredProducts.length === 0 && (
+          {!isPageLoading && filteredProducts.length === 0 && (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-semibold mb-2">{t("common.noResults")}</h3>
