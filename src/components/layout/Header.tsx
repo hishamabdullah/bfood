@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin, FileText, BarChart3, CreditCard } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin, FileText, BarChart3, CreditCard, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -36,6 +36,7 @@ const Header = () => {
   const canUseTemplates = features?.can_use_templates ?? false;
   const canViewAnalytics = features?.can_view_analytics ?? false;
   const canUseFavorites = features?.can_use_favorites ?? true;
+  const canManageSubUsers = features?.can_manage_sub_users ?? false;
 
   const handleSignOut = async () => {
     try {
@@ -182,6 +183,14 @@ const Header = () => {
                         {t("nav.mySubscription", "اشتراكي")}
                       </Link>
                     </DropdownMenuItem>
+                    {canManageSubUsers && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/sub-users" className="cursor-pointer">
+                          <Users className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                          {t("nav.subUsers", "إدارة المستخدمين")}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                   </>
                 )}
                 <DropdownMenuItem asChild>
@@ -352,6 +361,14 @@ const Header = () => {
                           {t("nav.mySubscription", "اشتراكي")}
                         </Button>
                       </Link>
+                      {canManageSubUsers && (
+                        <Link to="/sub-users" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" className="w-full gap-2">
+                            <Users className="h-4 w-4" />
+                            {t("nav.subUsers", "إدارة المستخدمين")}
+                          </Button>
+                        </Link>
+                      )}
                     </>
                   )}
                   <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
