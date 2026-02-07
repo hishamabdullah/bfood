@@ -108,7 +108,7 @@ export const useSubUsers = () => {
   });
 };
 
-// إنشاء مستخدم فرعي جديد
+// إنشاء مستخدم فرعي جديد عبر Edge Function
 export const useCreateSubUser = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -118,64 +118,35 @@ export const useCreateSubUser = () => {
     mutationFn: async (params: CreateSubUserParams) => {
       if (!user?.id) throw new Error("يجب تسجيل الدخول");
 
-      // إنشاء حساب المستخدم في Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: params.email,
-        password: params.password,
-        options: {
-          data: {
-            full_name: params.full_name,
-            is_sub_user: true,
-            parent_restaurant_id: user.id,
-          },
+      // استدعاء Edge Function لإنشاء المستخدم
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error("يجب تسجيل الدخول");
+      }
+
+      const response = await supabase.functions.invoke("create-sub-user", {
+        body: {
+          email: params.email,
+          password: params.password,
+          full_name: params.full_name,
+          phone: params.phone,
+          permissions: params.permissions,
+          branch_ids: params.branch_ids,
+        },
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
         },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("فشل في إنشاء المستخدم");
-
-      const newUserId = authData.user.id;
-
-      // إنشاء سجل المستخدم الفرعي
-      const { data: subUser, error: subUserError } = await supabase
-        .from("restaurant_sub_users")
-        .insert({
-          restaurant_id: user.id,
-          user_id: newUserId,
-          full_name: params.full_name,
-          phone: params.phone || null,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (subUserError) throw subUserError;
-
-      // إنشاء صلاحيات المستخدم
-      const { error: permError } = await supabase
-        .from("restaurant_sub_user_permissions")
-        .insert({
-          sub_user_id: subUser.id,
-          ...params.permissions,
-        });
-
-      if (permError) throw permError;
-
-      // ربط المستخدم بالفروع
-      if (params.branch_ids.length > 0) {
-        const branchInserts = params.branch_ids.map((branch_id) => ({
-          sub_user_id: subUser.id,
-          branch_id,
-        }));
-
-        const { error: branchError } = await supabase
-          .from("restaurant_sub_user_branches")
-          .insert(branchInserts);
-
-        if (branchError) throw branchError;
+      if (response.error) {
+        throw new Error(response.error.message || "فشل في إنشاء المستخدم");
       }
 
-      return subUser;
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data?.sub_user;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sub-users"] });
