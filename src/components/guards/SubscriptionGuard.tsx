@@ -25,7 +25,7 @@ const EXEMPT_PATHS = [
 const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userRole, loading: authLoading } = useAuth();
+  const { user, userRole, loading: authLoading, isSubUser, subUserInfo } = useAuth();
   const { data: subscription, isLoading: subscriptionLoading } = useRestaurantSubscription();
   const isRedirectingRef = useRef(false);
 
