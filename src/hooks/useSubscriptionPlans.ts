@@ -208,6 +208,7 @@ export const useAssignPlanToRestaurant = () => {
         max_orders_per_month: plan.max_orders_per_month,
         max_sub_users: plan.max_sub_users,
         max_branches: plan.max_branches,
+        max_notes_chars: (plan as any).max_notes_chars ?? 500,
         subscription_type: plan.name,
         subscription_start_date: startDate.toISOString(),
         subscription_end_date: endDate.toISOString(),
