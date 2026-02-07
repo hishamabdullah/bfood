@@ -49,11 +49,19 @@ Deno.serve(async (req) => {
     }
 
     // التحقق من أن المستخدم مطعم
-    const { data: roleData } = await supabaseClient
+    const { data: roleData, error: roleError } = await supabaseClient
       .from("user_roles")
       .select("role")
       .eq("user_id", callerUser.id)
-      .single();
+      .maybeSingle();
+
+    if (roleError) {
+      console.error("Role lookup error:", roleError);
+      return new Response(
+        JSON.stringify({ error: "تعذر التحقق من دور المستخدم" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!roleData || roleData.role !== "restaurant") {
       return new Response(
@@ -63,11 +71,19 @@ Deno.serve(async (req) => {
     }
 
     // التحقق من أن المطعم لديه صلاحية إدارة المستخدمين الفرعيين
-    const { data: features } = await supabaseClient
+    const { data: features, error: featuresError } = await supabaseClient
       .from("restaurant_features")
       .select("can_manage_sub_users, max_sub_users")
       .eq("restaurant_id", callerUser.id)
-      .single();
+      .maybeSingle();
+
+    if (featuresError) {
+      console.error("Features lookup error:", featuresError);
+      return new Response(
+        JSON.stringify({ error: "تعذر التحقق من ميزات الاشتراك" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!features?.can_manage_sub_users) {
       return new Response(

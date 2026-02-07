@@ -111,12 +111,39 @@ export const useCreateSubUser = () => {
       branch_ids: string[];
       permissions: SubUserPermissions;
     }) => {
-      const { data: result, error } = await supabase.functions.invoke("create-sub-user", {
-        body: data,
-      });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
 
-      if (error) throw error;
-      if (result?.error) throw new Error(result.error);
+      const { data: result, error } = await supabase.functions.invoke(
+        "create-sub-user",
+        {
+          body: {
+            ...data,
+            email: data.email.trim().toLowerCase(),
+          },
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        }
+      );
+
+      if (error) {
+        // supabase-js قد يُرجع FunctionsHttpError مع body داخل context
+        const anyErr = error as any;
+        const rawBody = anyErr?.context?.body;
+
+        let message = error.message;
+        if (rawBody) {
+          try {
+            const parsed = typeof rawBody === "string" ? JSON.parse(rawBody) : rawBody;
+            message = parsed?.error ?? parsed?.message ?? message;
+          } catch {
+            // ignore JSON parse errors
+          }
+        }
+
+        throw new Error(message);
+      }
+
+      if ((result as any)?.error) throw new Error((result as any).error);
       return result;
     },
     onSuccess: () => {
@@ -147,8 +174,12 @@ export const useUpdateSubUser = () => {
       branch_ids?: string[];
       permissions?: Partial<SubUserPermissions>;
     }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
       const { data: result, error } = await supabase.functions.invoke("update-sub-user", {
         body: data,
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
 
       if (error) throw error;
@@ -176,8 +207,12 @@ export const useDeleteSubUser = () => {
 
   return useMutation({
     mutationFn: async (sub_user_id: string) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
       const { data: result, error } = await supabase.functions.invoke("delete-sub-user", {
         body: { sub_user_id },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
 
       if (error) throw error;
