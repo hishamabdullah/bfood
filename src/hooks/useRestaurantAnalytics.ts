@@ -23,28 +23,19 @@ export interface SupplierSpending {
   ordersCount: number;
 }
 
-export interface SubUserSpending {
-  subUserId: string;
-  subUserName: string;
-  totalSpent: number;
-  ordersCount: number;
-}
-
 export interface RestaurantAnalytics {
   monthlySpending: MonthlySpending[];
   topProducts: TopProduct[];
   supplierBreakdown: SupplierSpending[];
-  subUserBreakdown: SubUserSpending[];
   totalSpentThisMonth: number;
   totalSpentLastMonth: number;
   monthlyChange: number;
 }
 
 export const useRestaurantAnalytics = (monthsToFetch: number = 6) => {
-  const { user, isSubUser, subUserInfo } = useAuth();
+  const { user } = useAuth();
   
-  // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
-  const restaurantId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
+  const restaurantId = user?.id;
 
   return useQuery({
     queryKey: ["restaurant-analytics", restaurantId, monthsToFetch],
@@ -54,7 +45,6 @@ export const useRestaurantAnalytics = (monthsToFetch: number = 6) => {
           monthlySpending: [],
           topProducts: [],
           supplierBreakdown: [],
-          subUserBreakdown: [],
           totalSpentThisMonth: 0,
           totalSpentLastMonth: 0,
           monthlyChange: 0,
@@ -111,26 +101,6 @@ export const useRestaurantAnalytics = (monthsToFetch: number = 6) => {
         supplierProfiles = profiles || [];
       }
       const profileMap = new Map(supplierProfiles.map(p => [p.user_id, p.business_name]));
-
-      // Fetch sub-users for this restaurant
-      const { data: subUsers } = await supabase
-        .from("restaurant_sub_users")
-        .select("id, user_id, full_name")
-        .eq("restaurant_id", restaurantId);
-      
-      const subUserMap = new Map(subUsers?.map(s => [s.user_id, { id: s.id, name: s.full_name }]) || []);
-
-      // Fetch order approval requests to link orders to sub-users
-      const orderIds = orders?.map(o => o.id) || [];
-      let approvalRequests: { order_id: string; requested_by: string }[] = [];
-      if (orderIds.length > 0) {
-        const { data: approvals } = await supabase
-          .from("order_approval_requests")
-          .select("order_id, requested_by")
-          .in("order_id", orderIds);
-        approvalRequests = approvals || [];
-      }
-      const orderToSubUserMap = new Map(approvalRequests.map(a => [a.order_id, a.requested_by]));
 
       // Calculate monthly spending
       const monthlyMap = new Map<string, number>();
@@ -207,43 +177,6 @@ export const useRestaurantAnalytics = (monthsToFetch: number = 6) => {
         }))
         .sort((a, b) => b.totalSpent - a.totalSpent);
 
-      // Calculate sub-user breakdown
-      const subUserCalcMap = new Map<string, { spent: number; orders: Set<string>; name: string }>();
-      
-      // أضف المدير أولاً
-      subUserCalcMap.set("owner", { spent: 0, orders: new Set(), name: "المدير" });
-      
-      orders?.forEach((order) => {
-        const subUserId = orderToSubUserMap.get(order.id);
-        const deliveredAmount = order.order_items
-          ?.filter((item: any) => item.status === "delivered")
-          .reduce((sum: number, item: any) => sum + (item.unit_price * item.quantity), 0) || 0;
-        
-        if (subUserId && subUserMap.has(subUserId)) {
-          // طلب من مستخدم فرعي
-          const subUserInfo = subUserMap.get(subUserId)!;
-          const existing = subUserCalcMap.get(subUserId) || { spent: 0, orders: new Set(), name: subUserInfo.name };
-          existing.spent += deliveredAmount;
-          existing.orders.add(order.id);
-          subUserCalcMap.set(subUserId, existing);
-        } else {
-          // طلب من المدير
-          const existing = subUserCalcMap.get("owner")!;
-          existing.spent += deliveredAmount;
-          existing.orders.add(order.id);
-        }
-      });
-
-      const subUserBreakdown: SubUserSpending[] = Array.from(subUserCalcMap.entries())
-        .filter(([_, data]) => data.orders.size > 0)
-        .map(([subUserId, data]) => ({
-          subUserId,
-          subUserName: data.name,
-          totalSpent: data.spent,
-          ordersCount: data.orders.size,
-        }))
-        .sort((a, b) => b.totalSpent - a.totalSpent);
-
       // Calculate this month vs last month
       const thisMonthKey = format(now, "yyyy-MM");
       const lastMonthKey = format(subMonths(now, 1), "yyyy-MM");
@@ -257,7 +190,6 @@ export const useRestaurantAnalytics = (monthsToFetch: number = 6) => {
         monthlySpending,
         topProducts,
         supplierBreakdown,
-        subUserBreakdown,
         totalSpentThisMonth,
         totalSpentLastMonth,
         monthlyChange,

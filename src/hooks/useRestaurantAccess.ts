@@ -36,13 +36,10 @@ const defaultFeatures: RestaurantAccessFeatures = {
 
 // Hook للتحقق من ميزات المطعم الحالي
 export const useRestaurantAccess = () => {
-  const { user, userRole, isSubUser, subUserInfo, loading: authLoading } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
   
-  // استخدام معرف المطعم الأصلي للمستخدم الفرعي
-  const restaurantId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
-  
-  // التحقق: المستخدم الفرعي يُعامل كمطعم حتى لو لم يتم تعيين userRole بعد
-  const isRestaurantUser = userRole === "restaurant" || isSubUser;
+  const restaurantId = user?.id;
+  const isRestaurantUser = userRole === "restaurant";
 
   return useQuery({
     queryKey: ["restaurant-access", restaurantId],
@@ -89,15 +86,14 @@ export const useRestaurantAccess = () => {
 // Helper function للتحقق من ميزة معينة
 export const useHasFeature = (featureName: keyof RestaurantAccessFeatures) => {
   const { data: features, isLoading } = useRestaurantAccess();
-  const { userRole, isSubUser } = useAuth();
+  const { userRole } = useAuth();
 
   // المدير والمورد لديهم كل الميزات
   if (userRole === "admin" || userRole === "supplier") {
     return { hasFeature: true, isLoading: false };
   }
   
-  // التحقق: المستخدم الفرعي يُعامل كمطعم
-  const isRestaurantUser = userRole === "restaurant" || isSubUser;
+  const isRestaurantUser = userRole === "restaurant";
 
   if (isLoading || !features || !isRestaurantUser) {
     return { hasFeature: false, isLoading };
@@ -112,15 +108,14 @@ export const useHasFeature = (featureName: keyof RestaurantAccessFeatures) => {
 // التحقق من أن الحساب نشط
 export const useIsRestaurantActive = () => {
   const { data: features, isLoading } = useRestaurantAccess();
-  const { userRole, isSubUser } = useAuth();
+  const { userRole } = useAuth();
 
   // المدير والمورد دائماً نشطين
   if (userRole === "admin" || userRole === "supplier") {
     return { isActive: true, isLoading: false };
   }
   
-  // التحقق: المستخدم الفرعي يُعامل كمطعم
-  const isRestaurantUser = userRole === "restaurant" || isSubUser;
+  const isRestaurantUser = userRole === "restaurant";
   
   if (!isRestaurantUser) {
     return { isActive: true, isLoading: false };

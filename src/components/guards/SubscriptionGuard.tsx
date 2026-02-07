@@ -25,12 +25,11 @@ const EXEMPT_PATHS = [
 const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userRole, loading: authLoading, isSubUser, subUserInfo } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
   const { data: subscription, isLoading: subscriptionLoading } = useRestaurantSubscription();
   const isRedirectingRef = useRef(false);
 
-  // التحقق: المستخدم الفرعي يُعامل كمطعم
-  const isRestaurantUser = userRole === "restaurant" || isSubUser;
+  const isRestaurantUser = userRole === "restaurant";
 
   const isExemptPath = EXEMPT_PATHS.some(path => 
     location.pathname === path || location.pathname.startsWith(path + "/")

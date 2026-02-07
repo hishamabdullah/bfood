@@ -4,30 +4,28 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { userDataQueryOptions } from "@/lib/queryConfig";
 import { useEffect } from "react";
-import { useRestaurantOwnerId } from "@/hooks/useRestaurantOwnerId";
 
 export const useFavoriteProducts = () => {
   const { user } = useAuth();
-  const { data: ownerId } = useRestaurantOwnerId();
   const queryClient = useQueryClient();
 
   // الاشتراك في التحديثات الفورية
   useEffect(() => {
-    if (!ownerId) return;
+    if (!user?.id) return;
 
     const channel = supabase
-      .channel(`favorite-products-${ownerId}`)
+      .channel(`favorite-products-${user.id}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "favorite_products",
-          filter: `user_id=eq.${ownerId}`,
+          filter: `user_id=eq.${user.id}`,
         },
         () => {
           // تحديث الكاش فوراً عند أي تغيير
-          queryClient.invalidateQueries({ queryKey: ["favorite-products", ownerId] });
+          queryClient.invalidateQueries({ queryKey: ["favorite-products", user.id] });
         }
       )
       .subscribe();
@@ -35,46 +33,45 @@ export const useFavoriteProducts = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ownerId, queryClient]);
+  }, [user?.id, queryClient]);
 
   return useQuery({
-    queryKey: ["favorite-products", ownerId],
+    queryKey: ["favorite-products", user?.id],
     queryFn: async () => {
-      if (!ownerId) return [];
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from("favorite_products")
         .select("product_id")
-        .eq("user_id", ownerId);
+        .eq("user_id", user.id);
 
       if (error) throw error;
       return data.map((f) => f.product_id);
     },
-    enabled: !!ownerId,
+    enabled: !!user?.id,
     ...userDataQueryOptions,
   });
 };
 
 export const useFavoriteSuppliers = () => {
   const { user } = useAuth();
-  const { data: ownerId } = useRestaurantOwnerId();
   const queryClient = useQueryClient();
 
   // الاشتراك في التحديثات الفورية
   useEffect(() => {
-    if (!ownerId) return;
+    if (!user?.id) return;
 
     const channel = supabase
-      .channel(`favorite-suppliers-${ownerId}`)
+      .channel(`favorite-suppliers-${user.id}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "favorite_suppliers",
-          filter: `user_id=eq.${ownerId}`,
+          filter: `user_id=eq.${user.id}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["favorite-suppliers", ownerId] });
+          queryClient.invalidateQueries({ queryKey: ["favorite-suppliers", user.id] });
         }
       )
       .subscribe();
@@ -82,28 +79,27 @@ export const useFavoriteSuppliers = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ownerId, queryClient]);
+  }, [user?.id, queryClient]);
 
   return useQuery({
-    queryKey: ["favorite-suppliers", ownerId],
+    queryKey: ["favorite-suppliers", user?.id],
     queryFn: async () => {
-      if (!ownerId) return [];
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from("favorite_suppliers")
         .select("supplier_id")
-        .eq("user_id", ownerId);
+        .eq("user_id", user.id);
 
       if (error) throw error;
       return data.map((f) => f.supplier_id);
     },
-    enabled: !!ownerId,
+    enabled: !!user?.id,
     ...userDataQueryOptions,
   });
 };
 
 export const useToggleFavoriteProduct = () => {
   const { user } = useAuth();
-  const { data: ownerId } = useRestaurantOwnerId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -114,25 +110,25 @@ export const useToggleFavoriteProduct = () => {
       productId: string;
       isFavorite: boolean;
     }) => {
-      if (!ownerId) throw new Error("يجب تسجيل الدخول");
+      if (!user?.id) throw new Error("يجب تسجيل الدخول");
 
       if (isFavorite) {
         const { error } = await supabase
           .from("favorite_products")
           .delete()
-          .eq("user_id", ownerId)
+          .eq("user_id", user.id)
           .eq("product_id", productId);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("favorite_products")
-          .insert({ user_id: ownerId, product_id: productId });
+          .insert({ user_id: user.id, product_id: productId });
         if (error) throw error;
       }
     },
     onSuccess: (_, { isFavorite }) => {
       queryClient.invalidateQueries({ queryKey: ["favorite-products"] });
-      if (ownerId) queryClient.invalidateQueries({ queryKey: ["favorite-products", ownerId] });
+      if (user?.id) queryClient.invalidateQueries({ queryKey: ["favorite-products", user.id] });
       toast.success(isFavorite ? "تمت الإزالة من المفضلة" : "تمت الإضافة للمفضلة");
     },
     onError: () => {
@@ -143,7 +139,6 @@ export const useToggleFavoriteProduct = () => {
 
 export const useToggleFavoriteSupplier = () => {
   const { user } = useAuth();
-  const { data: ownerId } = useRestaurantOwnerId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -154,25 +149,25 @@ export const useToggleFavoriteSupplier = () => {
       supplierId: string;
       isFavorite: boolean;
     }) => {
-      if (!ownerId) throw new Error("يجب تسجيل الدخول");
+      if (!user?.id) throw new Error("يجب تسجيل الدخول");
 
       if (isFavorite) {
         const { error } = await supabase
           .from("favorite_suppliers")
           .delete()
-          .eq("user_id", ownerId)
+          .eq("user_id", user.id)
           .eq("supplier_id", supplierId);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("favorite_suppliers")
-          .insert({ user_id: ownerId, supplier_id: supplierId });
+          .insert({ user_id: user.id, supplier_id: supplierId });
         if (error) throw error;
       }
     },
     onSuccess: (_, { isFavorite }) => {
       queryClient.invalidateQueries({ queryKey: ["favorite-suppliers"] });
-      if (ownerId) queryClient.invalidateQueries({ queryKey: ["favorite-suppliers", ownerId] });
+      if (user?.id) queryClient.invalidateQueries({ queryKey: ["favorite-suppliers", user.id] });
       toast.success(isFavorite ? "تمت الإزالة من المفضلة" : "تمت الإضافة للمفضلة");
     },
     onError: () => {

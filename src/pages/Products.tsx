@@ -9,7 +9,6 @@ import ProductSkeleton from "@/components/products/ProductSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, X, Store, MapPin, Loader2 } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
-import { useProductsByIds } from "@/hooks/useProductsByIds";
 import { useSupplierProfile } from "@/hooks/useSuppliers";
 import { saudiRegions, getRegionName, getCitiesByRegion, getCityName } from "@/data/saudiRegions";
 import i18n from "i18next";
@@ -21,7 +20,6 @@ import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubca
 import { useSectionsBySubcategory, getSectionName } from "@/hooks/useSections";
 import { useProductsWithPriceTiers } from "@/hooks/useProductPriceTiers";
 import { useFavoriteProducts, useFavoriteSuppliers } from "@/hooks/useFavorites";
-import { useSubUserPermissions } from "@/hooks/useSubUserPermissions";
 import {
   Select,
   SelectContent,
@@ -33,27 +31,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Products = () => {
   const { t } = useTranslation();
-  const { userRole, isSubUser } = useAuth();
+  const { userRole } = useAuth();
   
-  // صلاحيات المستخدم الفرعي
-  const subUserPermissionsQuery = useSubUserPermissions();
   const favoriteProductsQuery = useFavoriteProducts();
   const favoriteSuppliersQuery = useFavoriteSuppliers();
 
-  const subUserPermissions = subUserPermissionsQuery.data;
   const favoriteProductIds = favoriteProductsQuery.data ?? [];
   const favoriteSupplierIds = favoriteSuppliersQuery.data ?? [];
-
-  // التحقق من تفعيل تصفية المفضلة للمستخدم الفرعي
-  // مهم: في صفحة المنتجات، "المنتجات المفضلة فقط" يجب أن يعمل حتى لو لم يتم تفضيل المورد.
-  const favoritesOnlyProducts = isSubUser && !!subUserPermissions?.can_see_favorite_products_only;
-  const favoritesOnlySuppliers =
-    isSubUser && !favoritesOnlyProducts && !!subUserPermissions?.can_see_favorite_suppliers_only;
-
-  // مهم: لا نطبق فلتر المفضلة قبل أن تُحمّل القائمة حتى لا يظهر للمستخدم أن "لا توجد منتجات"
-  const favoritesLoading =
-    (favoritesOnlyProducts && favoriteProductsQuery.isLoading) ||
-    (favoritesOnlySuppliers && favoriteSuppliersQuery.isLoading);
 
   const { getCategoryName } = useCategoryTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,15 +64,9 @@ const Products = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useProducts(selectedCategory, selectedSubcategory, !favoritesOnlyProducts);
+  } = useProducts(selectedCategory, selectedSubcategory, true);
 
-  // في وضع (المنتجات المفضلة فقط) نجلب منتجات المفضلة مباشرة بدون pagination
-  const favoriteOnlyProductsQuery = useProductsByIds(favoritesOnlyProducts ? favoriteProductIds : []);
-
-  const isPageLoading =
-    productsLoading ||
-    favoritesLoading ||
-    (favoritesOnlyProducts && favoriteProductIds.length > 0 && favoriteOnlyProductsQuery.isLoading);
+  const isPageLoading = productsLoading;
 
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategoriesByCategory(
@@ -128,28 +106,14 @@ const Products = () => {
     );
   }, [sections, sectionSearch]);
 
-  // Flatten products (في وضع المفضلة فقط نستخدم بيانات المفضلة مباشرة بدون pagination)
+  // Flatten products
   const allProducts = useMemo(() => {
-    if (favoritesOnlyProducts) {
-      return favoriteOnlyProductsQuery.data ?? [];
-    }
     return productsData?.pages.flatMap((page) => page.products) || [];
-  }, [favoritesOnlyProducts, favoriteOnlyProductsQuery.data, productsData]);
+  }, [productsData]);
 
   // Memoize filtered products to prevent recalculation on every render
   const filteredProducts = useMemo(() => {
     return allProducts.filter((product) => {
-      // في صفحة المنتجات:
-      // - إذا كانت الصلاحية (منتجات المفضلة فقط) مفعّلة: اعرض فقط منتجات المفضلة
-      // - إذا لم تكن مفعّلة وكانت (موردين المفضلة فقط) مفعّلة: اعرض منتجات الموردين المفضلين
-      if (favoritesOnlyProducts && !favoriteProductIds.includes(product.id)) {
-        return false;
-      }
-
-      if (!favoritesOnlyProducts && favoritesOnlySuppliers && !favoriteSupplierIds.includes(product.supplier_id)) {
-        return false;
-      }
-
       if (supplierId && product.supplier_id !== supplierId) {
         return false;
       }
@@ -199,18 +163,12 @@ const Products = () => {
     selectedRegion,
     selectedCity,
     searchQuery,
-    favoritesOnlyProducts,
-    favoritesOnlySuppliers,
-    favoriteProductIds,
-    favoriteSupplierIds,
   ]);
 
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (favoritesOnlyProducts) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -225,7 +183,7 @@ const Products = () => {
     }
 
     return () => observer.disconnect();
-  }, [favoritesOnlyProducts, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const clearSupplierFilter = useCallback(() => {
     searchParams.delete("supplier");
@@ -429,30 +387,26 @@ const Products = () => {
                 </Button>
                 {subcategoriesLoading ? (
                   Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-9 w-16" />
+                    <Skeleton key={i} className="h-9 w-20" />
                   ))
-                ) : filteredSubcategories.length > 0 ? (
-                  filteredSubcategories.map((subcategory) => (
+                ) : (
+                  filteredSubcategories.map((sub) => (
                     <Button
-                      key={subcategory.id}
+                      key={sub.id}
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedSubcategory(subcategory.id);
+                        setSelectedSubcategory(sub.id);
                         setSelectedSection("all");
                         setSectionSearch("");
                       }}
                       className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
-                        selectedSubcategory === subcategory.id ? "bg-primary/25 font-semibold" : ""
+                        selectedSubcategory === sub.id ? "bg-primary/25 font-semibold" : ""
                       }`}
                     >
-                      {getSubcategoryName(subcategory, i18n.language)}
+                      {getSubcategoryName(sub, i18n.language)}
                     </Button>
                   ))
-                ) : (
-                  <span className="text-sm text-muted-foreground py-2">
-                    {t("products.noSubcategories")}
-                  </span>
                 )}
               </div>
             </div>
@@ -460,7 +414,7 @@ const Products = () => {
 
           {/* Sections (Third Level) */}
           {selectedSubcategory !== "all" && (
-            <div className="mb-8">
+            <div className="mb-6">
               {/* Section Search */}
               {sections && sections.length > 3 && (
                 <div className="relative mb-3 max-w-xs">
@@ -488,78 +442,69 @@ const Products = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedSection("all")}
-                  className={`whitespace-nowrap border-primary/50 text-primary hover:bg-primary/10 ${
-                    selectedSection === "all" ? "bg-primary/15 font-semibold" : ""
+                  className={`whitespace-nowrap border-secondary text-secondary-foreground hover:bg-secondary/15 ${
+                    selectedSection === "all" ? "bg-secondary/25 font-semibold" : ""
                   }`}
                 >
                   {t("common.all")}
                 </Button>
                 {sectionsLoading ? (
                   Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-9 w-16" />
-                  ))
-                ) : filteredSections.length > 0 ? (
-                  filteredSections.map((section) => (
-                    <Button
-                      key={section.id}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedSection(section.id)}
-                      className={`whitespace-nowrap border-primary/50 text-primary hover:bg-primary/10 ${
-                        selectedSection === section.id ? "bg-primary/15 font-semibold" : ""
-                      }`}
-                    >
-                      {getSectionName(section, i18n.language)}
-                    </Button>
+                    <Skeleton key={i} className="h-9 w-20" />
                   ))
                 ) : (
-                  <span className="text-sm text-muted-foreground py-2">
-                    لا توجد أقسام داخلية
-                  </span>
+                  filteredSections.map((sec) => (
+                    <Button
+                      key={sec.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSection(sec.id)}
+                      className={`whitespace-nowrap border-secondary text-secondary-foreground hover:bg-secondary/15 ${
+                        selectedSection === sec.id ? "bg-secondary/25 font-semibold" : ""
+                      }`}
+                    >
+                      {getSectionName(sec, i18n.language)}
+                    </Button>
+                  ))
                 )}
               </div>
             </div>
           )}
-
-          {/* Spacing when no subcategories shown */}
-          {selectedCategory === "all" && <div className="mb-4" />}
 
           {/* Products Grid */}
           {isPageLoading ? (
-            <ProductSkeleton count={12} />
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredProducts.map((product, index) => (
-                  <ProductCard 
-                    key={product.id} 
-                    product={product} 
-                    index={index}
-                    customPrice={userRole === "restaurant" ? customPrices?.[product.id] : undefined}
-                    hasPriceTiers={productsWithTiers.includes(product.id)}
-                  />
-                ))}
-              </div>
-
-              {/* Load More Trigger */}
-              <div ref={loadMoreRef} className="h-20 flex items-center justify-center">
-                {isFetchingNextPage && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>{t("common.loading")}</span>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* Empty State */}
-          {!isPageLoading && filteredProducts.length === 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <ProductSkeleton key={i} />
+              ))}
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-semibold mb-2">{t("common.noResults")}</h3>
-              <p className="text-muted-foreground">{t("products.searchPlaceholder")}</p>
+              <p className="text-muted-foreground">{t("products.noProducts")}</p>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {filteredProducts.map((product, index) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    customPrice={customPrices?.[product.id] ?? null}
+                    hasPriceTiers={productsWithTiers.includes(product.id)}
+                    index={index}
+                  />
+                ))}
+              </div>
+              
+              {/* Load More Trigger */}
+              <div ref={loadMoreRef} className="py-8 flex justify-center">
+                {isFetchingNextPage && (
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                )}
+              </div>
+            </>
           )}
         </div>
       </main>

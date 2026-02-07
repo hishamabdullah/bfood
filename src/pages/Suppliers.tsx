@@ -24,7 +24,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useHasFeature } from "@/hooks/useRestaurantAccess";
-import { useSubUserPermissions } from "@/hooks/useSubUserPermissions";
 
 interface SupplierCategory {
   id: string;
@@ -41,18 +40,13 @@ const Suppliers = () => {
   
   const availableCities = selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [];
   
-  const { user, userRole, isSubUser } = useAuth();
+  const { user, userRole } = useAuth();
   const { getCategoryName } = useCategoryTranslation();
   const { data: suppliers, isLoading: suppliersLoading } = useSuppliers(selectedRegion, selectedCity);
   const favoriteSuppliersQuery = useFavoriteSuppliers();
   const favoriteSuppliers = favoriteSuppliersQuery.data ?? [];
   const toggleFavorite = useToggleFavoriteSupplier();
   const { hasFeature: canUseFavorites } = useHasFeature("can_use_favorites");
-  
-  // صلاحيات المستخدم الفرعي
-  const { data: subUserPermissions } = useSubUserPermissions();
-  const shouldFilterByFavoriteSuppliers = isSubUser && !!subUserPermissions?.can_see_favorite_suppliers_only;
-  const showLoading = suppliersLoading || (shouldFilterByFavoriteSuppliers && favoriteSuppliersQuery.isLoading);
 
   // Fetch supplier categories
   const { data: supplierCategories = [] } = useQuery({
@@ -83,11 +77,6 @@ const Suppliers = () => {
 
   const filteredSuppliers = useMemo(() => {
     return suppliers?.filter((supplier) => {
-      // تصفية الموردين المفضلين للمستخدم الفرعي
-      if (shouldFilterByFavoriteSuppliers && !favoriteSuppliers.includes(supplier.user_id)) {
-        return false;
-      }
-      
       // Text search filter
       const matchesSearch = 
         supplier.business_name?.includes(searchQuery) ||
@@ -101,7 +90,7 @@ const Suppliers = () => {
       
       return matchesSearch && matchesCategory;
     }) || [];
-  }, [suppliers, searchQuery, selectedCategory, shouldFilterByFavoriteSuppliers, favoriteSuppliers]);
+  }, [suppliers, searchQuery, selectedCategory]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -179,7 +168,7 @@ const Suppliers = () => {
           </div>
 
           {/* Loading State */}
-          {showLoading && (
+          {suppliersLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="bg-card rounded-2xl border border-border p-6">
@@ -198,7 +187,7 @@ const Suppliers = () => {
           )}
 
           {/* Suppliers Grid */}
-          {!showLoading && (
+          {!suppliersLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredSuppliers.map((supplier, index) => (
                 <div
@@ -294,7 +283,7 @@ const Suppliers = () => {
           )}
 
           {/* Empty State */}
-          {!showLoading && filteredSuppliers.length === 0 && (
+          {!suppliersLoading && filteredSuppliers.length === 0 && (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-semibold mb-2">لا توجد نتائج</h3>
