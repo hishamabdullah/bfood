@@ -32,9 +32,10 @@ const Header = () => {
 
   // Feature checks for restaurant
   const canOrder = features?.can_order ?? true;
-  const canUseBranches = features?.can_use_branches ?? false;
+  // المستخدم الفرعي لا يمكنه إدارة الفروع أو رؤية التقارير
+  const canUseBranches = !isSubUser && (features?.can_use_branches ?? false);
   const canUseTemplates = features?.can_use_templates ?? false;
-  const canViewAnalytics = features?.can_view_analytics ?? false;
+  const canViewAnalytics = !isSubUser && (features?.can_view_analytics ?? false);
   const canUseFavorites = features?.can_use_favorites ?? true;
   // المستخدم الفرعي لا يمكنه إدارة المستخدمين الفرعيين أو الاشتراك
   const canManageSubUsers = !isSubUser && (features?.can_manage_sub_users ?? false);

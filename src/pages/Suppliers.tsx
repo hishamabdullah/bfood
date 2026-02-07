@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useHasFeature } from "@/hooks/useRestaurantAccess";
+import { useSubUserPermissions } from "@/hooks/useSubUserPermissions";
 
 interface SupplierCategory {
   id: string;
@@ -40,12 +41,16 @@ const Suppliers = () => {
   
   const availableCities = selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [];
   
-  const { user, userRole } = useAuth();
+  const { user, userRole, isSubUser } = useAuth();
   const { getCategoryName } = useCategoryTranslation();
   const { data: suppliers, isLoading } = useSuppliers(selectedRegion, selectedCity);
   const { data: favoriteSuppliers = [] } = useFavoriteSuppliers();
   const toggleFavorite = useToggleFavoriteSupplier();
   const { hasFeature: canUseFavorites } = useHasFeature("can_use_favorites");
+  
+  // صلاحيات المستخدم الفرعي
+  const { data: subUserPermissions } = useSubUserPermissions();
+  const shouldFilterByFavoriteSuppliers = isSubUser && subUserPermissions?.can_see_favorite_suppliers_only;
 
   // Fetch supplier categories
   const { data: supplierCategories = [] } = useQuery({
@@ -74,20 +79,27 @@ const Suppliers = () => {
   };
   const { data: availableRegions } = useRegions();
 
-  const filteredSuppliers = suppliers?.filter((supplier) => {
-    // Text search filter
-    const matchesSearch = 
-      supplier.business_name?.includes(searchQuery) ||
-      supplier.full_name?.includes(searchQuery) ||
-      supplier.region?.includes(searchQuery);
-    
-    // Category filter
-    const matchesCategory = 
-      selectedCategory === "all" || 
-      supplier.supply_categories?.includes(selectedCategory);
-    
-    return matchesSearch && matchesCategory;
-  }) || [];
+  const filteredSuppliers = useMemo(() => {
+    return suppliers?.filter((supplier) => {
+      // تصفية الموردين المفضلين للمستخدم الفرعي
+      if (shouldFilterByFavoriteSuppliers && !favoriteSuppliers.includes(supplier.user_id)) {
+        return false;
+      }
+      
+      // Text search filter
+      const matchesSearch = 
+        supplier.business_name?.includes(searchQuery) ||
+        supplier.full_name?.includes(searchQuery) ||
+        supplier.region?.includes(searchQuery);
+      
+      // Category filter
+      const matchesCategory = 
+        selectedCategory === "all" || 
+        supplier.supply_categories?.includes(selectedCategory);
+      
+      return matchesSearch && matchesCategory;
+    }) || [];
+  }, [suppliers, searchQuery, selectedCategory, shouldFilterByFavoriteSuppliers, favoriteSuppliers]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

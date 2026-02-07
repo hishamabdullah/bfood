@@ -19,6 +19,8 @@ import ProductCard from "@/components/products/ProductCard";
 import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
 import { useSectionsBySubcategory, getSectionName } from "@/hooks/useSections";
 import { useProductsWithPriceTiers } from "@/hooks/useProductPriceTiers";
+import { useFavoriteProducts, useFavoriteSuppliers } from "@/hooks/useFavorites";
+import { useSubUserPermissions } from "@/hooks/useSubUserPermissions";
 import {
   Select,
   SelectContent,
@@ -30,7 +32,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Products = () => {
   const { t } = useTranslation();
-  const { userRole } = useAuth();
+  const { userRole, isSubUser } = useAuth();
+  
+  // صلاحيات المستخدم الفرعي
+  const { data: subUserPermissions } = useSubUserPermissions();
+  const { data: favoriteProductIds = [] } = useFavoriteProducts();
+  const { data: favoriteSupplierIds = [] } = useFavoriteSuppliers();
+  
+  // التحقق من تفعيل تصفية المفضلة للمستخدم الفرعي
+  const shouldFilterByFavoriteProducts = isSubUser && subUserPermissions?.can_see_favorite_products_only;
+  const shouldFilterByFavoriteSuppliers = isSubUser && subUserPermissions?.can_see_favorite_suppliers_only;
   const { getCategoryName } = useCategoryTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const supplierId = searchParams.get("supplier");
@@ -103,6 +114,16 @@ const Products = () => {
   // Memoize filtered products to prevent recalculation on every render
   const filteredProducts = useMemo(() => {
     return allProducts.filter((product) => {
+      // تصفية المنتجات المفضلة للمستخدم الفرعي
+      if (shouldFilterByFavoriteProducts && !favoriteProductIds.includes(product.id)) {
+        return false;
+      }
+      
+      // تصفية الموردين المفضلين للمستخدم الفرعي
+      if (shouldFilterByFavoriteSuppliers && !favoriteSupplierIds.includes(product.supplier_id)) {
+        return false;
+      }
+      
       if (supplierId && product.supplier_id !== supplierId) {
         return false;
       }
@@ -141,11 +162,11 @@ const Products = () => {
       }
       
       const matchesSearch = 
-        product.name.includes(searchQuery) || 
+        product.name.includes(searchQuery) ||
         product.supplier_profile?.business_name?.includes(searchQuery);
       return matchesSearch;
     });
-  }, [allProducts, supplierId, selectedSection, selectedRegion, selectedCity, searchQuery]);
+  }, [allProducts, supplierId, selectedSection, selectedRegion, selectedCity, searchQuery, shouldFilterByFavoriteProducts, shouldFilterByFavoriteSuppliers, favoriteProductIds, favoriteSupplierIds]);
 
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);

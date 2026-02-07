@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useRestaurantOrders } from "@/hooks/useRestaurantOrders";
+import { useSubUserOrders } from "@/hooks/useSubUserOrders";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Package, ShoppingBag } from "lucide-react";
@@ -15,9 +16,17 @@ import OrderSkeleton from "@/components/orders/OrderSkeleton";
 
 const Orders = () => {
   const { t } = useTranslation();
-  const { user, userRole, loading: authLoading } = useAuth();
+  const { user, userRole, loading: authLoading, isSubUser } = useAuth();
   const navigate = useNavigate();
-  const { data: orders, isLoading, error, refetch, isFetching } = useRestaurantOrders();
+  
+  // استخدام hook مختلف للمستخدم الفرعي
+  const restaurantOrdersQuery = useRestaurantOrders();
+  const subUserOrdersQuery = useSubUserOrders();
+  
+  // اختيار البيانات حسب نوع المستخدم
+  const { data: orders, isLoading, error, refetch, isFetching } = isSubUser 
+    ? subUserOrdersQuery 
+    : restaurantOrdersQuery;
   const { addItem, clearCart } = useCart();
 
   useEffect(() => {
