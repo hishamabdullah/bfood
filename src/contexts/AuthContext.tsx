@@ -84,6 +84,12 @@ const clearAuthStorage = () => {
 
 type UserRole = "admin" | "restaurant" | "supplier";
 
+interface SubUserInfo {
+  isSubUser: boolean;
+  subUserId: string | null;
+  restaurantId: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -96,6 +102,7 @@ interface AuthContextType {
     avatar_url: string | null;
   } | null;
   loading: boolean;
+  subUserInfo: SubUserInfo;
   signUp: (email: string, password: string, userData: {
     fullName: string;
     businessName: string;
@@ -127,6 +134,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [subUserInfo, setSubUserInfo] = useState<SubUserInfo>({
+    isSubUser: false,
+    subUserId: null,
+    restaurantId: null,
+  });
 
   // Allow a single auto-retry per user (helps transient refresh auth hydration issues)
   const hasAutoRetriedRef = useRef<Record<string, boolean>>({});
@@ -164,7 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // before running PostgREST queries that depend on the auth header.
       await waitForAuthReady(userId);
 
-      const [roleResult, profileResult] = await withTimeout(
+      const [roleResult, profileResult, subUserResult] = await withTimeout(
         Promise.all([
           supabase
             .from("user_roles")
@@ -176,6 +188,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .select("full_name, business_name, phone, avatar_url, is_approved")
             .eq("user_id", userId)
             .maybeSingle(),
+          supabase
+            .from("restaurant_sub_users")
+            .select("id, restaurant_id, is_active")
+            .eq("user_id", userId)
+            .eq("is_active", true)
+            .maybeSingle(),
         ]),
         USERDATA_TIMEOUT_MS,
         "fetchUserData timeout"
@@ -183,14 +201,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (roleResult.error) throw roleResult.error;
       if (profileResult.error) throw profileResult.error;
+      // subUserResult.error هو طبيعي إذا لم يكن المستخدم فرعياً
 
       // بعض بيئات PostgREST قد تُرجع data كمصفوفة حتى مع maybeSingle.
       // نطبّعها هنا لضمان أن role/profile لا تبقى null بعد Refresh.
       const roleData = firstOrNull<any>((roleResult as any).data);
       const profileData = firstOrNull<any>((profileResult as any).data);
+      const subUserData = firstOrNull<any>((subUserResult as any).data);
 
       let approved = false;
       let fetchedRole: UserRole | null = null;
+      
+      // التحقق من المستخدم الفرعي أولاً
+      if (subUserData && subUserData.is_active) {
+        // المستخدم فرعي - نعامله كمطعم
+        setSubUserInfo({
+          isSubUser: true,
+          subUserId: subUserData.id,
+          restaurantId: subUserData.restaurant_id,
+        });
+        
+        // جلب بيانات المطعم الأب للتحقق من الاعتماد
+        const { data: parentProfile } = await supabase
+          .from("profiles")
+          .select("is_approved, business_name")
+          .eq("user_id", subUserData.restaurant_id)
+          .maybeSingle();
+        
+        fetchedRole = "restaurant";
+        approved = parentProfile?.is_approved === true;
+        
+        // استخدم اسم المستخدم الفرعي من جدول restaurant_sub_users
+        const newProfile = {
+          full_name: subUserData.full_name ?? "",
+          business_name: parentProfile?.business_name ?? "",
+          phone: subUserData.phone ?? null,
+          avatar_url: null,
+        };
+        setProfile(newProfile);
+        setUserRole(fetchedRole);
+        setIsApproved(approved);
+        lastFetchedUserIdRef.current = userId;
+        saveToCache(userId, fetchedRole, newProfile, approved);
+        return;
+      } else {
+        setSubUserInfo({
+          isSubUser: false,
+          subUserId: null,
+          restaurantId: null,
+        });
+      }
       
       if (roleData?.role) {
         fetchedRole = roleData.role as UserRole;
@@ -531,6 +591,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserRole(null);
       setProfile(null);
       setIsApproved(false);
+      setSubUserInfo({
+        isSubUser: false,
+        subUserId: null,
+        restaurantId: null,
+      });
     }
   };
 
@@ -543,6 +608,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isApproved,
         profile,
         loading,
+        subUserInfo,
         signUp,
         signIn,
         signOut,
