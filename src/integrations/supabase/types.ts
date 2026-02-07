@@ -195,6 +195,57 @@ export type Database = {
           },
         ]
       }
+      order_approval_requests: {
+        Row: {
+          approved_by: string | null
+          branch_id: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          order_id: string
+          requested_by: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          branch_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          requested_by: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          branch_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          requested_by?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_approval_requests_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_approval_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -674,6 +725,7 @@ export type Database = {
       }
       restaurant_features: {
         Row: {
+          can_manage_sub_users: boolean | null
           can_order: boolean
           can_repeat_orders: boolean
           can_use_branches: boolean
@@ -685,6 +737,7 @@ export type Database = {
           id: string
           is_active: boolean
           max_orders_per_month: number | null
+          max_sub_users: number | null
           notes: string | null
           restaurant_id: string
           subscription_end_date: string | null
@@ -693,6 +746,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          can_manage_sub_users?: boolean | null
           can_order?: boolean
           can_repeat_orders?: boolean
           can_use_branches?: boolean
@@ -704,6 +758,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_orders_per_month?: number | null
+          max_sub_users?: number | null
           notes?: string | null
           restaurant_id: string
           subscription_end_date?: string | null
@@ -712,6 +767,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          can_manage_sub_users?: boolean | null
           can_order?: boolean
           can_repeat_orders?: boolean
           can_use_branches?: boolean
@@ -723,12 +779,132 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_orders_per_month?: number | null
+          max_sub_users?: number | null
           notes?: string | null
           restaurant_id?: string
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           subscription_type?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurant_sub_user_branches: {
+        Row: {
+          branch_id: string
+          created_at: string | null
+          id: string
+          sub_user_id: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string | null
+          id?: string
+          sub_user_id: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string | null
+          id?: string
+          sub_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_sub_user_branches_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_sub_user_branches_sub_user_id_fkey"
+            columns: ["sub_user_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_sub_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_sub_user_permissions: {
+        Row: {
+          can_approve_order: boolean | null
+          can_cancel_order: boolean | null
+          can_edit_order: boolean | null
+          can_see_favorite_products_only: boolean | null
+          can_see_favorite_suppliers_only: boolean | null
+          can_see_order_totals: boolean | null
+          can_see_prices: boolean | null
+          created_at: string | null
+          id: string
+          sub_user_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          can_approve_order?: boolean | null
+          can_cancel_order?: boolean | null
+          can_edit_order?: boolean | null
+          can_see_favorite_products_only?: boolean | null
+          can_see_favorite_suppliers_only?: boolean | null
+          can_see_order_totals?: boolean | null
+          can_see_prices?: boolean | null
+          created_at?: string | null
+          id?: string
+          sub_user_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          can_approve_order?: boolean | null
+          can_cancel_order?: boolean | null
+          can_edit_order?: boolean | null
+          can_see_favorite_products_only?: boolean | null
+          can_see_favorite_suppliers_only?: boolean | null
+          can_see_order_totals?: boolean | null
+          can_see_prices?: boolean | null
+          created_at?: string | null
+          id?: string
+          sub_user_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_sub_user_permissions_sub_user_id_fkey"
+            columns: ["sub_user_id"]
+            isOneToOne: true
+            referencedRelation: "restaurant_sub_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_sub_users: {
+        Row: {
+          created_at: string | null
+          full_name: string
+          id: string
+          is_active: boolean | null
+          phone: string | null
+          restaurant_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean | null
+          phone?: string | null
+          restaurant_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          phone?: string | null
+          restaurant_id?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -954,6 +1130,7 @@ export type Database = {
         }[]
       }
       get_order_restaurant_id: { Args: { _order_id: string }; Returns: string }
+      get_restaurant_owner_id: { Args: { _user_id: string }; Returns: string }
       get_restaurant_profile_for_order: {
         Args: { _restaurant_id: string }
         Returns: {
@@ -963,6 +1140,24 @@ export type Database = {
           google_maps_url: string
           phone: string
           user_id: string
+        }[]
+      }
+      get_sub_user_branches: {
+        Args: { _user_id: string }
+        Returns: {
+          branch_id: string
+        }[]
+      }
+      get_sub_user_permissions: {
+        Args: { _user_id: string }
+        Returns: {
+          can_approve_order: boolean
+          can_cancel_order: boolean
+          can_edit_order: boolean
+          can_see_favorite_products_only: boolean
+          can_see_favorite_suppliers_only: boolean
+          can_see_order_totals: boolean
+          can_see_prices: boolean
         }[]
       }
       get_user_role: {
@@ -976,6 +1171,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_sub_user: { Args: { _user_id: string }; Returns: boolean }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
       restaurant_has_feature: {
         Args: { _feature: string; _restaurant_id: string }

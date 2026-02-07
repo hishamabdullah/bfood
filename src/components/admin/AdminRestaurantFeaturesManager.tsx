@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Users } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -88,7 +88,9 @@ const AdminRestaurantFeaturesManager = () => {
       can_view_analytics: restaurant.features?.can_view_analytics ?? false,
       can_use_custom_prices: restaurant.features?.can_use_custom_prices ?? false,
       can_repeat_orders: restaurant.features?.can_repeat_orders ?? true,
+      can_manage_sub_users: restaurant.features?.can_manage_sub_users ?? false,
       max_orders_per_month: restaurant.features?.max_orders_per_month ?? null,
+      max_sub_users: restaurant.features?.max_sub_users ?? 3,
       subscription_type: restaurant.features?.subscription_type ?? "basic",
       subscription_end_date: restaurant.features?.subscription_end_date ?? null,
       notes: restaurant.features?.notes ?? null,
@@ -461,6 +463,23 @@ const AdminRestaurantFeaturesManager = () => {
                     }
                   />
                 </div>
+
+                {/* إدارة المستخدمين الفرعيين */}
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5 text-indigo-500" />
+                    <div>
+                      <Label className="font-medium">إدارة المستخدمين</Label>
+                      <p className="text-sm text-muted-foreground">إنشاء مستخدمين فرعيين وتحديد صلاحياتهم</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={editedFeatures.can_manage_sub_users ?? false}
+                    onCheckedChange={(checked) =>
+                      setEditedFeatures({ ...editedFeatures, can_manage_sub_users: checked })
+                    }
+                  />
+                </div>
               </div>
             </div>
 
@@ -480,6 +499,28 @@ const AdminRestaurantFeaturesManager = () => {
                 }
               />
             </div>
+
+            {/* الحد الأقصى للمستخدمين الفرعيين */}
+            {editedFeatures.can_manage_sub_users && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  الحد الأقصى للمستخدمين الفرعيين
+                </Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={editedFeatures.max_sub_users ?? 3}
+                  onChange={(e) =>
+                    setEditedFeatures({
+                      ...editedFeatures,
+                      max_sub_users: e.target.value ? parseInt(e.target.value) : 3,
+                    })
+                  }
+                />
+              </div>
+            )}
 
             {/* ملاحظات */}
             <div className="space-y-2">
