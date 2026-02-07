@@ -43,6 +43,7 @@ const planSchema = z.object({
   can_manage_sub_users: z.boolean(),
   max_orders_per_month: z.coerce.number().nullable(),
   max_sub_users: z.coerce.number().nullable(),
+  max_branches: z.coerce.number().nullable(),
   is_active: z.boolean(),
 });
 
@@ -81,6 +82,7 @@ const SubscriptionPlanFormDialog = ({
       can_manage_sub_users: false,
       max_orders_per_month: null,
       max_sub_users: 3,
+      max_branches: 1,
       is_active: true,
     },
   });
@@ -103,6 +105,7 @@ const SubscriptionPlanFormDialog = ({
         can_manage_sub_users: existingPlan.can_manage_sub_users,
         max_orders_per_month: existingPlan.max_orders_per_month,
         max_sub_users: existingPlan.max_sub_users,
+        max_branches: existingPlan.max_branches,
         is_active: existingPlan.is_active,
       });
     } else if (!planId) {
@@ -122,6 +125,7 @@ const SubscriptionPlanFormDialog = ({
         can_manage_sub_users: false,
         max_orders_per_month: null,
         max_sub_users: 3,
+        max_branches: 1,
         is_active: true,
       });
     }
@@ -148,6 +152,7 @@ const SubscriptionPlanFormDialog = ({
           can_manage_sub_users: values.can_manage_sub_users,
           max_orders_per_month: values.max_orders_per_month,
           max_sub_users: values.max_sub_users,
+          max_branches: values.max_branches,
           is_active: values.is_active,
         });
       }
@@ -272,7 +277,7 @@ const SubscriptionPlanFormDialog = ({
               </div>
 
               {/* الحدود */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="max_orders_per_month"
@@ -306,6 +311,28 @@ const SubscriptionPlanFormDialog = ({
                         <Input
                           type="number"
                           min="0"
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? Number(e.target.value) : null)
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="max_branches"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الحد الأقصى للفروع</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
                           {...field}
                           value={field.value ?? ""}
                           onChange={(e) =>

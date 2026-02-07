@@ -736,6 +736,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          max_branches: number | null
           max_orders_per_month: number | null
           max_sub_users: number | null
           notes: string | null
@@ -758,6 +759,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          max_branches?: number | null
           max_orders_per_month?: number | null
           max_sub_users?: number | null
           notes?: string | null
@@ -780,6 +782,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          max_branches?: number | null
           max_orders_per_month?: number | null
           max_sub_users?: number | null
           notes?: string | null
@@ -1028,6 +1031,7 @@ export type Database = {
           duration_months: number
           id: string
           is_active: boolean
+          max_branches: number | null
           max_orders_per_month: number | null
           max_sub_users: number | null
           name: string
@@ -1049,6 +1053,7 @@ export type Database = {
           duration_months?: number
           id?: string
           is_active?: boolean
+          max_branches?: number | null
           max_orders_per_month?: number | null
           max_sub_users?: number | null
           name: string
@@ -1070,6 +1075,7 @@ export type Database = {
           duration_months?: number
           id?: string
           is_active?: boolean
+          max_branches?: number | null
           max_orders_per_month?: number | null
           max_sub_users?: number | null
           name?: string

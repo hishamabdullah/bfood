@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useBranches, useDeleteBranch, type Branch } from "@/hooks/useBranches";
+import { useBranches, useDeleteBranch, useMaxBranchesLimit, type Branch } from "@/hooks/useBranches";
 import { BranchFormDialog } from "./BranchFormDialog";
 import { Plus, MapPin, Pencil, Trash2, Building2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -19,10 +19,15 @@ import {
 
 export const BranchesManager = () => {
   const { data: branches = [], isLoading } = useBranches();
+  const { data: branchLimit } = useMaxBranchesLimit();
   const deleteBranch = useDeleteBranch();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deletingBranchId, setDeletingBranchId] = useState<string | null>(null);
+
+  const canAddMoreBranches = branchLimit 
+    ? branchLimit.currentCount < branchLimit.maxBranches 
+    : true;
 
   const handleEdit = (branch: Branch) => {
     setEditingBranch(branch);
@@ -30,6 +35,10 @@ export const BranchesManager = () => {
   };
 
   const handleAdd = () => {
+    if (!canAddMoreBranches) {
+      toast.error(`خطتك تسمح بحد أقصى ${branchLimit?.maxBranches} فروع فقط`);
+      return;
+    }
     setEditingBranch(null);
     setIsDialogOpen(true);
   };
@@ -63,11 +72,23 @@ export const BranchesManager = () => {
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            فروع المطعم
-          </CardTitle>
-          <Button onClick={handleAdd} size="sm">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              فروع المطعم
+            </CardTitle>
+            {branchLimit && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {branchLimit.currentCount} من {branchLimit.maxBranches} فروع
+              </p>
+            )}
+          </div>
+          <Button 
+            onClick={handleAdd} 
+            size="sm"
+            disabled={!canAddMoreBranches}
+            title={!canAddMoreBranches ? `خطتك تسمح بحد أقصى ${branchLimit?.maxBranches} فروع فقط` : undefined}
+          >
             <Plus className="h-4 w-4 ml-1" />
             إضافة فرع
           </Button>

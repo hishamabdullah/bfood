@@ -19,6 +19,7 @@ export interface SubscriptionPlan {
   can_manage_sub_users: boolean;
   max_orders_per_month: number | null;
   max_sub_users: number | null;
+  max_branches: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -206,6 +207,7 @@ export const useAssignPlanToRestaurant = () => {
         can_manage_sub_users: plan.can_manage_sub_users,
         max_orders_per_month: plan.max_orders_per_month,
         max_sub_users: plan.max_sub_users,
+        max_branches: plan.max_branches,
         subscription_type: plan.name,
         subscription_start_date: startDate.toISOString(),
         subscription_end_date: endDate.toISOString(),
