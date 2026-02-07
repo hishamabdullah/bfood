@@ -112,8 +112,16 @@ Deno.serve(async (req) => {
     }
 
     // استلام البيانات
-    const body: CreateSubUserRequest = await req.json();
-    const { email, password, full_name, phone, branch_ids, permissions } = body;
+    const body: Partial<CreateSubUserRequest> = await req.json();
+
+    const emailRaw = String(body.email ?? "");
+    const password = String(body.password ?? "");
+    const full_name = String(body.full_name ?? "");
+    const phone = body.phone ? String(body.phone) : undefined;
+    const branch_ids = Array.isArray(body.branch_ids) ? body.branch_ids : [];
+    const permissions = body.permissions ?? ({} as any);
+
+    const email = emailRaw.trim().toLowerCase();
 
     if (!email || !password || !full_name) {
       return new Response(
@@ -126,6 +134,7 @@ Deno.serve(async (req) => {
     const { data: newUser, error: createError } = await supabaseClient.auth.admin.createUser({
       email,
       password,
+      // ملاحظة: نفعّلها لضمان أن الموظف يستطيع تسجيل الدخول فوراً.
       email_confirm: true,
     });
 
@@ -157,31 +166,40 @@ Deno.serve(async (req) => {
       // محاولة حذف المستخدم من auth إذا فشل إنشاء السجل
       await supabaseClient.auth.admin.deleteUser(userId);
       return new Response(
-        JSON.stringify({ error: "فشل في إنشاء المستخدم الفرعي" }),
+        JSON.stringify({ error: subUserError.message || "فشل في إنشاء المستخدم الفرعي" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // إنشاء الصلاحيات
+    // إنشاء الصلاحيات (حرجة: بدونها لن تعمل صلاحيات الموظف كما هو متوقع)
     const { error: permError } = await supabaseClient
       .from("restaurant_sub_user_permissions")
       .insert({
         sub_user_id: subUserData.id,
-        can_see_prices: permissions?.can_see_prices ?? true,
-        can_see_favorite_suppliers_only: permissions?.can_see_favorite_suppliers_only ?? false,
-        can_see_favorite_products_only: permissions?.can_see_favorite_products_only ?? false,
-        can_edit_order: permissions?.can_edit_order ?? true,
-        can_cancel_order: permissions?.can_cancel_order ?? true,
-        can_approve_order: permissions?.can_approve_order ?? false,
-        can_see_order_totals: permissions?.can_see_order_totals ?? true,
+        can_see_prices: (permissions as any)?.can_see_prices ?? true,
+        can_see_favorite_suppliers_only:
+          (permissions as any)?.can_see_favorite_suppliers_only ?? false,
+        can_see_favorite_products_only:
+          (permissions as any)?.can_see_favorite_products_only ?? false,
+        can_edit_order: (permissions as any)?.can_edit_order ?? true,
+        can_cancel_order: (permissions as any)?.can_cancel_order ?? true,
+        can_approve_order: (permissions as any)?.can_approve_order ?? false,
+        can_see_order_totals: (permissions as any)?.can_see_order_totals ?? true,
       });
 
     if (permError) {
       console.error("Permissions creation error:", permError);
+      // تنظيف لتفادي بقاء حساب بدون صلاحيات
+      await supabaseClient.from("restaurant_sub_users").delete().eq("id", subUserData.id);
+      await supabaseClient.auth.admin.deleteUser(userId);
+      return new Response(
+        JSON.stringify({ error: "فشل في إنشاء صلاحيات المستخدم الفرعي" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // ربط الفروع إذا وُجدت
-    if (branch_ids && branch_ids.length > 0) {
+    // ربط الفروع إذا وُجدت (حرجة إذا تم تحديد فروع)
+    if (branch_ids.length > 0) {
       const branchRecords = branch_ids.map((branch_id) => ({
         sub_user_id: subUserData.id,
         branch_id,
@@ -193,6 +211,17 @@ Deno.serve(async (req) => {
 
       if (branchError) {
         console.error("Branch assignment error:", branchError);
+        // تنظيف لتفادي موظف بصلاحيات غير منضبطة
+        await supabaseClient
+          .from("restaurant_sub_user_permissions")
+          .delete()
+          .eq("sub_user_id", subUserData.id);
+        await supabaseClient.from("restaurant_sub_users").delete().eq("id", subUserData.id);
+        await supabaseClient.auth.admin.deleteUser(userId);
+        return new Response(
+          JSON.stringify({ error: "فشل في ربط فروع المستخدم الفرعي" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 
@@ -213,3 +242,4 @@ Deno.serve(async (req) => {
     );
   }
 });
+
