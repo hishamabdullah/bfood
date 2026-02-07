@@ -36,10 +36,13 @@ const defaultFeatures: RestaurantAccessFeatures = {
 
 // Hook للتحقق من ميزات المطعم الحالي
 export const useRestaurantAccess = () => {
-  const { user, userRole, isSubUser, subUserInfo } = useAuth();
+  const { user, userRole, isSubUser, subUserInfo, loading: authLoading } = useAuth();
   
   // استخدام معرف المطعم الأصلي للمستخدم الفرعي
   const restaurantId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
+  
+  // التحقق: المستخدم الفرعي يُعامل كمطعم حتى لو لم يتم تعيين userRole بعد
+  const isRestaurantUser = userRole === "restaurant" || isSubUser;
 
   return useQuery({
     queryKey: ["restaurant-access", restaurantId],
@@ -50,14 +53,16 @@ export const useRestaurantAccess = () => {
         .from("restaurant_features")
         .select("*")
         .eq("restaurant_id", restaurantId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        // إذا لم يوجد سجل، نرجع القيم الافتراضية
-        if (error.code === "PGRST116") {
-          return defaultFeatures;
-        }
-        throw error;
+        console.error("Error fetching restaurant features:", error);
+        return defaultFeatures;
+      }
+      
+      // إذا لم يوجد سجل، نرجع القيم الافتراضية
+      if (!data) {
+        return defaultFeatures;
       }
 
       return {
@@ -76,7 +81,7 @@ export const useRestaurantAccess = () => {
         subscription_end_date: data.subscription_end_date,
       } as RestaurantAccessFeatures;
     },
-    enabled: !!restaurantId && userRole === "restaurant",
+    enabled: !authLoading && !!restaurantId && isRestaurantUser,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -84,14 +89,17 @@ export const useRestaurantAccess = () => {
 // Helper function للتحقق من ميزة معينة
 export const useHasFeature = (featureName: keyof RestaurantAccessFeatures) => {
   const { data: features, isLoading } = useRestaurantAccess();
-  const { userRole } = useAuth();
+  const { userRole, isSubUser } = useAuth();
 
   // المدير والمورد لديهم كل الميزات
   if (userRole === "admin" || userRole === "supplier") {
     return { hasFeature: true, isLoading: false };
   }
+  
+  // التحقق: المستخدم الفرعي يُعامل كمطعم
+  const isRestaurantUser = userRole === "restaurant" || isSubUser;
 
-  if (isLoading || !features) {
+  if (isLoading || !features || !isRestaurantUser) {
     return { hasFeature: false, isLoading };
   }
 
@@ -104,10 +112,17 @@ export const useHasFeature = (featureName: keyof RestaurantAccessFeatures) => {
 // التحقق من أن الحساب نشط
 export const useIsRestaurantActive = () => {
   const { data: features, isLoading } = useRestaurantAccess();
-  const { userRole } = useAuth();
+  const { userRole, isSubUser } = useAuth();
 
   // المدير والمورد دائماً نشطين
   if (userRole === "admin" || userRole === "supplier") {
+    return { isActive: true, isLoading: false };
+  }
+  
+  // التحقق: المستخدم الفرعي يُعامل كمطعم
+  const isRestaurantUser = userRole === "restaurant" || isSubUser;
+  
+  if (!isRestaurantUser) {
     return { isActive: true, isLoading: false };
   }
 
