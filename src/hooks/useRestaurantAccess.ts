@@ -38,9 +38,10 @@ const defaultFeatures: RestaurantAccessFeatures = {
 
 // Hook للتحقق من ميزات المطعم الحالي
 export const useRestaurantAccess = () => {
-  const { user, userRole, loading: authLoading } = useAuth();
+  const { user, userRole, loading: authLoading, subUserInfo } = useAuth();
   
-  const restaurantId = user?.id;
+  // استخدم restaurantId الفعلي (سواء كان مستخدم أساسي أو فرعي)
+  const restaurantId = subUserInfo.isSubUser ? subUserInfo.restaurantId : user?.id;
   const isRestaurantUser = userRole === "restaurant";
 
   return useQuery({

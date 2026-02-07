@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, MapPin, Heart, Tag, Layers } from "lucide-react";
+import { Plus, Package, MapPin, Heart, Tag, Layers, EyeOff } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Product } from "@/hooks/useProducts";
@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
 import { useFavoriteProducts, useToggleFavoriteProduct } from "@/hooks/useFavorites";
 import { useHasFeature } from "@/hooks/useRestaurantAccess";
+import { useCanSeePrices } from "@/hooks/useSubUserContext";
 
 interface ProductCardProps {
   product: Product;
@@ -22,7 +23,7 @@ interface ProductCardProps {
 
 const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = false }: ProductCardProps) => {
   const { addItem } = useCart();
-  const { user, userRole } = useAuth();
+  const { user, userRole, subUserInfo } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { getProductName } = useProductTranslation();
@@ -30,6 +31,7 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
   const toggleFavorite = useToggleFavoriteProduct();
   const { hasFeature: canUseFavorites } = useHasFeature("can_use_favorites");
   const { hasFeature: canOrder } = useHasFeature("can_order");
+  const { hasPermission: canSeePrices } = useCanSeePrices();
   
   const isFavorite = favoriteProducts.includes(product.id);
   const hasCustomPrice = customPrice !== null && customPrice !== undefined && customPrice !== product.price;
@@ -157,12 +159,21 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
 
           <div className="flex items-center justify-between mt-4">
             <div>
-              <span className="text-xl font-bold text-primary">{displayPrice}</span>
-              <span className="text-sm text-muted-foreground ltr:ml-1 rtl:mr-1">{t("common.sar")}/{product.unit}</span>
-              {hasCustomPrice && (
-                <span className="block text-xs text-muted-foreground line-through">
-                  {product.price} {t("common.sar")}
-                </span>
+              {canSeePrices ? (
+                <>
+                  <span className="text-xl font-bold text-primary">{displayPrice}</span>
+                  <span className="text-sm text-muted-foreground ltr:ml-1 rtl:mr-1">{t("common.sar")}/{product.unit}</span>
+                  {hasCustomPrice && (
+                    <span className="block text-xs text-muted-foreground line-through">
+                      {product.price} {t("common.sar")}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <EyeOff className="h-4 w-4" />
+                  <span className="text-sm">السعر مخفي</span>
+                </div>
               )}
             </div>
             {/* Hide add to cart button if ordering is disabled */}
