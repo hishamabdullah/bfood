@@ -29,6 +29,9 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   const { data: subscription, isLoading: subscriptionLoading } = useRestaurantSubscription();
   const isRedirectingRef = useRef(false);
 
+  // التحقق: المستخدم الفرعي يُعامل كمطعم
+  const isRestaurantUser = userRole === "restaurant" || isSubUser;
+
   const isExemptPath = EXEMPT_PATHS.some(path => 
     location.pathname === path || location.pathname.startsWith(path + "/")
   );
@@ -45,7 +48,7 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   // اعتراض أي نقرة عند انتهاء الاشتراك
   useEffect(() => {
     if (authLoading || subscriptionLoading) return;
-    if (!user || userRole !== "restaurant") return;
+    if (!user || !isRestaurantUser) return;
     if (isExemptPath) return;
 
     const isExpired = subscription && (subscription.isExpired || !subscription.isActive);
@@ -89,7 +92,7 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   // التوجيه التلقائي عند انتهاء الاشتراك
   useEffect(() => {
     if (authLoading || subscriptionLoading) return;
-    if (!user || userRole !== "restaurant") return;
+    if (!user || !isRestaurantUser) return;
     if (isExemptPath) return;
 
     if (subscription && (subscription.isExpired || !subscription.isActive)) {
@@ -106,8 +109,9 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   ]);
 
   // إظهار التحميل فقط للمطاعم في الصفحات المحمية
+  // لا نعرض التحميل إذا انتهى تحميل المصادقة وتبين أن المستخدم ليس مطعماً
   if (
-    userRole === "restaurant" &&
+    isRestaurantUser &&
     !isExemptPath &&
     (authLoading || subscriptionLoading)
   ) {

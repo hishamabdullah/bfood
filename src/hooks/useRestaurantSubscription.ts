@@ -20,10 +20,13 @@ export interface SubscriptionStatus {
 }
 
 export const useRestaurantSubscription = () => {
-  const { user, userRole, isSubUser, subUserInfo } = useAuth();
+  const { user, userRole, isSubUser, subUserInfo, loading: authLoading } = useAuth();
 
   // استخدم restaurant_id من المستخدم الفرعي أو user.id للمالك
   const restaurantId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
+  
+  // التحقق: المستخدم الفرعي يُعامل كمطعم حتى لو لم يتم تعيين userRole بعد
+  const isRestaurantUser = userRole === "restaurant" || isSubUser;
 
   return useQuery({
     queryKey: ["restaurant-subscription", restaurantId],
@@ -92,7 +95,8 @@ export const useRestaurantSubscription = () => {
         },
       };
     },
-    enabled: !!restaurantId && userRole === "restaurant",
+    // تفعيل الاستعلام عند وجود restaurantId ودور المطعم أو المستخدم الفرعي
+    enabled: !authLoading && !!restaurantId && isRestaurantUser,
     staleTime: 5 * 60 * 1000, // 5 دقائق
     gcTime: 10 * 60 * 1000, // 10 دقائق
   });
