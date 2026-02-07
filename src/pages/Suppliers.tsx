@@ -43,14 +43,16 @@ const Suppliers = () => {
   
   const { user, userRole, isSubUser } = useAuth();
   const { getCategoryName } = useCategoryTranslation();
-  const { data: suppliers, isLoading } = useSuppliers(selectedRegion, selectedCity);
-  const { data: favoriteSuppliers = [] } = useFavoriteSuppliers();
+  const { data: suppliers, isLoading: suppliersLoading } = useSuppliers(selectedRegion, selectedCity);
+  const favoriteSuppliersQuery = useFavoriteSuppliers();
+  const favoriteSuppliers = favoriteSuppliersQuery.data ?? [];
   const toggleFavorite = useToggleFavoriteSupplier();
   const { hasFeature: canUseFavorites } = useHasFeature("can_use_favorites");
   
   // صلاحيات المستخدم الفرعي
   const { data: subUserPermissions } = useSubUserPermissions();
-  const shouldFilterByFavoriteSuppliers = isSubUser && subUserPermissions?.can_see_favorite_suppliers_only;
+  const shouldFilterByFavoriteSuppliers = isSubUser && !!subUserPermissions?.can_see_favorite_suppliers_only;
+  const showLoading = suppliersLoading || (shouldFilterByFavoriteSuppliers && favoriteSuppliersQuery.isLoading);
 
   // Fetch supplier categories
   const { data: supplierCategories = [] } = useQuery({
@@ -177,7 +179,7 @@ const Suppliers = () => {
           </div>
 
           {/* Loading State */}
-          {isLoading && (
+          {showLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="bg-card rounded-2xl border border-border p-6">
@@ -196,7 +198,7 @@ const Suppliers = () => {
           )}
 
           {/* Suppliers Grid */}
-          {!isLoading && (
+          {!showLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredSuppliers.map((supplier, index) => (
                 <div
@@ -292,7 +294,7 @@ const Suppliers = () => {
           )}
 
           {/* Empty State */}
-          {!isLoading && filteredSuppliers.length === 0 && (
+          {!showLoading && filteredSuppliers.length === 0 && (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-semibold mb-2">لا توجد نتائج</h3>

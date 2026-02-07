@@ -145,8 +145,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Cache لمنع جلب البيانات المكررة - استخدام useRef لتجنب إعادة إنشاء الدالة
   const lastFetchedUserIdRef = useRef<string | null>(null);
 
-  const SESSION_TIMEOUT_MS = 3000;
-  const USERDATA_TIMEOUT_MS = 10000;
+  // Timeouts أعلى لتفادي التعليق على الشبكات البطيئة (مهم خصوصاً للمستخدمين الفرعيين)
+  const SESSION_TIMEOUT_MS = 8000;
+  const USERDATA_TIMEOUT_MS = 20000;
 
   const fetchUserData = useCallback(async (userId: string, force = false): Promise<void> => {
     // تخطي إذا كانت البيانات موجودة مسبقاً (ما لم يكن force)
@@ -317,7 +318,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setInitialized(true);
 
           // محاولة خلفية سريعة لمزامنة بيانات المستخدم (بدون تعليق الواجهة)
-          withTimeout(supabase.auth.getSession(), 2000, "getSession (fallback) timeout")
+          withTimeout(supabase.auth.getSession(), 6000, "getSession (fallback) timeout")
             .then(({ data }) => {
               const fallbackUser = data.session?.user;
               if (fallbackUser) {
