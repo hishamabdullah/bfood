@@ -38,7 +38,7 @@ import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
   const { t, i18n } = useTranslation();
-  const { user, userRole, profile, loading, isApproved, isSubUser, subUserInfo } = useAuth();
+  const { user, userRole, profile, loading, isApproved } = useAuth();
   const navigate = useNavigate();
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [linkCopied, setLinkCopied] = useState(false);
@@ -54,12 +54,11 @@ const Dashboard = () => {
     if (!loading) {
       if (!user) {
         navigate("/login");
-      } else if (!isApproved && !isSubUser && (userRole === "restaurant" || userRole === "supplier")) {
-        // المطاعم والموردين غير المعتمدين يُحوّلون لصفحة الانتظار (باستثناء المستخدمين الفرعيين)
+      } else if (!isApproved && (userRole === "restaurant" || userRole === "supplier")) {
         navigate("/pending-approval");
       }
     }
-  }, [user, loading, isApproved, isSubUser, userRole, navigate]);
+  }, [user, loading, isApproved, userRole, navigate]);
 
   if (loading) {
     return (
@@ -103,11 +102,8 @@ const Dashboard = () => {
                 <Store className="h-8 w-8 text-primary" />
               )}
               <h1 className="text-3xl font-bold">
-                {t("dashboard.welcome")}، {isSubUser ? subUserInfo?.full_name : profile?.full_name || t("common.loading")}
+                {t("dashboard.welcome")}، {profile?.full_name || t("common.loading")}
               </h1>
-              {isSubUser && (
-                <Badge variant="secondary" className="text-xs">موظف</Badge>
-              )}
             </div>
             <p className="text-muted-foreground">
               {profile?.business_name} • {isSupplier ? t("auth.supplier") : isRestaurant ? t("auth.restaurant") : t("dashboard.admin")}

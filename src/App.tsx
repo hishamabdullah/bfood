@@ -36,7 +36,6 @@ import Branches from "./pages/Branches";
 import Templates from "./pages/Templates";
 import Analytics from "./pages/Analytics";
 import MySubscription from "./pages/MySubscription";
-import SubUsers from "./pages/SubUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,7 +70,6 @@ const App = () => (
                   <Route path="/templates" element={<Templates />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/my-subscription" element={<MySubscription />} />
-                  <Route path="/sub-users" element={<SubUsers />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/profile/:id" element={<Profile />} />
                   <Route path="/supplier/products" element={<SupplierProducts />} />

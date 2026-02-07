@@ -10,10 +10,9 @@ export interface RestaurantStats {
 }
 
 export const useRestaurantStats = () => {
-  const { user, isSubUser, subUserInfo } = useAuth();
+  const { user } = useAuth();
 
-  // استخدم restaurant_id من المستخدم الفرعي أو user.id للمالك
-  const restaurantId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
+  const restaurantId = user?.id;
 
   return useQuery({
     queryKey: ["restaurant-stats", restaurantId],

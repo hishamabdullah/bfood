@@ -28,7 +28,7 @@ const COLORS = ["#00875A", "#0070F3", "#F5A623", "#E63946", "#8B5CF6", "#06B6D4"
 
 const Analytics = () => {
   const { t, i18n } = useTranslation();
-  const { user, userRole, loading, isApproved, isSubUser } = useAuth();
+  const { user, userRole, loading, isApproved } = useAuth();
   const { hasFeature, isLoading: featureLoading } = useHasFeature("can_view_analytics");
   const navigate = useNavigate();
   const { data: analytics, isLoading } = useRestaurantAnalytics(6);
@@ -42,11 +42,11 @@ const Analytics = () => {
         navigate("/login");
       } else if (userRole !== "restaurant") {
         navigate("/dashboard");
-      } else if (!isApproved && !isSubUser) {
+      } else if (!isApproved) {
         navigate("/pending-approval");
       }
     }
-  }, [user, loading, isApproved, isSubUser, userRole, navigate]);
+  }, [user, loading, isApproved, userRole, navigate]);
 
   if (loading || isLoading || featureLoading) {
     return (
@@ -357,69 +357,6 @@ const Analytics = () => {
             )}
           </div>
 
-          {/* Sub-User Breakdown Table - Only for restaurant managers */}
-          {!isSubUser && analytics?.subUserBreakdown && analytics.subUserBreakdown.length > 1 && (
-            <div className="bg-card rounded-2xl border border-border p-6 mb-8">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                {t("analytics.subUserBreakdown", "المشتريات حسب المستخدمين")}
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground">{t("analytics.user", "المستخدم")}</th>
-                      <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground">{t("analytics.ordersCount", "عدد الطلبات")}</th>
-                      <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground">{t("analytics.totalSpent", "إجمالي المشتريات")}</th>
-                      <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground">{t("analytics.percentage", "النسبة")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analytics.subUserBreakdown.map((subUser, index) => {
-                      const totalSpent = analytics.subUserBreakdown.reduce((sum, s) => sum + s.totalSpent, 0);
-                      const percentage = totalSpent > 0 ? (subUser.totalSpent / totalSpent) * 100 : 0;
-                      return (
-                        <tr key={subUser.subUserId} className="border-b border-border/50 last:border-0">
-                          <td className="py-3 px-2">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="w-3 h-3 rounded-full shrink-0"
-                                style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                              />
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{subUser.subUserName}</span>
-                                {subUser.subUserId === "owner" && (
-                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                    {t("analytics.manager", "مدير")}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-2 text-muted-foreground">{subUser.ordersCount}</td>
-                          <td className="py-3 px-2 font-medium">{subUser.totalSpent.toFixed(2)} {t("common.sar")}</td>
-                          <td className="py-3 px-2">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-[100px]">
-                                <div
-                                  className="h-full rounded-full"
-                                  style={{
-                                    width: `${percentage}%`,
-                                    backgroundColor: COLORS[index % COLORS.length],
-                                  }}
-                                />
-                              </div>
-                              <span className="text-sm text-muted-foreground">{percentage.toFixed(1)}%</span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </div>
       </main>
       <Footer />

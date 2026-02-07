@@ -114,7 +114,7 @@ const SoundSettings = () => {
 const Profile = () => {
   const { t } = useTranslation();
   const { id } = useParams();
-  const { user, userRole, profile: authProfile, loading: authLoading, isSubUser, subUserInfo } = useAuth();
+  const { user, userRole, profile: authProfile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   const isOwnProfile = !id || id === user?.id;
@@ -338,6 +338,17 @@ const Profile = () => {
       setIsUploadingLogo(false);
     }
   };
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const isSupplier = targetRole === "supplier";
+  const isRestaurant = targetRole === "restaurant";
 
   if (authLoading || isLoading) {
     return (
