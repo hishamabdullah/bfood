@@ -739,6 +739,7 @@ export type Database = {
           max_orders_per_month: number | null
           max_sub_users: number | null
           notes: string | null
+          plan_id: string | null
           restaurant_id: string
           subscription_end_date: string | null
           subscription_start_date: string | null
@@ -760,6 +761,7 @@ export type Database = {
           max_orders_per_month?: number | null
           max_sub_users?: number | null
           notes?: string | null
+          plan_id?: string | null
           restaurant_id: string
           subscription_end_date?: string | null
           subscription_start_date?: string | null
@@ -781,13 +783,22 @@ export type Database = {
           max_orders_per_month?: number | null
           max_sub_users?: number | null
           notes?: string | null
+          plan_id?: string | null
           restaurant_id?: string
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           subscription_type?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_features_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restaurant_sub_user_branches: {
         Row: {
@@ -1001,6 +1012,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          can_manage_sub_users: boolean
+          can_order: boolean
+          can_repeat_orders: boolean
+          can_use_branches: boolean
+          can_use_custom_prices: boolean
+          can_use_favorites: boolean
+          can_use_templates: boolean
+          can_view_analytics: boolean
+          created_at: string
+          description: string | null
+          duration_months: number
+          id: string
+          is_active: boolean
+          max_orders_per_month: number | null
+          max_sub_users: number | null
+          name: string
+          name_en: string | null
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          can_manage_sub_users?: boolean
+          can_order?: boolean
+          can_repeat_orders?: boolean
+          can_use_branches?: boolean
+          can_use_custom_prices?: boolean
+          can_use_favorites?: boolean
+          can_use_templates?: boolean
+          can_view_analytics?: boolean
+          created_at?: string
+          description?: string | null
+          duration_months?: number
+          id?: string
+          is_active?: boolean
+          max_orders_per_month?: number | null
+          max_sub_users?: number | null
+          name: string
+          name_en?: string | null
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          can_manage_sub_users?: boolean
+          can_order?: boolean
+          can_repeat_orders?: boolean
+          can_use_branches?: boolean
+          can_use_custom_prices?: boolean
+          can_use_favorites?: boolean
+          can_use_templates?: boolean
+          can_view_analytics?: boolean
+          created_at?: string
+          description?: string | null
+          duration_months?: number
+          id?: string
+          is_active?: boolean
+          max_orders_per_month?: number | null
+          max_sub_users?: number | null
+          name?: string
+          name_en?: string | null
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       subscription_renewals: {
         Row: {

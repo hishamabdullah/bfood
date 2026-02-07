@@ -21,6 +21,7 @@ export interface RestaurantFeatures {
   subscription_start_date: string | null;
   subscription_end_date: string | null;
   notes: string | null;
+  plan_id: string | null;
   created_at: string;
   updated_at: string;
 }
