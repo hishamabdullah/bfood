@@ -3,6 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const getAccessTokenWithRetry = async (): Promise<string> => {
+  // أحياناً بعد Refresh تكون الجلسة لم تجهز بعد، فنحاول أكثر من مرة قبل الفشل.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) return token;
+    await sleep(250);
+  }
+  throw new Error("تعذر التحقق من جلسة الدخول. فضلاً أعد تسجيل الدخول ثم حاول مرة أخرى.");
+};
+
 export interface SubUserPermissions {
   can_see_prices: boolean;
   can_see_favorite_suppliers_only: boolean;
@@ -111,19 +124,15 @@ export const useCreateSubUser = () => {
       branch_ids: string[];
       permissions: SubUserPermissions;
     }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
+      const accessToken = await getAccessTokenWithRetry();
 
-      const { data: result, error } = await supabase.functions.invoke(
-        "create-sub-user",
-        {
-          body: {
-            ...data,
-            email: data.email.trim().toLowerCase(),
-          },
-          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-        }
-      );
+      const { data: result, error } = await supabase.functions.invoke("create-sub-user", {
+        body: {
+          ...data,
+          email: data.email.trim().toLowerCase(),
+        },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
       if (error) {
         // supabase-js قد يُرجع FunctionsHttpError مع body داخل context
@@ -174,12 +183,11 @@ export const useUpdateSubUser = () => {
       branch_ids?: string[];
       permissions?: Partial<SubUserPermissions>;
     }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
+      const accessToken = await getAccessTokenWithRetry();
 
       const { data: result, error } = await supabase.functions.invoke("update-sub-user", {
         body: data,
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (error) throw error;
@@ -207,12 +215,11 @@ export const useDeleteSubUser = () => {
 
   return useMutation({
     mutationFn: async (sub_user_id: string) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
+      const accessToken = await getAccessTokenWithRetry();
 
       const { data: result, error } = await supabase.functions.invoke("delete-sub-user", {
         body: { sub_user_id },
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (error) throw error;
