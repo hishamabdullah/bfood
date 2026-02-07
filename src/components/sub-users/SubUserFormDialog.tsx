@@ -39,6 +39,9 @@ const formSchema = z.object({
   can_approve_order: z.boolean(),
   can_see_favorite_suppliers_only: z.boolean(),
   can_see_favorite_products_only: z.boolean(),
+  can_view_analytics: z.boolean(),
+  can_manage_branches: z.boolean(),
+  can_manage_templates: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -76,6 +79,9 @@ const SubUserFormDialog = ({
       can_approve_order: false,
       can_see_favorite_suppliers_only: false,
       can_see_favorite_products_only: false,
+      can_view_analytics: false,
+      can_manage_branches: false,
+      can_manage_templates: false,
     },
   });
 
@@ -96,6 +102,9 @@ const SubUserFormDialog = ({
           subUser.permissions?.can_see_favorite_suppliers_only ?? false,
         can_see_favorite_products_only:
           subUser.permissions?.can_see_favorite_products_only ?? false,
+        can_view_analytics: subUser.permissions?.can_view_analytics ?? false,
+        can_manage_branches: subUser.permissions?.can_manage_branches ?? false,
+        can_manage_templates: subUser.permissions?.can_manage_templates ?? false,
       });
     } else {
       form.reset({
@@ -111,6 +120,9 @@ const SubUserFormDialog = ({
         can_approve_order: false,
         can_see_favorite_suppliers_only: false,
         can_see_favorite_products_only: false,
+        can_view_analytics: false,
+        can_manage_branches: false,
+        can_manage_templates: false,
       });
     }
   }, [subUser, form]);
@@ -124,6 +136,9 @@ const SubUserFormDialog = ({
       can_approve_order: data.can_approve_order,
       can_see_favorite_suppliers_only: data.can_see_favorite_suppliers_only,
       can_see_favorite_products_only: data.can_see_favorite_products_only,
+      can_view_analytics: data.can_view_analytics,
+      can_manage_branches: data.can_manage_branches,
+      can_manage_templates: data.can_manage_templates,
     };
 
     try {
@@ -402,6 +417,73 @@ const SubUserFormDialog = ({
                           <FormLabel>تقييد المنتجات</FormLabel>
                           <FormDescription>
                             رؤية المنتجات المفضلة فقط
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="border-t pt-4 mt-2">
+                    <h5 className="font-medium mb-3 text-sm text-muted-foreground">صلاحيات إضافية</h5>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="can_view_analytics"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between">
+                        <div>
+                          <FormLabel>رؤية التقارير</FormLabel>
+                          <FormDescription>
+                            الوصول لصفحة التحليلات والإحصائيات
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="can_manage_branches"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between">
+                        <div>
+                          <FormLabel>إدارة الفروع</FormLabel>
+                          <FormDescription>
+                            إضافة وتعديل فروع المطعم
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="can_manage_templates"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between">
+                        <div>
+                          <FormLabel>قوالب الطلبات</FormLabel>
+                          <FormDescription>
+                            إنشاء واستخدام قوالب الطلبات
                           </FormDescription>
                         </div>
                         <FormControl>

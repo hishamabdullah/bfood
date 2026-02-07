@@ -9,7 +9,9 @@ interface CreateOrderParams {
   notes?: string;
   branchId?: string;
   supplierDeliveryFees?: Record<string, { fee: number; reason: string }>;
-  supplierPickupStatus?: Record<string, boolean>; // per-supplier pickup status
+  supplierPickupStatus?: Record<string, boolean>;
+  createdByUserId?: string;
+  createdByName?: string;
 }
 
 export const useCreateOrder = () => {
@@ -17,7 +19,7 @@ export const useCreateOrder = () => {
   const { user, profile } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ items, deliveryAddress, notes, branchId, supplierDeliveryFees = {}, supplierPickupStatus = {} }: CreateOrderParams) => {
+    mutationFn: async ({ items, deliveryAddress, notes, branchId, supplierDeliveryFees = {}, supplierPickupStatus = {}, createdByUserId, createdByName }: CreateOrderParams) => {
       if (!user) throw new Error("يجب تسجيل الدخول أولاً");
 
       // Check if ALL suppliers are pickup
@@ -43,19 +45,27 @@ export const useCreateOrder = () => {
       );
       const totalAmount = subtotal + totalDeliveryFee;
 
-      // Create order
+      // Create order with creator info
+      const orderData: any = {
+        restaurant_id: user.id,
+        total_amount: totalAmount,
+        delivery_fee: totalDeliveryFee,
+        delivery_address: allPickup ? null : deliveryAddress,
+        notes,
+        status: "pending",
+        branch_id: allPickup ? null : (branchId || null),
+        is_pickup: allPickup,
+      };
+
+      // إضافة معلومات منشئ الطلب إذا كان موظفاً
+      if (createdByUserId) {
+        orderData.created_by_user_id = createdByUserId;
+        orderData.created_by_name = createdByName || null;
+      }
+
       const { data: order, error: orderError } = await supabase
         .from("orders")
-        .insert({
-          restaurant_id: user.id,
-          total_amount: totalAmount,
-          delivery_fee: totalDeliveryFee,
-          delivery_address: allPickup ? null : deliveryAddress,
-          notes,
-          status: "pending",
-          branch_id: allPickup ? null : (branchId || null),
-          is_pickup: allPickup,
-        })
+        .insert(orderData)
         .select()
         .single();
 

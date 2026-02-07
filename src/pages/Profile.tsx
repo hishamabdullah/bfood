@@ -51,6 +51,8 @@ import ServiceAreasSelector from "@/components/auth/ServiceAreasSelector";
 import { useUserSettings, useUpdateUserSettings } from "@/hooks/useUserSettings";
 import { useHasFeature } from "@/hooks/useRestaurantAccess";
 import AccountManagerInfo from "@/components/profile/AccountManagerInfo";
+import SubUserProfileView from "@/components/profile/SubUserProfileView";
+import { useSubUserContext } from "@/hooks/useSubUserContext";
 
 // Sound Settings Component
 const SoundSettings = () => {
@@ -116,6 +118,7 @@ const Profile = () => {
   const { id } = useParams();
   const { user, userRole, profile: authProfile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { data: subUserContext, isLoading: subUserLoading } = useSubUserContext();
   
   const isOwnProfile = !id || id === user?.id;
   const targetUserId = id || user?.id;
@@ -339,10 +342,33 @@ const Profile = () => {
     }
   };
 
-  if (authLoading || isLoading) {
+  if (authLoading || isLoading || subUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // إذا كان المستخدم موظفاً فرعياً، عرض صفحة الملف الشخصي المخصصة
+  if (isOwnProfile && subUserContext?.isSubUser) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1">
+          <div className="container py-8 max-w-2xl">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Store className="h-8 w-8 text-primary" />
+                <h1 className="text-3xl font-bold">{t("profile.title")}</h1>
+                <Badge variant="secondary">موظف</Badge>
+              </div>
+              <p className="text-muted-foreground">بياناتك وصلاحياتك في النظام</p>
+            </div>
+            <SubUserProfileView />
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }

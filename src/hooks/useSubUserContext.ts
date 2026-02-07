@@ -14,6 +14,9 @@ export interface SubUserContext {
     can_cancel_order: boolean;
     can_approve_order: boolean;
     can_see_order_totals: boolean;
+    can_view_analytics: boolean;
+    can_manage_branches: boolean;
+    can_manage_templates: boolean;
   } | null;
   allowedBranchIds: string[];
 }
@@ -69,6 +72,9 @@ export const useSubUserContext = () => {
             can_cancel_order: permData.can_cancel_order ?? true,
             can_approve_order: permData.can_approve_order ?? false,
             can_see_order_totals: permData.can_see_order_totals ?? true,
+            can_view_analytics: (permData as any).can_view_analytics ?? false,
+            can_manage_branches: (permData as any).can_manage_branches ?? false,
+            can_manage_templates: (permData as any).can_manage_templates ?? false,
           }
         : null;
 

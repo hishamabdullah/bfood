@@ -55,6 +55,8 @@ interface Order {
   notes?: string;
   branch?: Branch | null;
   order_items?: OrderItem[];
+  created_by_name?: string | null;
+  created_by_user_id?: string | null;
 }
 
 interface SupplierGroup {
@@ -188,11 +190,17 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
               </CollapsibleTrigger>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="font-bold text-sm">#{order.id.slice(0, 8)}</span>
                   <span className="text-xs text-muted-foreground">
                     {format(new Date(order.created_at), "dd/MM/yyyy", { locale: currentLocale })}
                   </span>
+                  {order.created_by_name && (
+                    <Badge variant="outline" className="text-xs gap-1">
+                      <User className="h-3 w-3" />
+                      {order.created_by_name}
+                    </Badge>
+                  )}
                 </div>
                 {/* عرض الموردين مع حالاتهم في سطر واحد */}
                 <div className="flex items-center gap-3 flex-wrap">
