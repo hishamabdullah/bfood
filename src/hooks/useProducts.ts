@@ -13,9 +13,10 @@ export type Product = Tables<"products"> & {
 
 const PRODUCTS_PER_PAGE = 12;
 
-export const useProducts = (categoryId?: string, subcategoryId?: string) => {
+export const useProducts = (categoryId?: string, subcategoryId?: string, enabled: boolean = true) => {
   return useInfiniteQuery({
     queryKey: ["products", categoryId, subcategoryId],
+    enabled,
     queryFn: async ({ pageParam = 0 }) => {
       const from = pageParam * PRODUCTS_PER_PAGE;
       const to = from + PRODUCTS_PER_PAGE - 1;
