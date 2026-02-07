@@ -50,6 +50,7 @@ import { withTimeout } from "@/lib/withTimeout";
 import ServiceAreasSelector from "@/components/auth/ServiceAreasSelector";
 import { useUserSettings, useUpdateUserSettings } from "@/hooks/useUserSettings";
 import { useHasFeature } from "@/hooks/useRestaurantAccess";
+import AccountManagerInfo from "@/components/profile/AccountManagerInfo";
 
 // Sound Settings Component
 const SoundSettings = () => {
@@ -113,7 +114,7 @@ const SoundSettings = () => {
 const Profile = () => {
   const { t } = useTranslation();
   const { id } = useParams();
-  const { user, userRole, profile: authProfile, loading: authLoading } = useAuth();
+  const { user, userRole, profile: authProfile, loading: authLoading, isSubUser, subUserInfo } = useAuth();
   const navigate = useNavigate();
   
   const isOwnProfile = !id || id === user?.id;
@@ -381,6 +382,13 @@ const Profile = () => {
               {isOwnProfile ? t("profile.updateInfo") : `${isSupplier ? t("auth.supplier") : t("auth.restaurant")}`}
             </p>
           </div>
+
+          {/* معلومات مدير الحساب للمستخدم الفرعي */}
+          {isSubUser && subUserInfo?.restaurant_id && isOwnProfile && (
+            <div className="mb-6">
+              <AccountManagerInfo restaurantId={subUserInfo.restaurant_id} />
+            </div>
+          )}
 
           {/* Profile Card */}
           <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
