@@ -5,48 +5,57 @@ import { toast } from "sonner";
 import { userDataQueryOptions } from "@/lib/queryConfig";
 
 export const useFavoriteProducts = () => {
-  const { user } = useAuth();
+  const { user, isSubUser, subUserInfo } = useAuth();
+  
+  // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
+  const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   return useQuery({
-    queryKey: ["favorite-products", user?.id],
+    queryKey: ["favorite-products", ownerId],
     queryFn: async () => {
-      if (!user) return [];
+      if (!ownerId) return [];
       const { data, error } = await supabase
         .from("favorite_products")
         .select("product_id")
-        .eq("user_id", user.id);
+        .eq("user_id", ownerId);
 
       if (error) throw error;
       return data.map((f) => f.product_id);
     },
-    enabled: !!user,
+    enabled: !!ownerId,
     ...userDataQueryOptions,
   });
 };
 
 export const useFavoriteSuppliers = () => {
-  const { user } = useAuth();
+  const { user, isSubUser, subUserInfo } = useAuth();
+  
+  // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
+  const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   return useQuery({
-    queryKey: ["favorite-suppliers", user?.id],
+    queryKey: ["favorite-suppliers", ownerId],
     queryFn: async () => {
-      if (!user) return [];
+      if (!ownerId) return [];
       const { data, error } = await supabase
         .from("favorite_suppliers")
         .select("supplier_id")
-        .eq("user_id", user.id);
+        .eq("user_id", ownerId);
 
       if (error) throw error;
       return data.map((f) => f.supplier_id);
     },
-    enabled: !!user,
+    enabled: !!ownerId,
     ...userDataQueryOptions,
   });
 };
 
 export const useToggleFavoriteProduct = () => {
-  const { user } = useAuth();
+  const { user, isSubUser, subUserInfo } = useAuth();
   const queryClient = useQueryClient();
+  
+  // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
+  const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   return useMutation({
     mutationFn: async ({
@@ -56,19 +65,19 @@ export const useToggleFavoriteProduct = () => {
       productId: string;
       isFavorite: boolean;
     }) => {
-      if (!user) throw new Error("يجب تسجيل الدخول");
+      if (!ownerId) throw new Error("يجب تسجيل الدخول");
 
       if (isFavorite) {
         const { error } = await supabase
           .from("favorite_products")
           .delete()
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .eq("product_id", productId);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("favorite_products")
-          .insert({ user_id: user.id, product_id: productId });
+          .insert({ user_id: ownerId, product_id: productId });
         if (error) throw error;
       }
     },
@@ -83,8 +92,11 @@ export const useToggleFavoriteProduct = () => {
 };
 
 export const useToggleFavoriteSupplier = () => {
-  const { user } = useAuth();
+  const { user, isSubUser, subUserInfo } = useAuth();
   const queryClient = useQueryClient();
+  
+  // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
+  const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   return useMutation({
     mutationFn: async ({
@@ -94,19 +106,19 @@ export const useToggleFavoriteSupplier = () => {
       supplierId: string;
       isFavorite: boolean;
     }) => {
-      if (!user) throw new Error("يجب تسجيل الدخول");
+      if (!ownerId) throw new Error("يجب تسجيل الدخول");
 
       if (isFavorite) {
         const { error } = await supabase
           .from("favorite_suppliers")
           .delete()
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .eq("supplier_id", supplierId);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("favorite_suppliers")
-          .insert({ user_id: user.id, supplier_id: supplierId });
+          .insert({ user_id: ownerId, supplier_id: supplierId });
         if (error) throw error;
       }
     },

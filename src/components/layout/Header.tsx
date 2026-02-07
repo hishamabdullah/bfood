@@ -19,7 +19,7 @@ import {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, userRole, profile, signOut } = useAuth();
+  const { user, userRole, profile, signOut, isSubUser } = useAuth();
   const { getItemCount } = useCart();
   const { data: siteSettings } = useSiteSettings();
   const { data: features } = useRestaurantAccess();
@@ -36,7 +36,8 @@ const Header = () => {
   const canUseTemplates = features?.can_use_templates ?? false;
   const canViewAnalytics = features?.can_view_analytics ?? false;
   const canUseFavorites = features?.can_use_favorites ?? true;
-  const canManageSubUsers = features?.can_manage_sub_users ?? false;
+  // المستخدم الفرعي لا يمكنه إدارة المستخدمين الفرعيين أو الاشتراك
+  const canManageSubUsers = !isSubUser && (features?.can_manage_sub_users ?? false);
 
   const handleSignOut = async () => {
     try {
@@ -177,12 +178,14 @@ const Header = () => {
                         </Link>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem asChild>
-                      <Link to="/my-subscription" className="cursor-pointer">
-                        <CreditCard className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                        {t("nav.mySubscription", "اشتراكي")}
-                      </Link>
-                    </DropdownMenuItem>
+                    {!isSubUser && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/my-subscription" className="cursor-pointer">
+                          <CreditCard className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                          {t("nav.mySubscription", "اشتراكي")}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {canManageSubUsers && (
                       <DropdownMenuItem asChild>
                         <Link to="/sub-users" className="cursor-pointer">
@@ -355,12 +358,14 @@ const Header = () => {
                           </Button>
                         </Link>
                       )}
-                      <Link to="/my-subscription" onClick={() => setIsMenuOpen(false)}>
-                        <Button variant="outline" className="w-full gap-2">
-                          <CreditCard className="h-4 w-4" />
-                          {t("nav.mySubscription", "اشتراكي")}
-                        </Button>
-                      </Link>
+                      {!isSubUser && (
+                        <Link to="/my-subscription" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" className="w-full gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            {t("nav.mySubscription", "اشتراكي")}
+                          </Button>
+                        </Link>
+                      )}
                       {canManageSubUsers && (
                         <Link to="/sub-users" onClick={() => setIsMenuOpen(false)}>
                           <Button variant="outline" className="w-full gap-2">
