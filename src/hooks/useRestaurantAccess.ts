@@ -36,17 +36,20 @@ const defaultFeatures: RestaurantAccessFeatures = {
 
 // Hook للتحقق من ميزات المطعم الحالي
 export const useRestaurantAccess = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, isSubUser, subUserInfo } = useAuth();
+  
+  // استخدام معرف المطعم الأصلي للمستخدم الفرعي
+  const restaurantId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   return useQuery({
-    queryKey: ["restaurant-access", user?.id],
+    queryKey: ["restaurant-access", restaurantId],
     queryFn: async () => {
-      if (!user?.id) return defaultFeatures;
+      if (!restaurantId) return defaultFeatures;
 
       const { data, error } = await supabase
         .from("restaurant_features")
         .select("*")
-        .eq("restaurant_id", user.id)
+        .eq("restaurant_id", restaurantId)
         .single();
 
       if (error) {
@@ -73,7 +76,7 @@ export const useRestaurantAccess = () => {
         subscription_end_date: data.subscription_end_date,
       } as RestaurantAccessFeatures;
     },
-    enabled: !!user?.id && userRole === "restaurant",
+    enabled: !!restaurantId && userRole === "restaurant",
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

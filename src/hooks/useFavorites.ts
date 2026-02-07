@@ -3,12 +3,40 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { userDataQueryOptions } from "@/lib/queryConfig";
+import { useEffect } from "react";
 
 export const useFavoriteProducts = () => {
   const { user, isSubUser, subUserInfo } = useAuth();
+  const queryClient = useQueryClient();
   
   // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
   const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
+
+  // الاشتراك في التحديثات الفورية
+  useEffect(() => {
+    if (!ownerId) return;
+
+    const channel = supabase
+      .channel(`favorite-products-${ownerId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "favorite_products",
+          filter: `user_id=eq.${ownerId}`,
+        },
+        () => {
+          // تحديث الكاش فوراً عند أي تغيير
+          queryClient.invalidateQueries({ queryKey: ["favorite-products", ownerId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [ownerId, queryClient]);
 
   return useQuery({
     queryKey: ["favorite-products", ownerId],
@@ -29,9 +57,35 @@ export const useFavoriteProducts = () => {
 
 export const useFavoriteSuppliers = () => {
   const { user, isSubUser, subUserInfo } = useAuth();
+  const queryClient = useQueryClient();
   
   // استخدام معرف المطعم الأصلي إذا كان المستخدم فرعياً
   const ownerId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
+
+  // الاشتراك في التحديثات الفورية
+  useEffect(() => {
+    if (!ownerId) return;
+
+    const channel = supabase
+      .channel(`favorite-suppliers-${ownerId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "favorite_suppliers",
+          filter: `user_id=eq.${ownerId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["favorite-suppliers", ownerId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [ownerId, queryClient]);
 
   return useQuery({
     queryKey: ["favorite-suppliers", ownerId],
