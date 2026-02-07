@@ -84,11 +84,20 @@ const clearAuthStorage = () => {
 
 type UserRole = "admin" | "restaurant" | "supplier";
 
+interface SubUserInfo {
+  id: string;
+  restaurant_id: string;
+  full_name: string;
+  is_active: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: UserRole | null;
   isApproved: boolean;
+  isSubUser: boolean;
+  subUserInfo: SubUserInfo | null;
   profile: {
     full_name: string;
     business_name: string;
@@ -123,6 +132,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isApproved, setIsApproved] = useState<boolean>(false);
+  const [isSubUser, setIsSubUser] = useState<boolean>(false);
+  const [subUserInfo, setSubUserInfo] = useState<SubUserInfo | null>(null);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
@@ -163,7 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // before running PostgREST queries that depend on the auth header.
       await waitForAuthReady(userId);
 
-      const [roleResult, profileResult] = await withTimeout(
+      const [roleResult, profileResult, subUserResult] = await withTimeout(
         Promise.all([
           supabase
             .from("user_roles")
@@ -175,6 +186,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .select("full_name, business_name, phone, avatar_url, is_approved")
             .eq("user_id", userId)
             .maybeSingle(),
+          // التحقق إذا كان المستخدم مستخدم فرعي
+          supabase
+            .from("restaurant_sub_users")
+            .select("id, restaurant_id, full_name, is_active")
+            .eq("user_id", userId)
+            .eq("is_active", true)
+            .maybeSingle(),
         ]),
         USERDATA_TIMEOUT_MS,
         "fetchUserData timeout"
@@ -182,23 +200,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (roleResult.error) throw roleResult.error;
       if (profileResult.error) throw profileResult.error;
+      // لا نرمي خطأ لـ subUserResult لأنه قد لا يكون موجوداً
 
       // بعض بيئات PostgREST قد تُرجع data كمصفوفة حتى مع maybeSingle.
       // نطبّعها هنا لضمان أن role/profile لا تبقى null بعد Refresh.
       const roleData = firstOrNull<any>((roleResult as any).data);
       const profileData = firstOrNull<any>((profileResult as any).data);
+      const subUserData = firstOrNull<any>((subUserResult as any).data);
 
       let approved = false;
       let fetchedRole: UserRole | null = null;
+      let isSubUserFlag = false;
+      let subUserInfoData: SubUserInfo | null = null;
       
-      if (roleData?.role) {
+      // التحقق إذا كان مستخدم فرعي
+      if (subUserData && subUserData.is_active) {
+        isSubUserFlag = true;
+        subUserInfoData = {
+          id: subUserData.id,
+          restaurant_id: subUserData.restaurant_id,
+          full_name: subUserData.full_name,
+          is_active: subUserData.is_active,
+        };
+        // المستخدم الفرعي يُعامل كمطعم
+        fetchedRole = "restaurant";
+        approved = true; // المستخدم الفرعي معتمد تلقائياً إذا كان نشطاً
+      } else if (roleData?.role) {
         fetchedRole = roleData.role as UserRole;
         if (fetchedRole === "admin" || fetchedRole === "supplier") {
           approved = true;
         }
       }
 
-      if (profileData) {
+      if (profileData && !isSubUserFlag) {
         if (fetchedRole === "restaurant") {
           approved = profileData.is_approved === true;
         } else if (fetchedRole === "admin" || fetchedRole === "supplier") {
@@ -208,17 +242,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setUserRole(fetchedRole);
       setIsApproved(approved);
+      setIsSubUser(isSubUserFlag);
+      setSubUserInfo(subUserInfoData);
       // لا نُثبّت الكاش إلا إذا نجحت الاستعلامات
       lastFetchedUserIdRef.current = userId;
       
-      const newProfile = profileData
-        ? {
-            full_name: profileData.full_name ?? "",
-            business_name: profileData.business_name ?? "",
-            phone: profileData.phone ?? null,
-            avatar_url: profileData.avatar_url ?? null,
-          }
-        : null;
+      // للمستخدم الفرعي، جلب بيانات المطعم الأصلي
+      let newProfile = null;
+      if (isSubUserFlag && subUserData) {
+        // جلب بيانات الملف الشخصي للمطعم الأصلي
+        const { data: parentProfile } = await supabase
+          .from("profiles")
+          .select("full_name, business_name, phone, avatar_url")
+          .eq("user_id", subUserData.restaurant_id)
+          .maybeSingle();
+        
+        const parentData = firstOrNull<any>(parentProfile);
+        newProfile = parentData
+          ? {
+              full_name: subUserData.full_name, // اسم المستخدم الفرعي
+              business_name: parentData.business_name ?? "", // اسم المطعم
+              phone: parentData.phone ?? null,
+              avatar_url: parentData.avatar_url ?? null,
+            }
+          : {
+              full_name: subUserData.full_name,
+              business_name: "",
+              phone: null,
+              avatar_url: null,
+            };
+      } else if (profileData) {
+        newProfile = {
+          full_name: profileData.full_name ?? "",
+          business_name: profileData.business_name ?? "",
+          phone: profileData.phone ?? null,
+          avatar_url: profileData.avatar_url ?? null,
+        };
+      }
 
       // حدّث الحالة حتى لو null لضمان عدم بقاء بيانات قديمة/ناقصة.
       setProfile(newProfile);
@@ -539,6 +599,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         session,
         userRole,
         isApproved,
+        isSubUser,
+        subUserInfo,
         profile,
         loading,
         signUp,

@@ -10,12 +10,15 @@ export interface RestaurantStats {
 }
 
 export const useRestaurantStats = () => {
-  const { user } = useAuth();
+  const { user, isSubUser, subUserInfo } = useAuth();
+
+  // استخدم restaurant_id من المستخدم الفرعي أو user.id للمالك
+  const restaurantId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   return useQuery({
-    queryKey: ["restaurant-stats", user?.id],
+    queryKey: ["restaurant-stats", restaurantId],
     queryFn: async (): Promise<RestaurantStats> => {
-      if (!user) {
+      if (!restaurantId) {
         return { totalOrders: 0, pendingOrders: 0, totalPurchases: 0 };
       }
 
@@ -25,18 +28,18 @@ export const useRestaurantStats = () => {
         supabase
           .from("orders")
           .select("*", { count: "exact", head: true })
-          .eq("restaurant_id", user.id),
+          .eq("restaurant_id", restaurantId),
         // الطلبات قيد التنفيذ
         supabase
           .from("orders")
           .select("*", { count: "exact", head: true })
-          .eq("restaurant_id", user.id)
+          .eq("restaurant_id", restaurantId)
           .not("status", "in", '("delivered","cancelled")'),
         // إجمالي المشتريات
         supabase
           .from("orders")
           .select("total_amount")
-          .eq("restaurant_id", user.id)
+          .eq("restaurant_id", restaurantId)
           .eq("status", "delivered"),
       ]);
 
@@ -51,7 +54,7 @@ export const useRestaurantStats = () => {
         totalPurchases,
       };
     },
-    enabled: !!user,
+    enabled: !!restaurantId,
     ...realtimeQueryOptions,
   });
 };

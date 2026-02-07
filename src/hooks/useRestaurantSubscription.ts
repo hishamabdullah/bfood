@@ -20,19 +20,22 @@ export interface SubscriptionStatus {
 }
 
 export const useRestaurantSubscription = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, isSubUser, subUserInfo } = useAuth();
+
+  // استخدم restaurant_id من المستخدم الفرعي أو user.id للمالك
+  const restaurantId = isSubUser && subUserInfo ? subUserInfo.restaurant_id : user?.id;
 
   return useQuery({
-    queryKey: ["restaurant-subscription", user?.id],
+    queryKey: ["restaurant-subscription", restaurantId],
     queryFn: async (): Promise<SubscriptionStatus> => {
-      if (!user?.id) {
+      if (!restaurantId) {
         return getDefaultStatus();
       }
 
       const { data, error } = await supabase
         .from("restaurant_features")
         .select("*")
-        .eq("restaurant_id", user.id)
+        .eq("restaurant_id", restaurantId)
         .maybeSingle();
 
       if (error) {
@@ -89,7 +92,7 @@ export const useRestaurantSubscription = () => {
         },
       };
     },
-    enabled: !!user?.id && userRole === "restaurant",
+    enabled: !!restaurantId && userRole === "restaurant",
     staleTime: 5 * 60 * 1000, // 5 دقائق
     gcTime: 10 * 60 * 1000, // 10 دقائق
   });
