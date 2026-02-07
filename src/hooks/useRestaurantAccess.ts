@@ -14,6 +14,7 @@ export interface RestaurantAccessFeatures {
   can_manage_sub_users: boolean;
   max_orders_per_month: number | null;
   max_sub_users: number;
+  max_notes_chars: number | null;
   subscription_type: string;
   subscription_end_date: string | null;
 }
@@ -30,6 +31,7 @@ const defaultFeatures: RestaurantAccessFeatures = {
   can_manage_sub_users: false,
   max_orders_per_month: null,
   max_sub_users: 3,
+  max_notes_chars: 500,
   subscription_type: "basic",
   subscription_end_date: null,
 };
@@ -74,6 +76,7 @@ export const useRestaurantAccess = () => {
         can_manage_sub_users: data.can_manage_sub_users ?? false,
         max_orders_per_month: data.max_orders_per_month,
         max_sub_users: data.max_sub_users ?? 3,
+        max_notes_chars: (data as any).max_notes_chars ?? 500,
         subscription_type: data.subscription_type,
         subscription_end_date: data.subscription_end_date,
       } as RestaurantAccessFeatures;
@@ -123,6 +126,28 @@ export const useIsRestaurantActive = () => {
 
   return {
     isActive: features?.is_active ?? true,
+    isLoading,
+  };
+};
+
+// Hook للحصول على الحد الأقصى لأحرف الملاحظات
+export const useMaxNotesChars = () => {
+  const { data: features, isLoading } = useRestaurantAccess();
+  const { userRole } = useAuth();
+
+  // المدير والمورد لديهم حد افتراضي كبير
+  if (userRole === "admin" || userRole === "supplier") {
+    return { maxChars: 1000, isLoading: false };
+  }
+  
+  const isRestaurantUser = userRole === "restaurant";
+  
+  if (!isRestaurantUser || isLoading || !features) {
+    return { maxChars: 500, isLoading };
+  }
+
+  return {
+    maxChars: features.max_notes_chars ?? 500,
     isLoading,
   };
 };

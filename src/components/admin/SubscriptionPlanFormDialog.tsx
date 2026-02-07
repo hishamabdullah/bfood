@@ -44,6 +44,7 @@ const planSchema = z.object({
   max_orders_per_month: z.coerce.number().nullable(),
   max_sub_users: z.coerce.number().nullable(),
   max_branches: z.coerce.number().nullable(),
+  max_notes_chars: z.coerce.number().nullable(),
   is_active: z.boolean(),
 });
 
@@ -80,12 +81,13 @@ const SubscriptionPlanFormDialog = ({
       can_use_custom_prices: false,
       can_repeat_orders: true,
       can_manage_sub_users: false,
-      max_orders_per_month: null,
-      max_sub_users: 3,
-      max_branches: 1,
-      is_active: true,
-    },
-  });
+        max_orders_per_month: null,
+        max_sub_users: 3,
+        max_branches: 1,
+        max_notes_chars: 500,
+        is_active: true,
+      },
+    });
 
   useEffect(() => {
     if (existingPlan) {
@@ -106,6 +108,7 @@ const SubscriptionPlanFormDialog = ({
         max_orders_per_month: existingPlan.max_orders_per_month,
         max_sub_users: existingPlan.max_sub_users,
         max_branches: existingPlan.max_branches,
+        max_notes_chars: (existingPlan as any).max_notes_chars ?? 500,
         is_active: existingPlan.is_active,
       });
     } else if (!planId) {
@@ -126,6 +129,7 @@ const SubscriptionPlanFormDialog = ({
         max_orders_per_month: null,
         max_sub_users: 3,
         max_branches: 1,
+        max_notes_chars: 500,
         is_active: true,
       });
     }
@@ -153,8 +157,9 @@ const SubscriptionPlanFormDialog = ({
           max_orders_per_month: values.max_orders_per_month,
           max_sub_users: values.max_sub_users,
           max_branches: values.max_branches,
+          max_notes_chars: values.max_notes_chars,
           is_active: values.is_active,
-        });
+        } as any);
       }
       onOpenChange(false);
     } catch (error) {
@@ -333,6 +338,29 @@ const SubscriptionPlanFormDialog = ({
                         <Input
                           type="number"
                           min="1"
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? Number(e.target.value) : null)
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="max_notes_chars"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الحد الأقصى لأحرف الملاحظات</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="50"
+                          placeholder="مثال: 500"
                           {...field}
                           value={field.value ?? ""}
                           onChange={(e) =>
