@@ -18,6 +18,7 @@ export interface SubUser {
   user_id: string;
   full_name: string;
   phone: string | null;
+  email: string | null;
   is_active: boolean;
   created_at: string;
   permissions: SubUserPermissions | null;
@@ -73,6 +74,7 @@ export const useSubUsers = () => {
         user_id: su.user_id,
         full_name: su.full_name,
         phone: su.phone,
+        email: (su as any).email || null,
         is_active: su.is_active ?? true,
         created_at: su.created_at ?? "",
         permissions: permissionsMap.get(su.id)

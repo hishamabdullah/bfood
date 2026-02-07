@@ -130,6 +130,7 @@ Deno.serve(async (req) => {
         restaurant_id: callerUser.id,
         full_name,
         phone: phone || null,
+        email,
         is_active: true,
       })
       .select()
