@@ -53,6 +53,7 @@ interface OrderItem {
     name: string;
     image_url?: string;
     unit?: string;
+    sku?: string | null;
   } | null;
 }
 
@@ -620,9 +621,16 @@ const CollapsibleSupplierOrderCard = memo(({
                               <Package className="h-5 w-5 text-muted-foreground" />
                             </div>
                           )}
-                          <p className="font-semibold text-foreground line-clamp-2">
-                            {item.product?.name || t("orders.deletedProduct")}
-                          </p>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground line-clamp-2">
+                              {item.product?.name || t("orders.deletedProduct")}
+                            </p>
+                            {item.product?.sku && (
+                              <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                                SKU: {item.product.sku}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         
                         {/* Quantity */}
@@ -671,9 +679,14 @@ const CollapsibleSupplierOrderCard = memo(({
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-foreground mb-2">
+                            <p className="font-semibold text-foreground mb-1">
                               {item.product?.name || t("orders.deletedProduct")}
                             </p>
+                            {item.product?.sku && (
+                              <p className="text-xs text-muted-foreground font-mono mb-2">
+                                SKU: {item.product.sku}
+                              </p>
+                            )}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <span className="inline-flex items-center justify-center px-3 py-1 bg-primary/10 text-primary font-bold rounded-lg">

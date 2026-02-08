@@ -97,7 +97,7 @@ export const useSupplierOrders = () => {
           delivery_fee,
           invoice_url,
           created_at,
-          product:products(id, name, image_url, unit, price),
+          product:products(id, name, image_url, unit, price, sku),
           order:orders(id, restaurant_id, status, total_amount, delivery_fee, delivery_address, notes, created_at, is_pickup, branch:branches(id, name, address, google_maps_url))
         `)
         .eq("supplier_id", user.id)
