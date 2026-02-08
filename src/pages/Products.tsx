@@ -442,8 +442,8 @@ const Products = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedSection("all")}
-                  className={`whitespace-nowrap border-secondary text-secondary-foreground hover:bg-secondary/15 ${
-                    selectedSection === "all" ? "bg-secondary/25 font-semibold" : ""
+                  className={`whitespace-nowrap bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/15 ${
+                    selectedSection === "all" ? "bg-green-500/20 font-semibold" : ""
                   }`}
                 >
                   {t("common.all")}
@@ -459,8 +459,8 @@ const Products = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedSection(sec.id)}
-                      className={`whitespace-nowrap border-secondary text-secondary-foreground hover:bg-secondary/15 ${
-                        selectedSection === sec.id ? "bg-secondary/25 font-semibold" : ""
+                      className={`whitespace-nowrap bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/15 ${
+                        selectedSection === sec.id ? "bg-green-500/20 font-semibold" : ""
                       }`}
                     >
                       {getSectionName(sec, i18n.language)}
