@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
 import { withTimeout } from "@/lib/withTimeout";
 import { dynamicQueryOptions } from "@/lib/queryConfig";
+import { useSubUserContext, useEffectiveRestaurantId } from "@/hooks/useSubUserContext";
 
 export type OrderItem = Tables<"order_items"> & {
   product?: Tables<"products"> | null;
@@ -19,6 +20,8 @@ export type Order = Tables<"orders"> & {
 export const useRestaurantOrders = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { data: subUserContext } = useSubUserContext();
+  const { restaurantId: effectiveRestaurantId } = useEffectiveRestaurantId();
 
   // Realtime subscription لتحديث البيانات فوراً بعد التعديل
   useEffect(() => {
@@ -65,36 +68,44 @@ export const useRestaurantOrders = () => {
   }, [user, queryClient]);
 
   return useQuery({
-    queryKey: ["restaurant-orders", user?.id],
+    queryKey: ["restaurant-orders", effectiveRestaurantId, subUserContext?.isSubUser, user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user || !effectiveRestaurantId) return [];
+
+      // بناء الاستعلام الأساسي
+      let query = supabase
+        .from("orders")
+        .select(`
+          *,
+          branch:branches(id, name, address),
+          order_items (
+            id,
+            product_id,
+            supplier_id,
+            quantity,
+            unit_price,
+            status,
+            delivery_fee,
+            invoice_url,
+            product:products (
+              id,
+              name,
+              image_url,
+              unit,
+              delivery_fee
+            )
+          )
+        `)
+        .eq("restaurant_id", effectiveRestaurantId)
+        .order("created_at", { ascending: false });
+
+      // إذا كان مستخدم فرعي، فلتر الطلبات التي أنشأها هو فقط
+      if (subUserContext?.isSubUser) {
+        query = query.eq("created_by_user_id", user.id);
+      }
 
       const { data, error } = await withTimeout(
-        supabase
-          .from("orders")
-          .select(`
-            *,
-            branch:branches(id, name, address),
-            order_items (
-              id,
-              product_id,
-              supplier_id,
-              quantity,
-              unit_price,
-              status,
-              delivery_fee,
-              invoice_url,
-              product:products (
-                id,
-                name,
-                image_url,
-                unit,
-                delivery_fee
-              )
-            )
-          `)
-          .eq("restaurant_id", user.id)
-          .order("created_at", { ascending: false }),
+        query,
         8000,
         "restaurant-orders timeout"
       );
@@ -140,7 +151,7 @@ export const useRestaurantOrders = () => {
 
       return ordersWithSuppliers as Order[];
     },
-    enabled: !!user,
+    enabled: !!user && !!effectiveRestaurantId,
     retry: 1,
     ...dynamicQueryOptions,
   });
