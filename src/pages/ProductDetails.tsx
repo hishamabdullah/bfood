@@ -172,7 +172,7 @@ const ProductDetails = () => {
                 <h1 className="text-3xl font-bold mb-2">{productName}</h1>
                 {product.supplier_profile && (
                   <Link 
-                    to={`/suppliers`} 
+                    to={`/store/${product.supplier_id}`} 
                     className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
                   >
                     <Store className="h-4 w-4" />
