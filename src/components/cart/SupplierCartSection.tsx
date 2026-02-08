@@ -48,7 +48,12 @@ export const SupplierCartSection = ({
     <div className="bg-card rounded-2xl border border-border overflow-hidden">
       {/* Supplier Header */}
       <div className="bg-muted/50 px-6 py-3 border-b border-border">
-        <h3 className="font-semibold">{group.supplierName}</h3>
+        <Link 
+          to={`/store/${supplierId}`}
+          className="font-semibold hover:text-primary transition-colors"
+        >
+          {group.supplierName}
+        </Link>
       </div>
 
       {/* Items */}
