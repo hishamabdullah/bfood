@@ -292,6 +292,8 @@ const Cart = () => {
         // إضافة معلومات منشئ الطلب إذا كان موظفاً
         createdByUserId: subUserContext?.isSubUser ? user?.id : undefined,
         createdByName: subUserContext?.isSubUser ? subUserName || undefined : undefined,
+        // تمرير معرف المطعم الفعلي (للمستخدم الفرعي)
+        effectiveRestaurantId: effectiveRestaurantId || undefined,
       });
 
       clearCart();
