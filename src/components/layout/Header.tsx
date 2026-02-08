@@ -196,6 +196,7 @@ const Header = () => {
                       <DropdownMenuItem asChild>
                         <Link to="/sub-users" className="cursor-pointer">
                           <Users className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                          {t("nav.subUsers", "إدارة المستخدمين")}
                         </Link>
                       </DropdownMenuItem>
                     )}
@@ -375,6 +376,7 @@ const Header = () => {
                         <Link to="/sub-users" onClick={() => setIsMenuOpen(false)}>
                           <Button variant="outline" className="w-full gap-2">
                             <Users className="h-4 w-4" />
+                            {t("nav.subUsers", "إدارة المستخدمين")}
                           </Button>
                         </Link>
                       )}
