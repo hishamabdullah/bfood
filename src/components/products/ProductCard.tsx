@@ -157,7 +157,7 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
             </Badge>
           </div>
 
-          <div className="flex items-center justify-between mt-4">
+          <div className="flex flex-col gap-3 mt-4">
             <div>
               {canSeePrices ? (
                 <>
@@ -178,9 +178,9 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
             </div>
             {/* Hide add to cart button if ordering is disabled */}
             {(!userRole || userRole !== "restaurant" || canOrder) && (
-              <Button size="sm" disabled={!product.in_stock} onClick={handleAddToCart}>
-                <Plus className="h-4 w-4" />
-                {t("products.addToCart")}
+              <Button size="sm" className="w-full text-xs sm:text-sm" disabled={!product.in_stock} onClick={handleAddToCart}>
+                <Plus className="h-4 w-4 shrink-0" />
+                <span className="truncate">{t("products.addToCart")}</span>
               </Button>
             )}
           </div>
