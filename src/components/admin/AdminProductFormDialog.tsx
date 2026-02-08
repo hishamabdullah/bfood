@@ -49,13 +49,19 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useCategories } from "@/hooks/useProducts";
+import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
+import { useSectionsBySubcategory, getSectionName } from "@/hooks/useSections";
+import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { Loader2, Globe, ChevronsUpDown, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
+import { useTranslation } from "react-i18next";
 
 type AdminProduct = Tables<"products"> & {
   category?: Tables<"categories"> | null;
+  subcategory?: Tables<"subcategories"> | null;
+  section?: Tables<"sections"> | null;
   supplier_profile?: Tables<"profiles"> | null;
 };
 
@@ -65,6 +71,8 @@ const productSchema = z.object({
   price: z.coerce.number().min(0.01, "السعر يجب أن يكون أكبر من صفر"),
   unit: z.string().min(1, "الوحدة مطلوبة"),
   category_id: z.string().optional(),
+  subcategory_id: z.string().optional(),
+  section_id: z.string().optional(),
   stock_quantity: z.coerce.number().min(0).default(0),
   unlimited_stock: z.boolean().default(false),
   country_of_origin: z.string().default("السعودية"),
@@ -174,11 +182,20 @@ export default function AdminProductFormDialog({
   onOpenChange,
   product,
 }: AdminProductFormDialogProps) {
+  const { i18n } = useTranslation();
+  const currentLang = i18n.language;
   const { data: categories } = useCategories();
   const { data: suppliers } = useSuppliers();
+  const { getCategoryName } = useCategoryTranslation();
   const updateProduct = useAdminUpdateProduct();
   const createProduct = useAdminCreateProduct();
   const isEditing = !!product;
+  
+  // Subcategory and Section states
+  const [subcategoryPopoverOpen, setSubcategoryPopoverOpen] = useState(false);
+  const [sectionPopoverOpen, setSectionPopoverOpen] = useState(false);
+  const [subcategorySearch, setSubcategorySearch] = useState("");
+  const [sectionSearch, setSectionSearch] = useState("");
   
   // Supplier search state
   const [supplierSearch, setSupplierSearch] = useState("");
@@ -212,6 +229,8 @@ export default function AdminProductFormDialog({
       price: 0,
       unit: "kg",
       category_id: "",
+      subcategory_id: "",
+      section_id: "",
       stock_quantity: 0,
       unlimited_stock: false,
       country_of_origin: "السعودية",
@@ -225,9 +244,54 @@ export default function AdminProductFormDialog({
     },
   });
 
+  const watchCategoryId = form.watch("category_id");
+  const watchSubcategoryId = form.watch("subcategory_id");
   const watchUnlimitedStock = form.watch("unlimited_stock");
 
+  // Fetch subcategories based on selected category
+  const { data: subcategories } = useSubcategoriesByCategory(watchCategoryId || null);
+  const { data: sections } = useSectionsBySubcategory(watchSubcategoryId || null);
+
+  // Filter subcategories based on search
+  const filteredSubcategories = useMemo(() => {
+    if (!subcategories) return [];
+    if (!subcategorySearch.trim()) return subcategories;
+    const search = subcategorySearch.toLowerCase();
+    return subcategories.filter((sub) =>
+      sub.name?.toLowerCase().includes(search) ||
+      sub.name_en?.toLowerCase().includes(search)
+    );
+  }, [subcategories, subcategorySearch]);
+
+  // Filter sections based on search
+  const filteredSections = useMemo(() => {
+    if (!sections) return [];
+    if (!sectionSearch.trim()) return sections;
+    const search = sectionSearch.toLowerCase();
+    return sections.filter((sec) =>
+      sec.name?.toLowerCase().includes(search) ||
+      sec.name_en?.toLowerCase().includes(search)
+    );
+  }, [sections, sectionSearch]);
+
+  // Get selected subcategory and section info
+  const selectedSubcategory = useMemo(() => {
+    const subId = form.watch("subcategory_id");
+    if (!subId || !subcategories) return null;
+    return subcategories.find((s) => s.id === subId);
+  }, [form.watch("subcategory_id"), subcategories]);
+
+  const selectedSection = useMemo(() => {
+    const secId = form.watch("section_id");
+    if (!secId || !sections) return null;
+    return sections.find((s) => s.id === secId);
+  }, [form.watch("section_id"), sections]);
+
   useEffect(() => {
+    // Reset search states when dialog opens
+    setSubcategorySearch("");
+    setSectionSearch("");
+    
     if (product) {
       form.reset({
         name: product.name,
@@ -235,6 +299,8 @@ export default function AdminProductFormDialog({
         price: product.price,
         unit: product.unit,
         category_id: product.category_id || "",
+        subcategory_id: product.subcategory_id || "",
+        section_id: product.section_id || "",
         stock_quantity: product.stock_quantity || 0,
         unlimited_stock: product.unlimited_stock || false,
         country_of_origin: product.country_of_origin || "السعودية",
@@ -253,6 +319,8 @@ export default function AdminProductFormDialog({
         price: 0,
         unit: "kg",
         category_id: "",
+        subcategory_id: "",
+        section_id: "",
         stock_quantity: 0,
         unlimited_stock: false,
         country_of_origin: "السعودية",
@@ -275,6 +343,8 @@ export default function AdminProductFormDialog({
         price: values.price,
         unit: values.unit,
         category_id: values.category_id || null,
+        subcategory_id: values.subcategory_id || null,
+        section_id: values.section_id || null,
         stock_quantity: values.unlimited_stock ? null : values.stock_quantity,
         unlimited_stock: values.unlimited_stock,
         country_of_origin: values.country_of_origin,
@@ -572,8 +642,16 @@ export default function AdminProductFormDialog({
                 name="category_id"
                 render={({ field }) => (
                   <FormItem className={watchUnlimitedStock ? "col-span-2" : ""}>
-                    <FormLabel>التصنيف</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <FormLabel>التصنيف الرئيسي</FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Reset subcategory and section when category changes
+                        form.setValue("subcategory_id", "");
+                        form.setValue("section_id", "");
+                      }} 
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="اختر التصنيف" />
@@ -582,7 +660,7 @@ export default function AdminProductFormDialog({
                       <SelectContent>
                         {categories?.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
+                            {getCategoryName(cat)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -592,6 +670,139 @@ export default function AdminProductFormDialog({
                 )}
               />
             </div>
+
+            {/* Subcategory Selection */}
+            {watchCategoryId && subcategories && subcategories.length > 0 && (
+              <FormField
+                control={form.control}
+                name="subcategory_id"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>القسم الفرعي</FormLabel>
+                    <Popover open={subcategoryPopoverOpen} onOpenChange={setSubcategoryPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {selectedSubcategory
+                              ? getSubcategoryName(selectedSubcategory, currentLang)
+                              : "اختر القسم الفرعي..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder="ابحث عن قسم فرعي..."
+                            value={subcategorySearch}
+                            onValueChange={setSubcategorySearch}
+                          />
+                          <CommandList>
+                            <CommandEmpty>لا توجد أقسام فرعية</CommandEmpty>
+                            <CommandGroup>
+                              {filteredSubcategories.map((sub) => (
+                                <CommandItem
+                                  key={sub.id}
+                                  value={`${sub.name} ${sub.name_en || ""}`}
+                                  onSelect={() => {
+                                    field.onChange(sub.id);
+                                    form.setValue("section_id", "");
+                                    setSubcategoryPopoverOpen(false);
+                                    setSubcategorySearch("");
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      field.value === sub.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {getSubcategoryName(sub, currentLang)}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Section Selection */}
+            {watchSubcategoryId && sections && sections.length > 0 && (
+              <FormField
+                control={form.control}
+                name="section_id"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>القسم الداخلي</FormLabel>
+                    <Popover open={sectionPopoverOpen} onOpenChange={setSectionPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {selectedSection
+                              ? getSectionName(selectedSection, currentLang)
+                              : "اختر القسم الداخلي..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder="ابحث عن قسم داخلي..."
+                            value={sectionSearch}
+                            onValueChange={setSectionSearch}
+                          />
+                          <CommandList>
+                            <CommandEmpty>لا توجد أقسام داخلية</CommandEmpty>
+                            <CommandGroup>
+                              {filteredSections.map((sec) => (
+                                <CommandItem
+                                  key={sec.id}
+                                  value={`${sec.name} ${sec.name_en || ""}`}
+                                  onSelect={() => {
+                                    field.onChange(sec.id);
+                                    setSectionPopoverOpen(false);
+                                    setSectionSearch("");
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      field.value === sec.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {getSectionName(sec, currentLang)}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
