@@ -12,6 +12,7 @@ interface CreateOrderParams {
   supplierPickupStatus?: Record<string, boolean>;
   createdByUserId?: string;
   createdByName?: string;
+  effectiveRestaurantId?: string; // معرف المطعم الفعلي (للمستخدم الفرعي)
 }
 
 export const useCreateOrder = () => {
@@ -19,8 +20,11 @@ export const useCreateOrder = () => {
   const { user, profile } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ items, deliveryAddress, notes, branchId, supplierDeliveryFees = {}, supplierPickupStatus = {}, createdByUserId, createdByName }: CreateOrderParams) => {
+    mutationFn: async ({ items, deliveryAddress, notes, branchId, supplierDeliveryFees = {}, supplierPickupStatus = {}, createdByUserId, createdByName, effectiveRestaurantId }: CreateOrderParams) => {
       if (!user) throw new Error("يجب تسجيل الدخول أولاً");
+
+      // استخدم effectiveRestaurantId إذا كان موجوداً (للمستخدم الفرعي)، وإلا استخدم user.id
+      const restaurantId = effectiveRestaurantId || user.id;
 
       // Check if ALL suppliers are pickup
       const allPickup = Object.values(supplierPickupStatus).length > 0 && 
@@ -47,7 +51,7 @@ export const useCreateOrder = () => {
 
       // Create order with creator info
       const orderData: any = {
-        restaurant_id: user.id,
+        restaurant_id: restaurantId, // استخدام معرف المطعم الفعلي
         total_amount: totalAmount,
         delivery_fee: totalDeliveryFee,
         delivery_address: allPickup ? null : deliveryAddress,
