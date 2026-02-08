@@ -137,16 +137,16 @@ const ProductDetails = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Product Image */}
-            <div className="bg-card rounded-2xl border border-border overflow-hidden relative">
+            <div className="bg-card rounded-2xl border border-border overflow-hidden relative flex items-center justify-center p-4">
               {product.image_url ? (
                 <img
                   src={product.image_url}
                   alt={productName}
-                  className="w-full h-96 object-cover"
+                  className="max-w-full max-h-72 object-contain"
                 />
               ) : (
-                <div className="w-full h-96 bg-muted flex items-center justify-center">
-                  <Package className="h-24 w-24 text-muted-foreground" />
+                <div className="w-full h-72 bg-muted flex items-center justify-center">
+                  <Package className="h-20 w-20 text-muted-foreground" />
                 </div>
               )}
               {/* Custom Price Badge */}
