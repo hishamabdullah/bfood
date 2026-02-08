@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
 import { userDataQueryOptions } from "@/lib/queryConfig";
+import { useEffectiveRestaurantId } from "@/hooks/useSubUserContext";
 
 export type Branch = Tables<"branches">;
 
@@ -15,23 +16,24 @@ export interface CreateBranchParams {
 
 export const useBranches = () => {
   const { user } = useAuth();
+  const { restaurantId, isLoading: isLoadingRestaurantId } = useEffectiveRestaurantId();
 
   return useQuery({
-    queryKey: ["branches", user?.id],
+    queryKey: ["branches", restaurantId],
     queryFn: async () => {
-      if (!user) return [];
+      if (!restaurantId) return [];
       
       const { data, error } = await supabase
         .from("branches")
         .select("id, name, address, google_maps_url, is_default, restaurant_id, created_at")
-        .eq("restaurant_id", user.id)
+        .eq("restaurant_id", restaurantId)
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true });
 
       if (error) throw error;
       return data as Branch[];
     },
-    enabled: !!user,
+    enabled: !!user && !!restaurantId && !isLoadingRestaurantId,
     ...userDataQueryOptions,
   });
 };
