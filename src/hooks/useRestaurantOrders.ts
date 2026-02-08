@@ -68,9 +68,13 @@ export const useRestaurantOrders = () => {
   }, [user, queryClient]);
 
   return useQuery({
-    queryKey: ["restaurant-orders", effectiveRestaurantId, subUserContext?.isSubUser, user?.id],
+    queryKey: ["restaurant-orders", effectiveRestaurantId, !!subUserContext?.isSubUser, user?.id],
     queryFn: async () => {
-      if (!user || !effectiveRestaurantId) return [];
+      if (!user) return [];
+      
+      // انتظار تحميل effectiveRestaurantId
+      const restaurantId = effectiveRestaurantId || user.id;
+      if (!restaurantId) return [];
 
       // بناء الاستعلام الأساسي
       let query = supabase
@@ -96,7 +100,7 @@ export const useRestaurantOrders = () => {
             )
           )
         `)
-        .eq("restaurant_id", effectiveRestaurantId)
+        .eq("restaurant_id", restaurantId)
         .order("created_at", { ascending: false });
 
       // إذا كان مستخدم فرعي، فلتر الطلبات التي أنشأها هو فقط
@@ -151,7 +155,7 @@ export const useRestaurantOrders = () => {
 
       return ordersWithSuppliers as Order[];
     },
-    enabled: !!user && !!effectiveRestaurantId,
+    enabled: !!user,
     retry: 1,
     ...dynamicQueryOptions,
   });
