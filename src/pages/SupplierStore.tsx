@@ -12,7 +12,11 @@ import {
   Store,
   ShoppingBag,
   ArrowRight,
-  Heart
+  Heart,
+  Truck,
+  TruckIcon,
+  BadgeCheck,
+  XCircle
 } from "lucide-react";
 import { usePublicSupplierStore } from "@/hooks/usePublicSupplierStore";
 import { useProductTranslation } from "@/hooks/useProductTranslation";
@@ -24,6 +28,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useHasFeature } from "@/hooks/useRestaurantAccess";
+import { getRegionName, getCityName, saudiRegions, saudiCities } from "@/data/saudiRegions";
 
 export default function SupplierStore() {
   const { supplierId } = useParams<{ supplierId: string }>();
@@ -187,7 +192,91 @@ export default function SupplierStore() {
                   )}
                 </div>
 
-                {/* Favorite Button for Restaurants - Only show if feature is enabled */}
+                {/* Delivery Info Section */}
+                <div className="mt-4 p-4 bg-card rounded-xl border space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-primary" />
+                    {i18n.language === "ar" ? "معلومات التوصيل" : "Delivery Information"}
+                  </h3>
+                  
+                  {/* Delivery Status */}
+                  <div className="flex flex-wrap gap-3">
+                    {supplier.delivery_option === "no_delivery" ? (
+                      <Badge variant="outline" className="bg-destructive/10 border-destructive/30 text-destructive">
+                        <XCircle className="h-3.5 w-3.5 ltr:mr-1.5 rtl:ml-1.5" />
+                        {i18n.language === "ar" ? "لا يتوفر توصيل - استلام من المستودع فقط" : "No delivery - Warehouse pickup only"}
+                      </Badge>
+                    ) : (
+                      <>
+                        <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary">
+                          <BadgeCheck className="h-3.5 w-3.5 ltr:mr-1.5 rtl:ml-1.5" />
+                          {i18n.language === "ar" ? "يتوفر توصيل" : "Delivery available"}
+                        </Badge>
+                        
+                        {/* Delivery Fee */}
+                        {supplier.delivery_option === "with_fee" && supplier.default_delivery_fee != null && supplier.default_delivery_fee > 0 && (
+                          <Badge variant="secondary">
+                            <Truck className="h-3.5 w-3.5 ltr:mr-1.5 rtl:ml-1.5" />
+                            {i18n.language === "ar" 
+                              ? `رسوم التوصيل: ${supplier.default_delivery_fee} ${t("common.sar")}` 
+                              : `Delivery fee: ${supplier.default_delivery_fee} ${t("common.sar")}`}
+                          </Badge>
+                        )}
+                        
+                        {/* Free Delivery Threshold */}
+                        {supplier.minimum_order_amount != null && supplier.minimum_order_amount > 0 && (
+                          <Badge variant="outline" className="bg-accent/50 border-accent text-accent-foreground">
+                            <ShoppingBag className="h-3.5 w-3.5 ltr:mr-1.5 rtl:ml-1.5" />
+                            {i18n.language === "ar" 
+                              ? `توصيل مجاني للطلبات فوق ${supplier.minimum_order_amount} ${t("common.sar")}` 
+                              : `Free delivery for orders above ${supplier.minimum_order_amount} ${t("common.sar")}`}
+                          </Badge>
+                        )}
+
+                        {supplier.delivery_option === "minimum_only" && (
+                          <Badge variant="outline" className="bg-muted border-muted-foreground/30 text-muted-foreground">
+                            {i18n.language === "ar" 
+                              ? "التوصيل متاح فقط عند تجاوز الحد الأدنى" 
+                              : "Delivery only available above minimum order"}
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Service Regions */}
+                  {(supplier.service_regions && supplier.service_regions.length > 0) && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4" />
+                        {i18n.language === "ar" ? "مناطق الخدمة:" : "Service areas:"}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {supplier.service_regions.map((region) => (
+                          <Badge key={region} variant="outline" className="text-xs">
+                            {getRegionName(region, i18n.language)}
+                          </Badge>
+                        ))}
+                      </div>
+                      
+                      {/* Service Cities */}
+                      {supplier.service_cities && supplier.service_cities.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-muted-foreground mb-1.5">
+                            {i18n.language === "ar" ? "المدن المخدومة:" : "Served cities:"}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {supplier.service_cities.map((city) => (
+                              <Badge key={city} variant="secondary" className="text-xs font-normal">
+                                {getCityName(city, i18n.language)}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {userRole === "restaurant" && canUseFavorites && (
                   <div className="flex items-center gap-3 mt-4 p-3 bg-card rounded-lg border">
                     <button

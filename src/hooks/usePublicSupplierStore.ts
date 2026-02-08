@@ -16,6 +16,10 @@ export type SupplierInfo = {
   city: string | null;
   phone: string | null;
   minimum_order_amount: number | null;
+  delivery_option: string | null;
+  default_delivery_fee: number | null;
+  service_regions: string[] | null;
+  service_cities: string[] | null;
 };
 
 export const usePublicSupplierStore = (supplierId: string) => {
@@ -25,7 +29,7 @@ export const usePublicSupplierStore = (supplierId: string) => {
       // Fetch supplier profile
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("user_id, business_name, avatar_url, bio, region, city, phone, minimum_order_amount")
+        .select("user_id, business_name, avatar_url, bio, region, city, phone, minimum_order_amount, delivery_option, default_delivery_fee, service_regions, service_cities")
         .eq("user_id", supplierId)
         .maybeSingle();
 
