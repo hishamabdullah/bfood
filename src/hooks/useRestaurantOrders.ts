@@ -20,8 +20,8 @@ export type Order = Tables<"orders"> & {
 export const useRestaurantOrders = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: subUserContext } = useSubUserContext();
-  const { restaurantId: effectiveRestaurantId } = useEffectiveRestaurantId();
+  const { data: subUserContext, isLoading: subUserLoading } = useSubUserContext();
+  const { restaurantId: effectiveRestaurantId, isLoading: restaurantIdLoading } = useEffectiveRestaurantId();
 
   // Realtime subscription لتحديث البيانات فوراً بعد التعديل
   useEffect(() => {
@@ -70,11 +70,9 @@ export const useRestaurantOrders = () => {
   return useQuery({
     queryKey: ["restaurant-orders", effectiveRestaurantId, !!subUserContext?.isSubUser, user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user || !effectiveRestaurantId) return [];
       
-      // انتظار تحميل effectiveRestaurantId
-      const restaurantId = effectiveRestaurantId || user.id;
-      if (!restaurantId) return [];
+      const restaurantId = effectiveRestaurantId;
 
       // بناء الاستعلام الأساسي
       let query = supabase
@@ -155,7 +153,7 @@ export const useRestaurantOrders = () => {
 
       return ordersWithSuppliers as Order[];
     },
-    enabled: !!user,
+    enabled: !!user && !!effectiveRestaurantId && !subUserLoading && !restaurantIdLoading,
     retry: 1,
     ...dynamicQueryOptions,
   });
