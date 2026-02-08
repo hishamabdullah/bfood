@@ -52,14 +52,20 @@ import { useSubUserContext } from "@/hooks/useSubUserContext";
        return;
      }
  
-     const branch = branches.find((b) => b.id === value);
-     if (branch) {
-       const address = branch.google_maps_url || branch.address || "";
-       onBranchChange(branch.id, address);
-     }
-   };
- 
+      const branch = availableBranches.find((b) => b.id === value);
+      if (branch) {
+        const address = branch.google_maps_url || branch.address || "";
+        onBranchChange(branch.id, address);
+      }
+    };
+
   const selectedBranch = availableBranches.find((b) => b.id === selectedBranchId);
+
+  // قيمة آمنة للـ Select: إذا كان الفرع المختار غير موجود ضمن الخيارات المتاحة، استخدم قيمة فارغة
+  const safeSelectedBranchId = useMemo(() => {
+    if (!selectedBranchId) return "";
+    return availableBranches.some((b) => b.id === selectedBranchId) ? selectedBranchId : "";
+  }, [availableBranches, selectedBranchId]);
 
   return (
     <>
@@ -73,7 +79,7 @@ import { useSubUserContext } from "@/hooks/useSubUserContext";
           {isLoading ? (
             <div className="h-10 bg-muted animate-pulse rounded-md" />
           ) : (
-            <Select value={selectedBranchId} onValueChange={handleBranchSelect}>
+            <Select value={safeSelectedBranchId} onValueChange={handleBranchSelect}>
               <SelectTrigger className="w-full bg-background">
                 <SelectValue placeholder={t("cart.selectBranch")} />
               </SelectTrigger>

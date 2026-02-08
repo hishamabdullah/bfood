@@ -35,6 +35,14 @@ const Cart = () => {
   
   const { data: branches = [] } = useBranches();
 
+  // الفروع المتاحة حسب المستخدم (المستخدم الفرعي يرى فقط الفروع المربوطة به)
+  const availableBranchesForUser = useMemo(() => {
+    if (subUserContext?.isSubUser && subUserContext.allowedBranchIds.length > 0) {
+      return branches.filter((b) => subUserContext.allowedBranchIds.includes(b.id));
+    }
+    return branches;
+  }, [branches, subUserContext]);
+
   // جلب اسم الموظف إذا كان موظفاً
   const { data: subUserName } = useQuery({
     queryKey: ["sub-user-name", user?.id],
@@ -149,16 +157,25 @@ const Cart = () => {
     return Object.values(supplierPickupStatus).some((isPickup) => !isPickup);
   }, [supplierPickupStatus]);
 
-  // Auto-select default branch when branches load
+  // Auto-select default branch when branches load (مع مراعاة تقييد فروع المستخدم الفرعي)
   useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      const defaultBranch = branches.find((b) => b.is_default);
-      if (defaultBranch) {
-        setSelectedBranchId(defaultBranch.id);
-        setDeliveryAddress(defaultBranch.google_maps_url || defaultBranch.address || "");
-      }
+    if (availableBranchesForUser.length === 0) return;
+
+    const selectedIsValid =
+      !!selectedBranchId && availableBranchesForUser.some((b) => b.id === selectedBranchId);
+
+    // إذا كان هناك فرع محدد وصالح ضمن الفروع المتاحة، لا تغيّر شيئاً
+    if (selectedIsValid) return;
+
+    // اختر الافتراضي ضمن الفروع المتاحة، وإلا أول فرع متاح
+    const nextBranch =
+      availableBranchesForUser.find((b) => b.is_default) ?? availableBranchesForUser[0];
+
+    if (nextBranch) {
+      setSelectedBranchId(nextBranch.id);
+      setDeliveryAddress(nextBranch.google_maps_url || nextBranch.address || "");
     }
-  }, [branches, selectedBranchId]);
+  }, [availableBranchesForUser, selectedBranchId]);
 
   const handleBranchChange = (branchId: string, address: string) => {
     setSelectedBranchId(branchId);
