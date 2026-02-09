@@ -160,9 +160,14 @@ export default function SupplierStore() {
 
               {/* Info */}
               <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                <h1 className="text-2xl md:text-3xl font-bold mb-1">
                   {supplier.business_name}
                 </h1>
+                {supplier.customer_code && (
+                  <p className="text-sm text-muted-foreground mb-2 font-mono">
+                    #{supplier.customer_code}
+                  </p>
+                )}
                 
                 {supplier.bio && (
                   <p className="text-muted-foreground mb-3 max-w-2xl">

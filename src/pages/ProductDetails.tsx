@@ -177,6 +177,9 @@ const ProductDetails = () => {
                   >
                     <Store className="h-4 w-4" />
                     {product.supplier_profile.business_name}
+                    {product.supplier_profile.customer_code && (
+                      <span className="text-xs font-mono opacity-70">#{product.supplier_profile.customer_code}</span>
+                    )}
                   </Link>
                 )}
               </div>
