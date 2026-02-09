@@ -507,6 +507,21 @@ const Products = () => {
             </>
           )}
         </div>
+
+        {/* Trust Banner */}
+        <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-y border-primary/10">
+          <div className="container py-10 text-center">
+            <div className="max-w-2xl mx-auto space-y-3">
+              <p className="text-lg md:text-xl font-semibold text-foreground leading-relaxed">
+                {i18n.language === "ar" 
+                  ? "جميع الموردين على منصتنا تم التحقق منهم بعناية، والتواصل معهم شخصياً، والتأكد من صحة وثائقهم الرسمية لضمان تجربة توريد موثوقة واحترافية لك 🤝"
+                  : "All suppliers on our platform are carefully verified, personally contacted, and their official documents validated to ensure a trusted and professional procurement experience for you 🤝"
+                }
+              </p>
+              <p className="text-2xl">😊</p>
+            </div>
+          </div>
+        </div>
       </main>
       <Footer />
     </div>
