@@ -514,7 +514,7 @@ const Products = () => {
             <div className="max-w-2xl mx-auto space-y-3">
               <p className="text-lg md:text-xl font-semibold text-foreground leading-relaxed">
                 {i18n.language === "ar" 
-                  ? "جميع الموردين على منصتنا تم التحقق منهم بعناية، والتواصل معهم شخصياً، والتأكد من صحة وثائقهم الرسمية لضمان تجربة توريد موثوقة واحترافية لك 🤝"
+                  ? "جميع الموردين على منصتنا تم التحقق منهم بعناية، والتواصل معهم شخصياً، والتأكد من صحة وثائقهم الرسمية لضمان تجربة توريد موثوقة واحترافية لك"
                   : "All suppliers on our platform are carefully verified, personally contacted, and their official documents validated to ensure a trusted and professional procurement experience for you 🤝"
                 }
               </p>
