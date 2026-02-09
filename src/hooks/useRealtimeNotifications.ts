@@ -10,7 +10,7 @@ export const useRealtimeNotifications = () => {
   const queryClient = useQueryClient();
   const { data: userSettings } = useUserSettings();
   const bellAudioRef = useRef<HTMLAudioElement | null>(null);
-  const toneAudioRef = useRef<HTMLAudioElement | null>(null);
+  const bubbleAudioRef = useRef<HTMLAudioElement | null>(null);
   const paymentChimeRef = useRef<HTMLAudioElement | null>(null);
   const lastPlayedRef = useRef<number>(0);
   const processedNotificationsRef = useRef<Set<string>>(new Set());
@@ -18,19 +18,20 @@ export const useRealtimeNotifications = () => {
   useEffect(() => {
     // Initialize audio elements
     const bellAudio = new Audio("/sounds/notification-bell.mp3");
-    const toneAudio = new Audio("/sounds/notification-tone.mp3");
+    const bubbleAudio = new Audio("/sounds/bubble-notification.mp3");
     const paymentChime = new Audio("/sounds/payment-chime.mp3");
     
     // Preload audio
     bellAudio.load();
-    toneAudio.load();
+    bubbleAudio.load();
     paymentChime.load();
     
     // Set payment chime volume lower for softer sound
     paymentChime.volume = 0.6;
+    bubbleAudio.volume = 0.7;
     
     bellAudioRef.current = bellAudio;
-    toneAudioRef.current = toneAudio;
+    bubbleAudioRef.current = bubbleAudio;
     paymentChimeRef.current = paymentChime;
 
     return () => {
@@ -40,10 +41,10 @@ export const useRealtimeNotifications = () => {
         bellAudioRef.current.src = "";
         bellAudioRef.current = null;
       }
-      if (toneAudioRef.current) {
-        toneAudioRef.current.pause();
-        toneAudioRef.current.src = "";
-        toneAudioRef.current = null;
+      if (bubbleAudioRef.current) {
+        bubbleAudioRef.current.pause();
+        bubbleAudioRef.current.src = "";
+        bubbleAudioRef.current = null;
       }
       if (paymentChimeRef.current) {
         paymentChimeRef.current.pause();
@@ -63,9 +64,9 @@ export const useRealtimeNotifications = () => {
         bellAudioRef.current.pause();
         bellAudioRef.current.currentTime = 0;
       }
-      if (toneAudioRef.current) {
-        toneAudioRef.current.pause();
-        toneAudioRef.current.currentTime = 0;
+      if (bubbleAudioRef.current) {
+        bubbleAudioRef.current.pause();
+        bubbleAudioRef.current.currentTime = 0;
       }
       if (paymentChimeRef.current) {
         paymentChimeRef.current.pause();
@@ -147,8 +148,8 @@ export const useRealtimeNotifications = () => {
             // تحديث بيانات الدفعات للمورد فوراً
             queryClient.invalidateQueries({ queryKey: ["supplier-payments", user.id] });
           } else if (userRole === "restaurant" && notification.type === "status_update") {
-            // صوت النغمة للمطعم عند تغيير الحالة
-            playSound(toneAudioRef);
+            // صوت فقاعي ناعم للمطعم عند تغيير الحالة
+            playSound(bubbleAudioRef);
             toast.info(notification.title, {
               description: notification.message,
             });
