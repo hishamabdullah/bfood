@@ -9,6 +9,7 @@ export const useRealtimeNotifications = () => {
   const { user, userRole } = useAuth();
   const queryClient = useQueryClient();
   const { data: userSettings } = useUserSettings();
+  const soundEnabledRef = useRef<boolean>(true);
   const bellAudioRef = useRef<HTMLAudioElement | null>(null);
   const bubbleAudioRef = useRef<HTMLAudioElement | null>(null);
   const paymentChimeRef = useRef<HTMLAudioElement | null>(null);
@@ -56,6 +57,11 @@ export const useRealtimeNotifications = () => {
   }, []);
 
   useEffect(() => {
+    // Keep a live value for the realtime listener closure
+    soundEnabledRef.current = userSettings?.sound_enabled !== false;
+  }, [userSettings?.sound_enabled]);
+
+  useEffect(() => {
     if (!user) return;
 
     // إيقاف جميع الأصوات
@@ -77,7 +83,7 @@ export const useRealtimeNotifications = () => {
     // تشغيل الصوت مع منع التكرار (يحترم إعداد الصوت)
     const playSound = (audioRef: React.RefObject<HTMLAudioElement | null>) => {
       // تحقق من تفعيل الصوت - إذا لم يكن هناك إعداد، افترض تفعيل الصوت
-      if (userSettings?.sound_enabled === false) {
+      if (!soundEnabledRef.current) {
         console.log("Sound disabled by user settings");
         return;
       }
