@@ -66,7 +66,7 @@ export const useUploadLogo = () => {
       type 
     }: { 
       file: File; 
-      type: "header_logo" | "favicon" 
+      type: "header_logo" | "header_logo_dark" | "favicon" 
     }) => {
       const fileExt = file.name.split(".").pop();
       const fileName = `${type}_${Date.now()}.${fileExt}`;
@@ -87,8 +87,12 @@ export const useUploadLogo = () => {
       const publicUrl = urlData.publicUrl;
 
       // Update setting
-      const settingKey = type === "header_logo" ? "header_logo_url" : "favicon_url";
-      await updateSetting.mutateAsync({ key: settingKey, value: publicUrl });
+      const settingKeyMap: Record<string, string> = {
+        header_logo: "header_logo_url",
+        header_logo_dark: "header_logo_dark_url",
+        favicon: "favicon_url",
+      };
+      await updateSetting.mutateAsync({ key: settingKeyMap[type], value: publicUrl });
 
       return publicUrl;
     },
