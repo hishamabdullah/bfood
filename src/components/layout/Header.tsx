@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -58,15 +58,28 @@ const Header = () => {
   };
 
   const headerLogoUrl = siteSettings?.header_logo_url;
+  const headerLogoDarkUrl = siteSettings?.header_logo_dark_url;
+  
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const activeLogo = (isDark && headerLogoDarkUrl) ? headerLogoDarkUrl : headerLogoUrl;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo - goes to dashboard if logged in, otherwise home */}
         <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
-          {headerLogoUrl ? (
+          {activeLogo ? (
             <img 
-              src={headerLogoUrl} 
+              src={activeLogo} 
               alt="BFOOD" 
               className="h-10 w-10 rounded-xl object-contain bg-transparent"
             />
