@@ -9,4 +9,10 @@ const rtlLanguages = ["ar", "ur"];
 document.documentElement.dir = rtlLanguages.includes(savedLanguage) ? "rtl" : "ltr";
 document.documentElement.lang = savedLanguage;
 
+// تطبيق الوضع الليلي المحفوظ
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+  document.documentElement.classList.add("dark");
+}
+
 createRoot(document.getElementById("root")!).render(<App />);
