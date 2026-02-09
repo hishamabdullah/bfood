@@ -100,7 +100,7 @@ export const useProduct = (productId: string) => {
       // Fetch supplier profile - only needed fields
       const { data: profile } = await supabase
         .from("profiles")
-        .select("user_id, business_name, avatar_url, region, phone, google_maps_url, minimum_order_amount, default_delivery_fee, delivery_option")
+        .select("user_id, business_name, avatar_url, region, phone, google_maps_url, minimum_order_amount, default_delivery_fee, delivery_option, customer_code")
         .eq("user_id", product.supplier_id)
         .maybeSingle();
 
