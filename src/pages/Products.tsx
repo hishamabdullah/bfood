@@ -20,29 +20,24 @@ import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubca
 import { useSectionsBySubcategory, getSectionName } from "@/hooks/useSections";
 import { useProductsWithPriceTiers } from "@/hooks/useProductPriceTiers";
 import { useFavoriteProducts, useFavoriteSuppliers } from "@/hooks/useFavorites";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
 const Products = () => {
-  const { t } = useTranslation();
-  const { userRole } = useAuth();
-  
+  const {
+    t
+  } = useTranslation();
+  const {
+    userRole
+  } = useAuth();
   const favoriteProductsQuery = useFavoriteProducts();
   const favoriteSuppliersQuery = useFavoriteSuppliers();
-
   const favoriteProductIds = favoriteProductsQuery.data ?? [];
   const favoriteSupplierIds = favoriteSuppliersQuery.data ?? [];
-
-  const { getCategoryName } = useCategoryTranslation();
+  const {
+    getCategoryName
+  } = useCategoryTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const supplierId = searchParams.get("supplier");
-  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedSubcategory, setSelectedSubcategory] = useState("all");
@@ -52,68 +47,66 @@ const Products = () => {
   const [categorySearch, setCategorySearch] = useState("");
   const [subcategorySearch, setSubcategorySearch] = useState("");
   const [sectionSearch, setSectionSearch] = useState("");
-
-  const availableCities = useMemo(() => 
-    selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [], 
-    [selectedRegion]
-  );
-
-  const { 
-    data: productsData, 
+  const availableCities = useMemo(() => selectedRegion !== "all" ? getCitiesByRegion(selectedRegion) : [], [selectedRegion]);
+  const {
+    data: productsData,
     isLoading: productsLoading,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
+    isFetchingNextPage
   } = useProducts(selectedCategory, selectedSubcategory, true);
-
   const isPageLoading = productsLoading;
-
-  const { data: categories, isLoading: categoriesLoading } = useCategories();
-  const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategoriesByCategory(
-    selectedCategory !== "all" ? selectedCategory : null
-  );
-  const { data: sections, isLoading: sectionsLoading } = useSectionsBySubcategory(
-    selectedSubcategory !== "all" ? selectedSubcategory : null
-  );
-  const { data: supplierProfile } = useSupplierProfile(supplierId || "");
-  const { data: customPrices } = useRestaurantAllCustomPrices();
-  const { data: productsWithTiers = [] } = useProductsWithPriceTiers();
+  const {
+    data: categories,
+    isLoading: categoriesLoading
+  } = useCategories();
+  const {
+    data: subcategories,
+    isLoading: subcategoriesLoading
+  } = useSubcategoriesByCategory(selectedCategory !== "all" ? selectedCategory : null);
+  const {
+    data: sections,
+    isLoading: sectionsLoading
+  } = useSectionsBySubcategory(selectedSubcategory !== "all" ? selectedSubcategory : null);
+  const {
+    data: supplierProfile
+  } = useSupplierProfile(supplierId || "");
+  const {
+    data: customPrices
+  } = useRestaurantAllCustomPrices();
+  const {
+    data: productsWithTiers = []
+  } = useProductsWithPriceTiers();
 
   // Filter categories based on search
   const filteredCategories = useMemo(() => {
     if (!categories) return [];
     if (!categorySearch) return categories;
-    return categories.filter((cat) =>
-      getCategoryName(cat).toLowerCase().includes(categorySearch.toLowerCase())
-    );
+    return categories.filter(cat => getCategoryName(cat).toLowerCase().includes(categorySearch.toLowerCase()));
   }, [categories, categorySearch, getCategoryName]);
 
   // Filter subcategories based on search
   const filteredSubcategories = useMemo(() => {
     if (!subcategories) return [];
     if (!subcategorySearch) return subcategories;
-    return subcategories.filter((sub) =>
-      getSubcategoryName(sub, i18n.language).toLowerCase().includes(subcategorySearch.toLowerCase())
-    );
+    return subcategories.filter(sub => getSubcategoryName(sub, i18n.language).toLowerCase().includes(subcategorySearch.toLowerCase()));
   }, [subcategories, subcategorySearch]);
 
   // Filter sections based on search
   const filteredSections = useMemo(() => {
     if (!sections) return [];
     if (!sectionSearch) return sections;
-    return sections.filter((sec) =>
-      getSectionName(sec, i18n.language).toLowerCase().includes(sectionSearch.toLowerCase())
-    );
+    return sections.filter(sec => getSectionName(sec, i18n.language).toLowerCase().includes(sectionSearch.toLowerCase()));
   }, [sections, sectionSearch]);
 
   // Flatten products
   const allProducts = useMemo(() => {
-    return productsData?.pages.flatMap((page) => page.products) || [];
+    return productsData?.pages.flatMap(page => page.products) || [];
   }, [productsData]);
 
   // Memoize filtered products to prevent recalculation on every render
   const filteredProducts = useMemo(() => {
-    return allProducts.filter((product) => {
+    return allProducts.filter(product => {
       if (supplierId && product.supplier_id !== supplierId) {
         return false;
       }
@@ -150,77 +143,55 @@ const Products = () => {
           return false;
         }
       }
-
-      const matchesSearch =
-        product.name.includes(searchQuery) ||
-        product.supplier_profile?.business_name?.includes(searchQuery);
+      const matchesSearch = product.name.includes(searchQuery) || product.supplier_profile?.business_name?.includes(searchQuery);
       return matchesSearch;
     });
-  }, [
-    allProducts,
-    supplierId,
-    selectedSection,
-    selectedRegion,
-    selectedCity,
-    searchQuery,
-  ]);
+  }, [allProducts, supplierId, selectedSection, selectedRegion, selectedCity, searchQuery]);
 
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }, {
+      threshold: 0.1
+    });
     if (loadMoreRef.current) {
       observer.observe(loadMoreRef.current);
     }
-
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
   const clearSupplierFilter = useCallback(() => {
     searchParams.delete("supplier");
     setSearchParams(searchParams);
   }, [searchParams, setSearchParams]);
-
-  const handleRegionChange = useCallback((val: string) => { 
-    setSelectedRegion(val); 
-    setSelectedCity("all"); 
+  const handleRegionChange = useCallback((val: string) => {
+    setSelectedRegion(val);
+    setSelectedCity("all");
   }, []);
-
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
+  return <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1">
         <div className="container py-8">
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">
-              {supplierId && supplierProfile 
-                ? t("products.supplierProducts", { name: supplierProfile.business_name }) 
-                : t("products.title")}
+              {supplierId && supplierProfile ? t("products.supplierProducts", {
+              name: supplierProfile.business_name
+            }) : t("products.title")}
             </h1>
             <p className="text-muted-foreground">
               {supplierId ? t("products.subtitle") : t("products.subtitle")}
             </p>
             
             {/* Supplier Filter Badge */}
-            {supplierId && supplierProfile && (
-              <div className="mt-4 flex items-center gap-2">
+            {supplierId && supplierProfile && <div className="mt-4 flex items-center gap-2">
                 <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full">
                   <Store className="h-4 w-4" />
                   <span className="font-medium">{supplierProfile.business_name}</span>
-                  <button 
-                    onClick={clearSupplierFilter}
-                    className="hover:bg-primary/20 rounded-full p-1 transition-colors"
-                  >
+                  <button onClick={clearSupplierFilter} className="hover:bg-primary/20 rounded-full p-1 transition-colors">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -229,8 +200,7 @@ const Products = () => {
                     {t("suppliers.viewProducts")}
                   </Button>
                 </Link>
-              </div>
-            )}
+              </div>}
           </div>
 
           {/* Filters */}
@@ -238,12 +208,7 @@ const Products = () => {
             {/* Search */}
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder={t("products.searchPlaceholder")}
-                className="pr-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <Input placeholder={t("products.searchPlaceholder")} className="pr-10" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
             
             {/* Region Filter */}
@@ -254,31 +219,25 @@ const Products = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("suppliers.allRegions")}</SelectItem>
-                {saudiRegions.map((region) => (
-                  <SelectItem key={region.name} value={region.name}>
+                {saudiRegions.map(region => <SelectItem key={region.name} value={region.name}>
                     {getRegionName(region, i18n.language)}
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
             </Select>
 
             {/* City Filter */}
-            {selectedRegion !== "all" && availableCities.length > 0 && (
-              <Select value={selectedCity} onValueChange={setSelectedCity}>
+            {selectedRegion !== "all" && availableCities.length > 0 && <Select value={selectedCity} onValueChange={setSelectedCity}>
                 <SelectTrigger className="w-full md:w-[180px]">
                   <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
                   <SelectValue placeholder={t("suppliers.allCities")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t("suppliers.allCities")}</SelectItem>
-                  {availableCities.map((city) => (
-                    <SelectItem key={city.name} value={city.name}>
+                  {availableCities.map(city => <SelectItem key={city.name} value={city.name}>
                       {getCityName(city, i18n.language)}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
-              </Select>
-            )}
+              </Select>}
           </div>
 
           {/* Categories Search and Buttons */}
@@ -286,246 +245,128 @@ const Products = () => {
             {/* Category Search */}
             <div className="relative mb-3 max-w-xs">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("products.searchCategories")}
-                value={categorySearch}
-                onChange={(e) => setCategorySearch(e.target.value)}
-                className="ps-9 h-9"
-              />
-              {categorySearch && (
-                <button
-                  onClick={() => setCategorySearch("")}
-                  className="absolute end-3 top-1/2 -translate-y-1/2"
-                >
+              <Input placeholder={t("products.searchCategories")} value={categorySearch} onChange={e => setCategorySearch(e.target.value)} className="ps-9 h-9" />
+              {categorySearch && <button onClick={() => setCategorySearch("")} className="absolute end-3 top-1/2 -translate-y-1/2">
                   <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                </button>
-              )}
+                </button>}
             </div>
             
             {/* Category Buttons */}
             <div className="flex gap-2 overflow-x-auto pb-2">
-              <Button
-                variant={selectedCategory === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setSelectedCategory("all");
-                  setSelectedSubcategory("all");
-                  setSelectedSection("all");
-                  setCategorySearch("");
-                  setSubcategorySearch("");
-                  setSectionSearch("");
-                }}
-                className="whitespace-nowrap"
-              >
+              <Button variant={selectedCategory === "all" ? "default" : "outline"} size="sm" onClick={() => {
+              setSelectedCategory("all");
+              setSelectedSubcategory("all");
+              setSelectedSection("all");
+              setCategorySearch("");
+              setSubcategorySearch("");
+              setSectionSearch("");
+            }} className="whitespace-nowrap">
                 {t("common.all")}
               </Button>
-              {categoriesLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-9 w-20" />
-                ))
-              ) : (
-                filteredCategories.map((category) => (
-                  <Button
-                    key={category.id}
-                    variant={selectedCategory === category.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCategory(category.id);
-                      setSelectedSubcategory("all");
-                      setSelectedSection("all");
-                      setSubcategorySearch("");
-                      setSectionSearch("");
-                    }}
-                    className="whitespace-nowrap"
-                  >
+              {categoriesLoading ? Array.from({
+              length: 4
+            }).map((_, i) => <Skeleton key={i} className="h-9 w-20" />) : filteredCategories.map(category => <Button key={category.id} variant={selectedCategory === category.id ? "default" : "outline"} size="sm" onClick={() => {
+              setSelectedCategory(category.id);
+              setSelectedSubcategory("all");
+              setSelectedSection("all");
+              setSubcategorySearch("");
+              setSectionSearch("");
+            }} className="whitespace-nowrap">
                     {getCategoryName(category)}
-                  </Button>
-                ))
-              )}
+                  </Button>)}
             </div>
           </div>
 
           {/* Subcategories */}
-          {selectedCategory !== "all" && (
-            <div className="mb-4">
+          {selectedCategory !== "all" && <div className="mb-4">
               {/* Subcategory Search */}
-              {subcategories && subcategories.length > 3 && (
-                <div className="relative mb-3 max-w-xs">
+              {subcategories && subcategories.length > 3 && <div className="relative mb-3 max-w-xs">
                   <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t("products.searchCategories")}
-                    value={subcategorySearch}
-                    onChange={(e) => setSubcategorySearch(e.target.value)}
-                    className="ps-9 h-9"
-                  />
-                  {subcategorySearch && (
-                    <button
-                      onClick={() => setSubcategorySearch("")}
-                      className="absolute end-3 top-1/2 -translate-y-1/2"
-                    >
+                  <Input placeholder={t("products.searchCategories")} value={subcategorySearch} onChange={e => setSubcategorySearch(e.target.value)} className="ps-9 h-9" />
+                  {subcategorySearch && <button onClick={() => setSubcategorySearch("")} className="absolute end-3 top-1/2 -translate-y-1/2">
                       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                    </button>
-                  )}
-                </div>
-              )}
+                    </button>}
+                </div>}
               
               {/* Subcategory Buttons */}
               <div className="flex gap-2 overflow-x-auto pb-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedSubcategory("all");
-                    setSelectedSection("all");
-                    setSectionSearch("");
-                  }}
-                  className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
-                    selectedSubcategory === "all" ? "bg-primary/25 font-semibold" : ""
-                  }`}
-                >
+                <Button variant="outline" size="sm" onClick={() => {
+              setSelectedSubcategory("all");
+              setSelectedSection("all");
+              setSectionSearch("");
+            }} className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${selectedSubcategory === "all" ? "bg-primary/25 font-semibold" : ""}`}>
                   {t("common.all")}
                 </Button>
-                {subcategoriesLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-9 w-20" />
-                  ))
-                ) : (
-                  filteredSubcategories.map((sub) => (
-                    <Button
-                      key={sub.id}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedSubcategory(sub.id);
-                        setSelectedSection("all");
-                        setSectionSearch("");
-                      }}
-                      className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${
-                        selectedSubcategory === sub.id ? "bg-primary/25 font-semibold" : ""
-                      }`}
-                    >
+                {subcategoriesLoading ? Array.from({
+              length: 3
+            }).map((_, i) => <Skeleton key={i} className="h-9 w-20" />) : filteredSubcategories.map(sub => <Button key={sub.id} variant="outline" size="sm" onClick={() => {
+              setSelectedSubcategory(sub.id);
+              setSelectedSection("all");
+              setSectionSearch("");
+            }} className={`whitespace-nowrap border-primary text-primary hover:bg-primary/15 ${selectedSubcategory === sub.id ? "bg-primary/25 font-semibold" : ""}`}>
                       {getSubcategoryName(sub, i18n.language)}
-                    </Button>
-                  ))
-                )}
+                    </Button>)}
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Sections (Third Level) */}
-          {selectedSubcategory !== "all" && (
-            <div className="mb-6">
+          {selectedSubcategory !== "all" && <div className="mb-6">
               {/* Section Search */}
-              {sections && sections.length > 3 && (
-                <div className="relative mb-3 max-w-xs">
+              {sections && sections.length > 3 && <div className="relative mb-3 max-w-xs">
                   <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t("products.searchCategories")}
-                    value={sectionSearch}
-                    onChange={(e) => setSectionSearch(e.target.value)}
-                    className="ps-9 h-9"
-                  />
-                  {sectionSearch && (
-                    <button
-                      onClick={() => setSectionSearch("")}
-                      className="absolute end-3 top-1/2 -translate-y-1/2"
-                    >
+                  <Input placeholder={t("products.searchCategories")} value={sectionSearch} onChange={e => setSectionSearch(e.target.value)} className="ps-9 h-9" />
+                  {sectionSearch && <button onClick={() => setSectionSearch("")} className="absolute end-3 top-1/2 -translate-y-1/2">
                       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                    </button>
-                  )}
-                </div>
-              )}
+                    </button>}
+                </div>}
               
               {/* Section Buttons */}
               <div className="flex gap-2 overflow-x-auto pb-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedSection("all")}
-                  className={`whitespace-nowrap bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/15 ${
-                    selectedSection === "all" ? "bg-green-500/20 font-semibold" : ""
-                  }`}
-                >
+                <Button variant="outline" size="sm" onClick={() => setSelectedSection("all")} className={`whitespace-nowrap bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/15 ${selectedSection === "all" ? "bg-green-500/20 font-semibold" : ""}`}>
                   {t("common.all")}
                 </Button>
-                {sectionsLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-9 w-20" />
-                  ))
-                ) : (
-                  filteredSections.map((sec) => (
-                    <Button
-                      key={sec.id}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedSection(sec.id)}
-                      className={`whitespace-nowrap bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/15 ${
-                        selectedSection === sec.id ? "bg-green-500/20 font-semibold" : ""
-                      }`}
-                    >
+                {sectionsLoading ? Array.from({
+              length: 3
+            }).map((_, i) => <Skeleton key={i} className="h-9 w-20" />) : filteredSections.map(sec => <Button key={sec.id} variant="outline" size="sm" onClick={() => setSelectedSection(sec.id)} className={`whitespace-nowrap bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/15 ${selectedSection === sec.id ? "bg-green-500/20 font-semibold" : ""}`}>
                       {getSectionName(sec, i18n.language)}
-                    </Button>
-                  ))
-                )}
+                    </Button>)}
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Products Grid */}
-          {isPageLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <ProductSkeletonCard key={i} />
-              ))}
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-16">
+          {isPageLoading ? <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {Array.from({
+            length: 10
+          }).map((_, i) => <ProductSkeletonCard key={i} />)}
+            </div> : filteredProducts.length === 0 ? <div className="text-center py-16">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-semibold mb-2">{t("common.noResults")}</h3>
               <p className="text-muted-foreground">{t("products.noProducts")}</p>
-            </div>
-          ) : (
-            <>
+            </div> : <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {filteredProducts.map((product, index) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    customPrice={customPrices?.[product.id] ?? null}
-                    hasPriceTiers={productsWithTiers.includes(product.id)}
-                    index={index}
-                  />
-                ))}
+                {filteredProducts.map((product, index) => <ProductCard key={product.id} product={product} customPrice={customPrices?.[product.id] ?? null} hasPriceTiers={productsWithTiers.includes(product.id)} index={index} />)}
               </div>
               
               {/* Load More Trigger */}
               <div ref={loadMoreRef} className="py-8 flex justify-center">
-                {isFetchingNextPage && (
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                )}
+                {isFetchingNextPage && <Loader2 className="h-6 w-6 animate-spin text-primary" />}
               </div>
-            </>
-          )}
+            </>}
         </div>
 
         {/* Trust Banner */}
         <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-y border-primary/10">
           <div className="container py-10 text-center">
-            <div className="max-w-2xl mx-auto space-y-3">
-              <p className="text-lg md:text-xl font-semibold text-foreground leading-relaxed">
-                {i18n.language === "ar" 
-                  ? "جميع الموردين على منصتنا تم التحقق منهم بعناية، والتواصل معهم شخصياً، والتأكد من صحة وثائقهم الرسمية لضمان تجربة توريد موثوقة واحترافية لك"
-                  : "All suppliers on our platform are carefully verified, personally contacted, and their official documents validated to ensure a trusted and professional procurement experience for you 🤝"
-                }
+            <div className="max-w-2xl mx-auto space-y-3 opacity-80 rounded-sm border-solid shadow-sm">
+              <p className="text-lg font-semibold text-foreground leading-relaxed md:text-sm">
+                {i18n.language === "ar" ? "جميع الموردين على منصتنا تم التحقق منهم بعناية، والتواصل معهم شخصياً، والتأكد من صحة وثائقهم الرسمية لضمان تجربة توريد موثوقة واحترافية لك" : "All suppliers on our platform are carefully verified, personally contacted, and their official documents validated to ensure a trusted and professional procurement experience for you 🤝"}
               </p>
-              <p className="text-2xl">😊</p>
+              
             </div>
           </div>
         </div>
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Products;
