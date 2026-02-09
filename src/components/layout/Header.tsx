@@ -60,7 +60,7 @@ const Header = () => {
   const headerLogoUrl = siteSettings?.header_logo_url;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-white backdrop-blur">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo - goes to dashboard if logged in, otherwise home */}
         <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
@@ -75,7 +75,7 @@ const Header = () => {
               <span className="text-xl font-bold text-primary-foreground leading-none">B</span>
             </div>
           )}
-          <span className="text-xl font-bold text-gray-900">BFOOD</span>
+          <span className="text-xl font-bold text-foreground">BFOOD</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -263,7 +263,7 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-white animate-fade-in">
+        <div className="md:hidden border-t border-border bg-background animate-fade-in">
           <nav className="container py-4 flex flex-col gap-4">
             {/* المطعم فقط يرى المنتجات والموردين وطلباتي وإدارة الفروع */}
             {isRestaurant && (
