@@ -83,7 +83,7 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
   return (
     <Link to={`/products/${product.id}`}>
       <div
-        className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card transition-all duration-300 animate-fade-in group cursor-pointer"
+        className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card transition-all duration-300 animate-fade-in group cursor-pointer h-full flex flex-col"
         style={{ animationDelay: `${index * 0.05}s` }}
       >
         {/* Product Image */}
@@ -128,7 +128,7 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
         </div>
 
         {/* Product Info */}
-        <div className="p-4">
+        <div className="p-4 flex-1 flex flex-col">
           <div className="flex items-start justify-between mb-2">
             <div className="min-w-0 flex-1">
               <h3 className="font-medium text-sm leading-tight line-clamp-2">{productName}</h3>
@@ -157,7 +157,7 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
             </Badge>
           </div>
 
-          <div className="flex flex-col gap-3 mt-4">
+          <div className="flex flex-col gap-3 mt-auto pt-4">
             <div>
               {canSeePrices ? (
                 <>
