@@ -72,6 +72,18 @@ const Header = () => {
 
   const activeLogo = (isDark && headerLogoDarkUrl) ? headerLogoDarkUrl : headerLogoUrl;
 
+  // Preload both logos for instant switching
+  useEffect(() => {
+    if (headerLogoUrl) {
+      const img = new Image();
+      img.src = headerLogoUrl;
+    }
+    if (headerLogoDarkUrl) {
+      const img = new Image();
+      img.src = headerLogoDarkUrl;
+    }
+  }, [headerLogoUrl, headerLogoDarkUrl]);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
