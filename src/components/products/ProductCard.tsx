@@ -131,17 +131,17 @@ const ProductCard = memo(({ product, index = 0, customPrice, hasPriceTiers = fal
         <div className="p-4">
           <div className="flex items-start justify-between mb-2">
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-lg truncate">{productName}</h3>
-              <div className="flex items-center gap-2 mt-1">
+              <h3 className="font-medium text-sm leading-tight line-clamp-2">{productName}</h3>
+              <div className="flex items-center gap-1.5 mt-1">
                 {product.supplier_profile?.avatar_url ? (
                   <img 
                     src={product.supplier_profile.avatar_url} 
                     alt={product.supplier_profile?.business_name || ""} 
-                    className="w-5 h-5 rounded-full object-cover shrink-0"
+                    className="w-5 h-5 rounded-md object-cover shrink-0"
                     loading="lazy"
                   />
                 ) : null}
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {product.supplier_profile?.business_name || t("products.supplier")}
                 </p>
               </div>
