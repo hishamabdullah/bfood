@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ShoppingCart, User, LogOut, Package, Heart, MapPin, FileText, BarChart3, CreditCard, Users } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -119,7 +120,8 @@ const Header = () => {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
-          {/* Language Switcher */}
+          {/* Theme & Language */}
+          <ThemeToggle />
           <LanguageSwitcher />
           
           {/* جرس الإشعارات للموردين */}
@@ -228,7 +230,8 @@ const Header = () => {
 
         {/* Mobile Actions */}
         <div className="md:hidden flex items-center gap-2">
-          {/* Language Switcher */}
+          {/* Theme & Language */}
+          <ThemeToggle />
           <LanguageSwitcher />
           
           {/* جرس الإشعارات للموردين */}
