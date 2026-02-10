@@ -23,6 +23,8 @@ export type DeliveryOrderSupplier = {
   items_count: number;
   is_paid: boolean;
   receipt_url: string | null;
+  agent_payment_method: string | null;
+  agent_receipt_url: string | null;
   items: DeliveryOrderItem[];
   delivery_agent: DeliveryAgentInfo | null;
   delivery_type: string | null;
@@ -133,6 +135,8 @@ export const useAdminDeliveryOrders = () => {
             items_count: group.items.length,
             is_paid: payment?.is_paid || false,
             receipt_url: payment?.receipt_url || null,
+            agent_payment_method: (payment as any)?.agent_payment_method || null,
+            agent_receipt_url: (payment as any)?.agent_receipt_url || null,
             items: formattedItems,
             delivery_agent: deliveryAgent ? { name: deliveryAgent.name, phone: deliveryAgent.phone } : null,
             delivery_type: deliveryType,
