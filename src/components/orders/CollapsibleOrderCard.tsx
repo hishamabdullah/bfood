@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, FileText, Edit2, X, UserRound, Phone, Building2, Copy, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, FileText, Edit2, X, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { PaymentDetailsDialog } from "@/components/cart/PaymentDetailsDialog";
@@ -302,6 +302,9 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                               amountToPay={supplierTotal}
                               orderId={order.id}
                               isConfirmed={group.status === "confirmed" || group.status === "preparing" || group.status === "shipped" || group.status === "delivered"}
+                              deliveryAgent={group.deliveryType === "agent" ? group.deliveryAgent : null}
+                              deliveryFee={group.deliveryFee}
+                              subtotal={group.subtotal}
                             />
                           </div>
                         );
@@ -376,96 +379,26 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                       ))}
                     </div>
 
-                    {/* Supplier Footer - Payment Summary */}
-                    <div className="bg-muted/20 px-3 py-2 border-t space-y-1.5 text-sm">
-                      {/* المنتجات */}
+                    {/* Supplier Footer */}
+                    <div className="bg-muted/20 px-3 py-2 border-t space-y-1 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t("orders.subtotal", "المنتجات")}</span>
                         <span>{group.subtotal.toFixed(2)} {t("common.sar")}</span>
                       </div>
-
-                      {/* رسوم التوصيل */}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground flex items-center gap-1">
                           <Truck className="h-3 w-3" />
                           {t("orders.deliveryFee")}
+                          {group.deliveryType === "agent" && group.deliveryAgent && (
+                            <span className="text-xs text-amber-600 dark:text-amber-400">({group.deliveryAgent.name})</span>
+                          )}
                         </span>
                         <span>{group.deliveryFee.toFixed(2)} {t("common.sar")}</span>
                       </div>
-
-                      {/* عند وجود مندوب خارجي: فصل المبالغ */}
-                      {group.deliveryType === "agent" && group.deliveryAgent ? (
-                        <>
-                          <div className="border-t border-border pt-1.5 space-y-2">
-                            {/* المستحق للمورد */}
-                            <div className="flex items-center justify-between p-2 bg-primary/5 rounded-lg">
-                              <span className="flex items-center gap-1.5 font-medium">
-                                <Store className="h-3.5 w-3.5 text-primary" />
-                                المستحق للمورد
-                              </span>
-                              <span className="font-bold text-primary">{group.subtotal.toFixed(2)} {t("common.sar")}</span>
-                            </div>
-
-                            {/* المستحق للمندوب */}
-                            <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
-                              <div className="flex items-center gap-1.5">
-                                <UserRound className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                                <div>
-                                  <span className="font-medium text-amber-800 dark:text-amber-200">المستحق للمندوب</span>
-                                  <span className="text-xs text-muted-foreground ms-1">({group.deliveryAgent.name})</span>
-                                </div>
-                              </div>
-                              <span className="font-bold text-amber-700 dark:text-amber-300">{group.deliveryFee.toFixed(2)} {t("common.sar")}</span>
-                            </div>
-
-                            {/* بيانات تحويل المندوب */}
-                            <div className="p-2 rounded-lg bg-muted/30 space-y-1 text-xs">
-                              {group.deliveryAgent.phone && (
-                                <a href={`tel:${group.deliveryAgent.phone}`} className="flex items-center gap-1.5 text-primary hover:underline">
-                                  <Phone className="h-3 w-3" />
-                                  <span dir="ltr">{group.deliveryAgent.phone}</span>
-                                </a>
-                              )}
-                              {group.deliveryAgent.bank_name && (
-                                <div className="flex items-center gap-1.5 text-muted-foreground">
-                                  <Building2 className="h-3 w-3" />
-                                  <span>{group.deliveryAgent.bank_name} {group.deliveryAgent.bank_account_name ? `— ${group.deliveryAgent.bank_account_name}` : ''}</span>
-                                </div>
-                              )}
-                              {group.deliveryAgent.bank_iban && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-mono text-muted-foreground truncate">
-                                    IBAN: {group.deliveryAgent.bank_iban}
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 shrink-0"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(group.deliveryAgent!.bank_iban!);
-                                      import("sonner").then(({ toast }) => toast.success(t("cart.ibanCopied")));
-                                    }}
-                                  >
-                                    <Copy className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* الإجمالي الكلي */}
-                          <div className="flex justify-between font-semibold pt-1.5 border-t border-border">
-                            <span>{t("orders.supplierTotal", "الإجمالي")}</span>
-                            <span className="text-primary">{supplierTotal.toFixed(2)} {t("common.sar")}</span>
-                          </div>
-                        </>
-                      ) : (
-                        /* بدون مندوب - العرض العادي */
-                        <div className="flex justify-between font-semibold pt-1 border-t border-border">
-                          <span>{t("orders.supplierTotal")}</span>
-                          <span className="text-primary">{supplierTotal.toFixed(2)} {t("common.sar")}</span>
-                        </div>
-                      )}
+                      <div className="flex justify-between font-semibold pt-1 border-t border-border">
+                        <span>{t("orders.supplierTotal")}</span>
+                        <span className="text-primary">{supplierTotal.toFixed(2)} {t("common.sar")}</span>
+                      </div>
 
                       {/* Invoice Link */}
                       {(() => {

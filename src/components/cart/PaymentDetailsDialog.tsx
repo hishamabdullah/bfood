@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Copy, Check, Loader2, Banknote, Building, User, Upload, Image, AlertTriangle } from "lucide-react";
+import { CreditCard, Copy, Check, Loader2, Banknote, Building, User, Upload, Image, AlertTriangle, UserRound, Phone, Truck, Store } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,13 +20,25 @@ interface SupplierBankDetails {
   bank_iban?: string | null;
 }
 
+interface DeliveryAgentInfo {
+  id: string;
+  name: string;
+  phone: string | null;
+  bank_name: string | null;
+  bank_account_name: string | null;
+  bank_iban: string | null;
+}
+
 interface PaymentDetailsDialogProps {
   supplierId: string;
   supplierName: string;
   supplierProfile: SupplierBankDetails | null;
   amountToPay: number;
   orderId?: string;
-  isConfirmed?: boolean; // Whether the supplier has confirmed the order
+  isConfirmed?: boolean;
+  deliveryAgent?: DeliveryAgentInfo | null;
+  deliveryFee?: number;
+  subtotal?: number;
 }
 
 export const PaymentDetailsDialog = ({
@@ -36,6 +48,9 @@ export const PaymentDetailsDialog = ({
   amountToPay,
   orderId,
   isConfirmed = false,
+  deliveryAgent,
+  deliveryFee = 0,
+  subtotal,
 }: PaymentDetailsDialogProps) => {
   const { t } = useTranslation();
   const { user, profile, userRole } = useAuth();
@@ -53,6 +68,20 @@ export const PaymentDetailsDialog = ({
   const bankIban = (supplierProfile as any)?.bank_iban;
 
   const hasBankDetails = bankName || bankAccountName || bankIban;
+  const hasAgent = deliveryAgent && deliveryFee > 0;
+  const [isAgentIbanCopied, setIsAgentIbanCopied] = useState(false);
+
+  const copyAgentIban = async () => {
+    if (!deliveryAgent?.bank_iban) return;
+    try {
+      await navigator.clipboard.writeText(deliveryAgent.bank_iban);
+      setIsAgentIbanCopied(true);
+      toast.success(t("cart.ibanCopied"));
+      setTimeout(() => setIsAgentIbanCopied(false), 2000);
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
 
   const copyIban = async () => {
     if (!bankIban) return;
@@ -228,58 +257,160 @@ export const PaymentDetailsDialog = ({
                 </div>
               )}
 
-              {/* Amount to Pay */}
-              <div className="bg-primary/10 rounded-xl p-4 text-center">
-                <p className="text-sm text-muted-foreground mb-1">{t("cart.amountToPay")}</p>
-                <p className="text-3xl font-bold text-primary">
-                  {amountToPay.toFixed(2)} <span className="text-lg">{t("common.sar")}</span>
-                </p>
-              </div>
-
-              {/* Bank Details */}
-              <div className="space-y-3">
-                {bankName && (
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Building className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground">{t("cart.bankName")}</p>
-                      <p className="font-medium">{bankName}</p>
-                    </div>
+              {/* Amount Summary */}
+              {hasAgent ? (
+                <div className="space-y-3">
+                  {/* الإجمالي الكلي */}
+                  <div className="bg-muted/50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-muted-foreground mb-0.5">{t("orders.supplierTotal", "الإجمالي")}</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {amountToPay.toFixed(2)} <span className="text-sm">{t("common.sar")}</span>
+                    </p>
                   </div>
-                )}
 
-                {bankAccountName && (
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <User className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground">{t("cart.bankAccountName")}</p>
-                      <p className="font-medium">{bankAccountName}</p>
+                  {/* المستحق للمورد */}
+                  <div className="border rounded-xl overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-primary/5">
+                      <Store className="h-4 w-4 text-primary" />
+                      <span className="font-semibold text-sm">المستحق للمورد — {supplierName}</span>
                     </div>
-                  </div>
-                )}
-
-                {bankIban && (
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <CreditCard className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground">{t("cart.bankIban")}</p>
-                      <p className="font-mono text-sm break-all">{bankIban}</p>
+                    <div className="p-3 text-center">
+                      <p className="text-2xl font-bold text-primary">
+                        {(subtotal ?? (amountToPay - deliveryFee)).toFixed(2)} <span className="text-sm">{t("common.sar")}</span>
+                      </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={copyIban}
-                      className="shrink-0"
-                    >
-                      {isCopied ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
+                    {/* بيانات بنك المورد */}
+                    <div className="px-3 pb-3 space-y-2">
+                      {bankName && (
+                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
+                          <Building className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("cart.bankName")}</p>
+                            <p className="font-medium">{bankName}</p>
+                          </div>
+                        </div>
                       )}
-                    </Button>
+                      {bankAccountName && (
+                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
+                          <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("cart.bankAccountName")}</p>
+                            <p className="font-medium">{bankAccountName}</p>
+                          </div>
+                        </div>
+                      )}
+                      {bankIban && (
+                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
+                          <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-muted-foreground">{t("cart.bankIban")}</p>
+                            <p className="font-mono text-xs break-all">{bankIban}</p>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={copyIban} className="shrink-0 h-7 w-7 p-0">
+                            {isCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* المستحق للمندوب */}
+                  <div className="border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30">
+                      <UserRound className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <span className="font-semibold text-sm text-amber-800 dark:text-amber-200">المستحق للمندوب — {deliveryAgent!.name}</span>
+                    </div>
+                    <div className="p-3 text-center">
+                      <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                        {deliveryFee.toFixed(2)} <span className="text-sm">{t("common.sar")}</span>
+                      </p>
+                    </div>
+                    {/* بيانات بنك المندوب */}
+                    <div className="px-3 pb-3 space-y-2">
+                      {deliveryAgent!.phone && (
+                        <a href={`tel:${deliveryAgent!.phone}`} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm text-primary hover:underline">
+                          <Phone className="h-4 w-4 shrink-0" />
+                          <span dir="ltr">{deliveryAgent!.phone}</span>
+                        </a>
+                      )}
+                      {deliveryAgent!.bank_name && (
+                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
+                          <Building className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("cart.bankName")}</p>
+                            <p className="font-medium">{deliveryAgent!.bank_name}</p>
+                          </div>
+                        </div>
+                      )}
+                      {deliveryAgent!.bank_account_name && (
+                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
+                          <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("cart.bankAccountName")}</p>
+                            <p className="font-medium">{deliveryAgent!.bank_account_name}</p>
+                          </div>
+                        </div>
+                      )}
+                      {deliveryAgent!.bank_iban && (
+                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
+                          <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-muted-foreground">{t("cart.bankIban")}</p>
+                            <p className="font-mono text-xs break-all">{deliveryAgent!.bank_iban}</p>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={copyAgentIban} className="shrink-0 h-7 w-7 p-0">
+                            {isAgentIbanCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* العرض العادي بدون مندوب */}
+                  <div className="bg-primary/10 rounded-xl p-4 text-center">
+                    <p className="text-sm text-muted-foreground mb-1">{t("cart.amountToPay")}</p>
+                    <p className="text-3xl font-bold text-primary">
+                      {amountToPay.toFixed(2)} <span className="text-lg">{t("common.sar")}</span>
+                    </p>
+                  </div>
+
+                  {/* Bank Details */}
+                  <div className="space-y-3">
+                    {bankName && (
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <Building className="h-5 w-5 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground">{t("cart.bankName")}</p>
+                          <p className="font-medium">{bankName}</p>
+                        </div>
+                      </div>
+                    )}
+                    {bankAccountName && (
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <User className="h-5 w-5 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground">{t("cart.bankAccountName")}</p>
+                          <p className="font-medium">{bankAccountName}</p>
+                        </div>
+                      </div>
+                    )}
+                    {bankIban && (
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <CreditCard className="h-5 w-5 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground">{t("cart.bankIban")}</p>
+                          <p className="font-mono text-sm break-all">{bankIban}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={copyIban} className="shrink-0">
+                          {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Upload Receipt */}
               <div className="space-y-2">
