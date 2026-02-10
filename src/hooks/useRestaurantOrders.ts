@@ -89,6 +89,9 @@ export const useRestaurantOrders = () => {
             status,
             delivery_fee,
             invoice_url,
+            delivery_type,
+            delivery_agent_id,
+            delivery_agent:delivery_agents(id, name, phone, bank_name, bank_account_name, bank_iban),
             product:products (
               id,
               name,

@@ -20,6 +20,7 @@ import AdminModeratorsManager from "@/components/admin/AdminModeratorsManager";
 import AdminRestaurantFeaturesManager from "@/components/admin/AdminRestaurantFeaturesManager";
 import AdminSubscriptionManager from "@/components/admin/AdminSubscriptionManager";
 import AdminSubscriptionPlansManager from "@/components/admin/AdminSubscriptionPlansManager";
+import AdminDeliveryAgentsManager from "@/components/admin/AdminDeliveryAgentsManager";
 
 const Admin = () => {
   const { user, userRole, loading } = useAuth();
@@ -123,6 +124,10 @@ const Admin = () => {
                 <CreditCard className="h-4 w-4" />
                 التجديدات
               </TabsTrigger>
+              <TabsTrigger value="delivery-agents" className="flex items-center gap-2">
+                <Truck className="h-4 w-4" />
+                مناديب التوصيل
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="approvals">
@@ -179,6 +184,10 @@ const Admin = () => {
 
             <TabsContent value="renewals">
               <AdminSubscriptionManager />
+            </TabsContent>
+
+            <TabsContent value="delivery-agents">
+              <AdminDeliveryAgentsManager />
             </TabsContent>
           </Tabs>
         </div>

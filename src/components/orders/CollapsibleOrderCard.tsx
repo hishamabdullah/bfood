@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, FileText, Edit2, X } from "lucide-react";
+import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, FileText, Edit2, X, UserRound, Phone, Building2, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { PaymentDetailsDialog } from "@/components/cart/PaymentDetailsDialog";
@@ -15,6 +15,15 @@ import { userDataQueryOptions } from "@/lib/queryConfig";
 import { useHasFeature } from "@/hooks/useRestaurantAccess";
 import { EditItemDialog, CancelSupplierDialog, CancelOrderDialog } from "./OrderEditActions";
 
+interface DeliveryAgentInfo {
+  id: string;
+  name: string;
+  phone: string | null;
+  bank_name: string | null;
+  bank_account_name: string | null;
+  bank_iban: string | null;
+}
+
 interface OrderItem {
   id: string;
   quantity: number;
@@ -23,6 +32,9 @@ interface OrderItem {
   status?: string;
   supplier_id: string;
   invoice_url?: string | null;
+  delivery_type?: string | null;
+  delivery_agent_id?: string | null;
+  delivery_agent?: DeliveryAgentInfo | null;
   supplier_profile?: {
     business_name?: string;
     user_id?: string;
@@ -71,6 +83,8 @@ interface SupplierGroup {
   status: string;
   deliveryFee: number;
   subtotal: number;
+  deliveryType: string;
+  deliveryAgent: DeliveryAgentInfo | null;
 }
 
 interface OrderPayment {
@@ -99,6 +113,8 @@ const groupItemsBySupplier = (orderItems: OrderItem[]): SupplierGroup[] => {
         status: item.status || "pending",
         deliveryFee: 0,
         subtotal: 0,
+        deliveryType: item.delivery_type || "self",
+        deliveryAgent: item.delivery_agent || null,
       };
     }
     grouped[supplierId].items.push(item);
@@ -390,6 +406,65 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                         }
                         return null;
                       })()}
+
+                      {/* Delivery Agent Payment Info */}
+                      {group.deliveryType === "agent" && group.deliveryAgent && (
+                        <div className="pt-2 border-t border-border">
+                          <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800 space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
+                              <UserRound className="h-4 w-4" />
+                              <span>بيانات دفع مندوب التوصيل</span>
+                            </div>
+                            <div className="space-y-1.5 text-sm">
+                              <div className="flex items-center gap-2">
+                                <User className="h-3 w-3 text-muted-foreground" />
+                                <span className="font-medium">{group.deliveryAgent.name}</span>
+                              </div>
+                              {group.deliveryAgent.phone && (
+                                <a href={`tel:${group.deliveryAgent.phone}`} className="flex items-center gap-2 text-primary hover:underline">
+                                  <Phone className="h-3 w-3" />
+                                  <span dir="ltr">{group.deliveryAgent.phone}</span>
+                                </a>
+                              )}
+                              {group.deliveryAgent.bank_name && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Building2 className="h-3 w-3" />
+                                  <span>{group.deliveryAgent.bank_name}</span>
+                                </div>
+                              )}
+                              {group.deliveryAgent.bank_account_name && (
+                                <div className="text-xs text-muted-foreground">
+                                  صاحب الحساب: {group.deliveryAgent.bank_account_name}
+                                </div>
+                              )}
+                              {group.deliveryAgent.bank_iban && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-mono text-muted-foreground truncate">
+                                    IBAN: {group.deliveryAgent.bank_iban}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 shrink-0"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(group.deliveryAgent!.bank_iban!);
+                                      import("sonner").then(({ toast }) => toast.success(t("cart.ibanCopied")));
+                                    }}
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
+                              <div className="flex justify-between items-center pt-1.5 border-t border-amber-200 dark:border-amber-800">
+                                <span className="text-xs text-muted-foreground">مبلغ التوصيل:</span>
+                                <span className="font-semibold text-amber-700 dark:text-amber-300">
+                                  {group.deliveryFee.toFixed(2)} {t("common.sar")}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

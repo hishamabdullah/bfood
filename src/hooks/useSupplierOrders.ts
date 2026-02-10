@@ -6,8 +6,19 @@ import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { dynamicQueryOptions } from "@/lib/queryConfig";
 
-export type SupplierOrderItem = Tables<"order_items"> & {
-  product?: Tables<"products"> | null;
+export type SupplierOrderItem = Omit<Tables<"order_items">, 'product_id'> & {
+  product_id: string;
+  delivery_type?: string | null;
+  delivery_agent_id?: string | null;
+  product?: Pick<Tables<"products">, "id" | "name" | "image_url" | "unit" | "price" | "sku"> | null;
+  delivery_agent?: {
+    id: string;
+    name: string;
+    phone: string | null;
+    bank_name: string | null;
+    bank_account_name: string | null;
+    bank_iban: string | null;
+  } | null;
   order?: (Tables<"orders"> & {
     restaurant_profile?: Tables<"profiles"> | null;
     branch?: Tables<"branches"> | null;
@@ -96,9 +107,12 @@ export const useSupplierOrders = () => {
           status,
           delivery_fee,
           invoice_url,
+          delivery_type,
+          delivery_agent_id,
           created_at,
           product:products(id, name, image_url, unit, price, sku),
-          order:orders(id, restaurant_id, status, total_amount, delivery_fee, delivery_address, notes, created_at, is_pickup, branch:branches(id, name, address, google_maps_url))
+          order:orders(id, restaurant_id, status, total_amount, delivery_fee, delivery_address, notes, created_at, is_pickup, branch:branches(id, name, address, google_maps_url)),
+          delivery_agent:delivery_agents(id, name, phone, bank_name, bank_account_name, bank_iban)
         `)
         .eq("supplier_id", user.id)
         .order("created_at", { ascending: false });
