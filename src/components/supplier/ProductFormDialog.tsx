@@ -47,6 +47,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { useCategories } from "@/hooks/useProducts";
 import { useCategoryTranslation } from "@/hooks/useCategoryTranslation";
 import { useCreateProduct, useUpdateProduct, SupplierProduct, PriceTier } from "@/hooks/useSupplierProducts";
@@ -56,17 +57,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useSubcategoriesByCategory, getSubcategoryName } from "@/hooks/useSubcategories";
-import { useSectionsBySubcategory, getSectionName } from "@/hooks/useSections";
+import { useSubcategories, getSubcategoryName } from "@/hooks/useSubcategories";
+import { useSections, getSectionName } from "@/hooks/useSections";
 
 const productSchema = z.object({
   name: z.string().min(2).max(100),
   description: z.string().max(500).optional(),
   price: z.coerce.number().min(0.01),
   unit: z.string().min(1),
-  category_id: z.string().optional(),
-  subcategory_id: z.string().optional(),
-  section_id: z.string().optional(),
   stock_quantity: z.coerce.number().min(0).default(0),
   unlimited_stock: z.boolean().default(false),
   country_of_origin: z.string().default("السعودية"),
@@ -94,13 +92,16 @@ export default function ProductFormDialog({
   onOpenChange,
   product,
 }: ProductFormDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { data: categories } = useCategories();
+  const { data: allSubcategories } = useSubcategories();
+  const { data: allSections } = useSections();
   const { getCategoryName } = useCategoryTranslation();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const isEditing = !!product;
+  const lang = i18n.language;
   
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -108,7 +109,12 @@ export default function ProductFormDialog({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Category, subcategory and section popover states
+  // Multi-select states
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<string[]>([]);
+  const [selectedSectionIds, setSelectedSectionIds] = useState<string[]>([]);
+  
+  // Popover states
   const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
   const [subcategoryPopoverOpen, setSubcategoryPopoverOpen] = useState(false);
   const [sectionPopoverOpen, setSectionPopoverOpen] = useState(false);
@@ -123,9 +129,6 @@ export default function ProductFormDialog({
       description: "",
       price: 0,
       unit: "kg",
-      category_id: "",
-      subcategory_id: "",
-      section_id: "",
       stock_quantity: 0,
       unlimited_stock: false,
       country_of_origin: "السعودية",
@@ -138,10 +141,17 @@ export default function ProductFormDialog({
     },
   });
 
-  const watchCategoryId = form.watch("category_id");
-  const watchSubcategoryId = form.watch("subcategory_id");
-  const { data: subcategories } = useSubcategoriesByCategory(watchCategoryId || null);
-  const { data: sections } = useSectionsBySubcategory(watchSubcategoryId || null);
+  // Filter subcategories based on selected categories
+  const availableSubcategories = useMemo(() => {
+    if (!allSubcategories || selectedCategoryIds.length === 0) return [];
+    return allSubcategories.filter((sub) => selectedCategoryIds.includes(sub.category_id));
+  }, [allSubcategories, selectedCategoryIds]);
+
+  // Filter sections based on selected subcategories
+  const availableSections = useMemo(() => {
+    if (!allSections || selectedSubcategoryIds.length === 0) return [];
+    return allSections.filter((sec) => selectedSubcategoryIds.includes(sec.subcategory_id));
+  }, [allSections, selectedSubcategoryIds]);
 
   const watchUnlimitedStock = form.watch("unlimited_stock");
   const watchPrice = form.watch("price");
@@ -160,49 +170,29 @@ export default function ProductFormDialog({
   
   // Filter subcategories based on search
   const filteredSubcategories = useMemo(() => {
-    if (!subcategories) return [];
-    if (!subcategorySearch.trim()) return subcategories;
+    if (!availableSubcategories) return [];
+    if (!subcategorySearch.trim()) return availableSubcategories;
     const search = subcategorySearch.toLowerCase();
-    return subcategories.filter((sub) =>
+    return availableSubcategories.filter((sub) =>
       sub.name?.toLowerCase().includes(search) ||
       sub.name_en?.toLowerCase().includes(search)
     );
-  }, [subcategories, subcategorySearch]);
+  }, [availableSubcategories, subcategorySearch]);
   
   // Filter sections based on search
   const filteredSections = useMemo(() => {
-    if (!sections) return [];
-    if (!sectionSearch.trim()) return sections;
+    if (!availableSections) return [];
+    if (!sectionSearch.trim()) return availableSections;
     const search = sectionSearch.toLowerCase();
-    return sections.filter((sec) =>
+    return availableSections.filter((sec) =>
       sec.name?.toLowerCase().includes(search) ||
       sec.name_en?.toLowerCase().includes(search)
     );
-  }, [sections, sectionSearch]);
-  
-  // Get selected category, subcategory and section info
-  const selectedCategory = useMemo(() => {
-    const catId = form.watch("category_id");
-    if (!catId || !categories) return null;
-    return categories.find((c) => c.id === catId);
-  }, [form.watch("category_id"), categories]);
-  
-  const selectedSubcategory = useMemo(() => {
-    const subId = form.watch("subcategory_id");
-    if (!subId || !subcategories) return null;
-    return subcategories.find((s) => s.id === subId);
-  }, [form.watch("subcategory_id"), subcategories]);
-
-  const selectedSection = useMemo(() => {
-    const secId = form.watch("section_id");
-    if (!secId || !sections) return null;
-    return sections.find((s) => s.id === secId);
-  }, [form.watch("section_id"), sections]);
+  }, [availableSections, sectionSearch]);
 
   // Reset form when dialog opens for a new product
   useEffect(() => {
     if (open) {
-      // Reset search states
       setCategorySearch("");
       setSubcategorySearch("");
       setSectionSearch("");
@@ -213,9 +203,6 @@ export default function ProductFormDialog({
           description: product.description || "",
           price: product.price,
           unit: product.unit,
-          category_id: product.category_id || "",
-          subcategory_id: (product as any).subcategory_id || "",
-          section_id: (product as any).section_id || "",
           stock_quantity: product.stock_quantity || 0,
           unlimited_stock: (product as any).unlimited_stock || false,
           country_of_origin: product.country_of_origin || "السعودية",
@@ -229,16 +216,19 @@ export default function ProductFormDialog({
         setPriceTiers(product.price_tiers || []);
         setImagePreview(product.image_url || null);
         setImageFile(null);
+        // Set multi-select from junction tables or fallback to old fields
+        const catIds = product.product_categories?.map((pc) => pc.category_id) || [];
+        const subIds = product.product_subcategories?.map((ps) => ps.subcategory_id) || [];
+        const secIds = product.product_sections?.map((ps) => ps.section_id) || [];
+        setSelectedCategoryIds(catIds.length > 0 ? catIds : product.category_id ? [product.category_id] : []);
+        setSelectedSubcategoryIds(subIds.length > 0 ? subIds : (product as any).subcategory_id ? [(product as any).subcategory_id] : []);
+        setSelectedSectionIds(secIds.length > 0 ? secIds : (product as any).section_id ? [(product as any).section_id] : []);
       } else {
-        // Clear form completely for new product
         form.reset({
           name: "",
           description: "",
           price: 0,
           unit: "kg",
-          category_id: "",
-          subcategory_id: "",
-          section_id: "",
           stock_quantity: 0,
           unlimited_stock: false,
           country_of_origin: "السعودية",
@@ -252,7 +242,9 @@ export default function ProductFormDialog({
         setPriceTiers([]);
         setImagePreview(null);
         setImageFile(null);
-        // Clear file input
+        setSelectedCategoryIds([]);
+        setSelectedSubcategoryIds([]);
+        setSelectedSectionIds([]);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -315,7 +307,6 @@ export default function ProductFormDialog({
 
   const onSubmit = async (values: ProductFormValues) => {
     try {
-      // Upload image if a new file was selected
       let imageUrl = values.image_url || null;
       if (imageFile) {
         const uploadedUrl = await uploadImage();
@@ -324,14 +315,19 @@ export default function ProductFormDialog({
         }
       }
 
+      // Keep first category as primary for backward compatibility
+      const primaryCategoryId = selectedCategoryIds[0] || null;
+      const primarySubcategoryId = selectedSubcategoryIds[0] || null;
+      const primarySectionId = selectedSectionIds[0] || null;
+
       const productData = {
         name: values.name,
         description: values.description || null,
         price: values.price,
         unit: values.unit,
-        category_id: values.category_id || null,
-        subcategory_id: values.subcategory_id || null,
-        section_id: values.section_id || null,
+        category_id: primaryCategoryId,
+        subcategory_id: primarySubcategoryId,
+        section_id: primarySectionId,
         stock_quantity: values.unlimited_stock ? null : values.stock_quantity,
         unlimited_stock: values.unlimited_stock,
         country_of_origin: values.country_of_origin,
@@ -342,6 +338,9 @@ export default function ProductFormDialog({
         description_en: values.description_en || null,
         sku: values.sku || null,
         price_tiers: priceTiers,
+        category_ids: selectedCategoryIds,
+        subcategory_ids: selectedSubcategoryIds,
+        section_ids: selectedSectionIds,
       };
 
       if (isEditing && product) {
@@ -538,260 +537,302 @@ export default function ProductFormDialog({
               />
             )}
 
-            <FormField
-              control={form.control}
-              name="category_id"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>{t("productForm.category")}</FormLabel>
-                  <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {selectedCategory ? (
-                            <span>{getCategoryName(selectedCategory)}</span>
-                          ) : (
-                            t("productForm.selectCategory")
-                          )}
-                          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-[300px] p-0"
-                      align="start"
-                      onWheelCapture={(e) => e.stopPropagation()}
-                      onTouchMoveCapture={(e) => e.stopPropagation()}
-                    >
-                      <Command shouldFilter={false}>
-                        <CommandInput
-                          placeholder={t("productForm.searchCategory")}
-                          value={categorySearch}
-                          onValueChange={setCategorySearch}
-                        />
-                        <CommandList className="max-h-[200px]">
-                          {filteredCategories.length === 0 ? (
-                            <CommandEmpty>{t("common.noResults")}</CommandEmpty>
-                          ) : (
-                            <CommandGroup>
-                              {filteredCategories.map((cat) => (
-                                <CommandItem
-                                  key={cat.id}
-                                  value={cat.id}
-                                  onSelect={() => {
-                                    field.onChange(cat.id);
-                                    form.setValue("subcategory_id", "");
-                                    setCategoryPopoverOpen(false);
-                                    setCategorySearch("");
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "me-2 h-4 w-4",
-                                      field.value === cat.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <span>{getCategoryName(cat)}</span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          )}
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Subcategory Field - Optional, shown when category is selected */}
-            {watchCategoryId && subcategories && subcategories.length > 0 && (
-              <FormField
-                control={form.control}
-                name="subcategory_id"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>{t("productForm.subcategory")}</FormLabel>
-                    <Popover open={subcategoryPopoverOpen} onOpenChange={setSubcategoryPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {selectedSubcategory ? (
-                              <span>{getSubcategoryName(selectedSubcategory, "ar")}</span>
-                            ) : (
-                              t("productForm.selectSubcategory")
-                            )}
-                            <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-[300px] p-0"
-                        align="start"
-                        onWheelCapture={(e) => e.stopPropagation()}
-                        onTouchMoveCapture={(e) => e.stopPropagation()}
-                      >
-                        <Command shouldFilter={false}>
-                          <CommandInput
-                            placeholder={t("productForm.searchSubcategory")}
-                            value={subcategorySearch}
-                            onValueChange={setSubcategorySearch}
-                          />
-                          <CommandList className="max-h-[200px]">
-                            <CommandGroup>
+            {/* Multi-select Categories */}
+            <div className="flex flex-col gap-2">
+              <FormLabel>{t("productForm.category")}</FormLabel>
+              <p className="text-xs text-muted-foreground">حدد الأقسام التي يشملها المنتج لو كانت أكثر من قسم</p>
+              <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    type="button"
+                    className={cn(
+                      "w-full justify-between",
+                      selectedCategoryIds.length === 0 && "text-muted-foreground"
+                    )}
+                  >
+                    {selectedCategoryIds.length > 0 ? (
+                      <span>{selectedCategoryIds.length} {t("productForm.category")}</span>
+                    ) : (
+                      t("productForm.selectCategory")
+                    )}
+                    <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[300px] p-0"
+                  align="start"
+                  onWheelCapture={(e) => e.stopPropagation()}
+                  onTouchMoveCapture={(e) => e.stopPropagation()}
+                >
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder={t("productForm.searchCategory")}
+                      value={categorySearch}
+                      onValueChange={setCategorySearch}
+                    />
+                    <CommandList className="max-h-[200px]">
+                      {filteredCategories.length === 0 ? (
+                        <CommandEmpty>{t("common.noResults")}</CommandEmpty>
+                      ) : (
+                        <CommandGroup>
+                          {filteredCategories.map((cat) => {
+                            const isSelected = selectedCategoryIds.includes(cat.id);
+                            return (
                               <CommandItem
-                                value="none"
+                                key={cat.id}
+                                value={cat.id}
                                 onSelect={() => {
-                                  field.onChange("");
-                                  setSubcategoryPopoverOpen(false);
+                                  if (isSelected) {
+                                    const newIds = selectedCategoryIds.filter((id) => id !== cat.id);
+                                    setSelectedCategoryIds(newIds);
+                                    // Remove subcategories that belong to removed category
+                                    if (allSubcategories) {
+                                      const subIdsToRemove = allSubcategories
+                                        .filter((s) => s.category_id === cat.id)
+                                        .map((s) => s.id);
+                                      setSelectedSubcategoryIds((prev) => prev.filter((id) => !subIdsToRemove.includes(id)));
+                                    }
+                                  } else {
+                                    setSelectedCategoryIds([...selectedCategoryIds, cat.id]);
+                                  }
+                                  setCategorySearch("");
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "me-2 h-4 w-4",
+                                    isSelected ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span>{getCategoryName(cat)}</span>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {selectedCategoryIds.length > 0 && categories && (
+                <div className="flex flex-wrap gap-1">
+                  {selectedCategoryIds.map((catId) => {
+                    const cat = categories.find((c) => c.id === catId);
+                    if (!cat) return null;
+                    return (
+                      <Badge key={catId} variant="secondary" className="gap-1">
+                        {getCategoryName(cat)}
+                        <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => {
+                            setSelectedCategoryIds((prev) => prev.filter((id) => id !== catId));
+                            if (allSubcategories) {
+                              const subIdsToRemove = allSubcategories
+                                .filter((s) => s.category_id === catId)
+                                .map((s) => s.id);
+                              setSelectedSubcategoryIds((prev) => prev.filter((id) => !subIdsToRemove.includes(id)));
+                            }
+                          }}
+                        />
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Multi-select Subcategories */}
+            {selectedCategoryIds.length > 0 && availableSubcategories.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <FormLabel>{t("productForm.subcategory")}</FormLabel>
+                <p className="text-xs text-muted-foreground">حدد الأقسام الفرعية التي يشملها المنتج</p>
+                <Popover open={subcategoryPopoverOpen} onOpenChange={setSubcategoryPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      type="button"
+                      className={cn(
+                        "w-full justify-between",
+                        selectedSubcategoryIds.length === 0 && "text-muted-foreground"
+                      )}
+                    >
+                      {selectedSubcategoryIds.length > 0 ? (
+                        <span>{selectedSubcategoryIds.length} {t("productForm.subcategory")}</span>
+                      ) : (
+                        t("productForm.selectSubcategory")
+                      )}
+                      <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[300px] p-0"
+                    align="start"
+                    onWheelCapture={(e) => e.stopPropagation()}
+                    onTouchMoveCapture={(e) => e.stopPropagation()}
+                  >
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder={t("productForm.searchSubcategory")}
+                        value={subcategorySearch}
+                        onValueChange={setSubcategorySearch}
+                      />
+                      <CommandList className="max-h-[200px]">
+                        <CommandGroup>
+                          {filteredSubcategories.map((sub) => {
+                            const isSelected = selectedSubcategoryIds.includes(sub.id);
+                            return (
+                              <CommandItem
+                                key={sub.id}
+                                value={sub.id}
+                                onSelect={() => {
+                                  if (isSelected) {
+                                    const newIds = selectedSubcategoryIds.filter((id) => id !== sub.id);
+                                    setSelectedSubcategoryIds(newIds);
+                                    // Remove sections that belong to removed subcategory
+                                    if (allSections) {
+                                      const secIdsToRemove = allSections
+                                        .filter((s) => s.subcategory_id === sub.id)
+                                        .map((s) => s.id);
+                                      setSelectedSectionIds((prev) => prev.filter((id) => !secIdsToRemove.includes(id)));
+                                    }
+                                  } else {
+                                    setSelectedSubcategoryIds([...selectedSubcategoryIds, sub.id]);
+                                  }
                                   setSubcategorySearch("");
                                 }}
                               >
                                 <Check
                                   className={cn(
                                     "me-2 h-4 w-4",
-                                    !field.value ? "opacity-100" : "opacity-0"
+                                    isSelected ? "opacity-100" : "opacity-0"
                                   )}
                                 />
-                                <span>{t("productForm.noSubcategory")}</span>
+                                <span>{getSubcategoryName(sub, lang)}</span>
                               </CommandItem>
-                              {filteredSubcategories.map((sub) => (
-                                <CommandItem
-                                  key={sub.id}
-                                  value={sub.id}
-                                  onSelect={() => {
-                                    field.onChange(sub.id);
-                                    setSubcategoryPopoverOpen(false);
-                                    setSubcategorySearch("");
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "me-2 h-4 w-4",
-                                      field.value === sub.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <span>{getSubcategoryName(sub, "ar")}</span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("productForm.subcategoryHint")}
-                    </p>
-                    <FormMessage />
-                  </FormItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {selectedSubcategoryIds.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {selectedSubcategoryIds.map((subId) => {
+                      const sub = allSubcategories?.find((s) => s.id === subId);
+                      if (!sub) return null;
+                      return (
+                        <Badge key={subId} variant="secondary" className="gap-1">
+                          {getSubcategoryName(sub, lang)}
+                          <X
+                            className="h-3 w-3 cursor-pointer"
+                            onClick={() => {
+                              setSelectedSubcategoryIds((prev) => prev.filter((id) => id !== subId));
+                              if (allSections) {
+                                const secIdsToRemove = allSections
+                                  .filter((s) => s.subcategory_id === subId)
+                                  .map((s) => s.id);
+                                setSelectedSectionIds((prev) => prev.filter((id) => !secIdsToRemove.includes(id)));
+                              }
+                            }}
+                          />
+                        </Badge>
+                      );
+                    })}
+                  </div>
                 )}
-              />
+              </div>
             )}
 
-            {/* Section Field - Optional, shown when subcategory is selected */}
-            {watchSubcategoryId && sections && sections.length > 0 && (
-              <FormField
-                control={form.control}
-                name="section_id"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>القسم الداخلي</FormLabel>
-                    <Popover open={sectionPopoverOpen} onOpenChange={setSectionPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {selectedSection ? (
-                              <span>{getSectionName(selectedSection, "ar")}</span>
-                            ) : (
-                              "اختر القسم الداخلي"
-                            )}
-                            <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-[300px] p-0"
-                        align="start"
-                        onWheelCapture={(e) => e.stopPropagation()}
-                        onTouchMoveCapture={(e) => e.stopPropagation()}
-                      >
-                        <Command shouldFilter={false}>
-                          <CommandInput
-                            placeholder="ابحث عن قسم داخلي..."
-                            value={sectionSearch}
-                            onValueChange={setSectionSearch}
-                          />
-                          <CommandList className="max-h-[200px]">
-                            <CommandGroup>
+            {/* Multi-select Sections */}
+            {selectedSubcategoryIds.length > 0 && availableSections.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <FormLabel>القسم الداخلي</FormLabel>
+                <p className="text-xs text-muted-foreground">حدد الأقسام الداخلية التي يشملها المنتج</p>
+                <Popover open={sectionPopoverOpen} onOpenChange={setSectionPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      type="button"
+                      className={cn(
+                        "w-full justify-between",
+                        selectedSectionIds.length === 0 && "text-muted-foreground"
+                      )}
+                    >
+                      {selectedSectionIds.length > 0 ? (
+                        <span>{selectedSectionIds.length} قسم داخلي</span>
+                      ) : (
+                        "اختر القسم الداخلي"
+                      )}
+                      <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[300px] p-0"
+                    align="start"
+                    onWheelCapture={(e) => e.stopPropagation()}
+                    onTouchMoveCapture={(e) => e.stopPropagation()}
+                  >
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="ابحث عن قسم داخلي..."
+                        value={sectionSearch}
+                        onValueChange={setSectionSearch}
+                      />
+                      <CommandList className="max-h-[200px]">
+                        <CommandGroup>
+                          {filteredSections.map((sec) => {
+                            const isSelected = selectedSectionIds.includes(sec.id);
+                            return (
                               <CommandItem
-                                value="none"
+                                key={sec.id}
+                                value={sec.id}
                                 onSelect={() => {
-                                  field.onChange("");
-                                  setSectionPopoverOpen(false);
+                                  if (isSelected) {
+                                    setSelectedSectionIds((prev) => prev.filter((id) => id !== sec.id));
+                                  } else {
+                                    setSelectedSectionIds([...selectedSectionIds, sec.id]);
+                                  }
                                   setSectionSearch("");
                                 }}
                               >
                                 <Check
                                   className={cn(
                                     "me-2 h-4 w-4",
-                                    !field.value ? "opacity-100" : "opacity-0"
+                                    isSelected ? "opacity-100" : "opacity-0"
                                   )}
                                 />
-                                <span>بدون قسم داخلي</span>
+                                <span>{getSectionName(sec, lang)}</span>
                               </CommandItem>
-                              {filteredSections.map((sec) => (
-                                <CommandItem
-                                  key={sec.id}
-                                  value={sec.id}
-                                  onSelect={() => {
-                                    field.onChange(sec.id);
-                                    setSectionPopoverOpen(false);
-                                    setSectionSearch("");
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "me-2 h-4 w-4",
-                                      field.value === sec.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <span>{getSectionName(sec, "ar")}</span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      اختيار القسم الداخلي يساعد في تنظيم المنتجات بشكل أفضل
-                    </p>
-                    <FormMessage />
-                  </FormItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {selectedSectionIds.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {selectedSectionIds.map((secId) => {
+                      const sec = allSections?.find((s) => s.id === secId);
+                      if (!sec) return null;
+                      return (
+                        <Badge key={secId} variant="secondary" className="gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          {getSectionName(sec, lang)}
+                          <X
+                            className="h-3 w-3 cursor-pointer"
+                            onClick={() => setSelectedSectionIds((prev) => prev.filter((id) => id !== secId))}
+                          />
+                        </Badge>
+                      );
+                    })}
+                  </div>
                 )}
-              />
+              </div>
             )}
             <FormField
               control={form.control}

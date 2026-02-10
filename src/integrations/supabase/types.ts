@@ -463,6 +463,42 @@ export type Database = {
           },
         ]
       }
+      product_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_categories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_custom_prices: {
         Row: {
           created_at: string
@@ -529,6 +565,78 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_sections: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          section_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          section_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          section_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sections_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sections_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_subcategories: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          subcategory_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          subcategory_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          subcategory_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_subcategories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_subcategories_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategories"
             referencedColumns: ["id"]
           },
         ]
