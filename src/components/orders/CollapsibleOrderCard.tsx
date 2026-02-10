@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, FileText, Edit2, X, UserRound, Phone, Building2, Copy } from "lucide-react";
+import { ChevronLeft, ChevronDown, Package, Clock, CheckCircle, XCircle, Truck, Store, RotateCcw, MapPin, ExternalLink, User, FileText, Edit2, X, UserRound, Phone, Building2, Copy, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { PaymentDetailsDialog } from "@/components/cart/PaymentDetailsDialog";
@@ -323,6 +323,16 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                         />
                       )}
                     </div>
+
+                    {/* تنبيه الدفع المنفصل للمندوب */}
+                    {group.deliveryType === "agent" && group.deliveryAgent && (
+                      <div className="mx-3 mt-2 p-2.5 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800 flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                          ⚠️ التوصيل عبر مندوب خارجي — يُرجى دفع رسوم التوصيل ({group.deliveryFee.toFixed(2)} {t("common.sar")}) بشكل منفصل للمندوب "{group.deliveryAgent.name}" وليس للمورد.
+                        </p>
+                      </div>
+                    )}
                     
                     {/* Items */}
                     <div className="divide-y">
