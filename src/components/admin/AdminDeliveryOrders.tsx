@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Loader2, MapPin, Truck, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, XCircle, Building2, Phone, Package } from "lucide-react";
+import { Loader2, MapPin, Truck, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, XCircle, Building2, Phone, Package, User } from "lucide-react";
 import { useAdminDeliveryOrders, DeliveryOrder } from "@/hooks/useAdminDeliveryOrders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,6 +88,19 @@ const DeliveryOrderCard = ({ order }: { order: DeliveryOrder }) => {
               <Truck className="h-4 w-4" />
               <span>{order.suppliers.length} مورد</span>
             </div>
+            {/* عرض أسماء المناديب */}
+            {order.suppliers.some(s => s.delivery_agent) && (
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>
+                  المندوب: {order.suppliers
+                    .filter(s => s.delivery_agent)
+                    .map(s => s.delivery_agent!.name)
+                    .filter((v, i, a) => a.indexOf(v) === i)
+                    .join("، ")}
+                </span>
+              </div>
+            )}
             <div className="font-medium text-primary">
               رسوم التوصيل: {totalDeliveryFee.toFixed(2)} ر.س
             </div>
