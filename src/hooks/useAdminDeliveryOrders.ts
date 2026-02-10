@@ -10,6 +10,11 @@ export type DeliveryOrderItem = {
   unit: string;
 };
 
+export type DeliveryAgentInfo = {
+  name: string;
+  phone: string | null;
+};
+
 export type DeliveryOrderSupplier = {
   supplier_id: string;
   supplier_profile: Tables<"profiles"> | null;
@@ -19,6 +24,8 @@ export type DeliveryOrderSupplier = {
   is_paid: boolean;
   receipt_url: string | null;
   items: DeliveryOrderItem[];
+  delivery_agent: DeliveryAgentInfo | null;
+  delivery_type: string | null;
 };
 
 export type DeliveryOrder = Tables<"orders"> & {
@@ -59,7 +66,8 @@ export const useAdminDeliveryOrders = () => {
         .from("order_items")
         .select(`
           *,
-          product:products(id, name, unit)
+          product:products(id, name, unit),
+          delivery_agent:delivery_agents(id, name, phone)
         `)
         .in("order_id", orderIds);
 
@@ -112,6 +120,11 @@ export const useAdminDeliveryOrders = () => {
             unit: (item as any).product?.unit || "وحدة",
           }));
           
+          // أخذ معلومات المندوب من أول عنصر يحتوي على مندوب
+          const agentItem = group.items.find(i => (i as any).delivery_agent);
+          const deliveryAgent = agentItem ? (agentItem as any).delivery_agent : null;
+          const deliveryType = group.items[0]?.delivery_type || null;
+
           return {
             supplier_id: supplierId,
             supplier_profile: supplierProfiles?.find(p => p.user_id === supplierId) || null,
@@ -121,6 +134,8 @@ export const useAdminDeliveryOrders = () => {
             is_paid: payment?.is_paid || false,
             receipt_url: payment?.receipt_url || null,
             items: formattedItems,
+            delivery_agent: deliveryAgent ? { name: deliveryAgent.name, phone: deliveryAgent.phone } : null,
+            delivery_type: deliveryType,
           };
         });
 
