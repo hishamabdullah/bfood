@@ -233,6 +233,12 @@ const CollapsibleOrderCard = memo(({ order, onRepeatOrder }: CollapsibleOrderCar
                           <SupplierStatusIcon className="h-3 w-3" />
                           {supplierStatusConfig.label}
                         </Badge>
+                        {group.deliveryType === "agent" && group.deliveryAgent && (
+                          <Badge variant="outline" className="gap-0.5 text-xs py-0 h-5 text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-600">
+                            <UserRound className="h-3 w-3" />
+                            مندوب: {group.deliveryAgent.name}
+                          </Badge>
+                        )}
                       </div>
                     );
                   })}

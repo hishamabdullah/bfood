@@ -10,6 +10,14 @@ import { useSubUserContext, useEffectiveRestaurantId } from "@/hooks/useSubUserC
 export type OrderItem = Tables<"order_items"> & {
   product?: Tables<"products"> | null;
   supplier_profile?: Pick<Tables<"profiles">, "business_name" | "user_id" | "bank_name" | "bank_account_name" | "bank_iban"> | null;
+  delivery_agent?: {
+    id: string;
+    name: string;
+    phone: string | null;
+    bank_name: string | null;
+    bank_account_name: string | null;
+    bank_iban: string | null;
+  } | null;
 };
 
 export type Order = Tables<"orders"> & {
