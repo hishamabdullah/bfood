@@ -40,6 +40,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { InvoiceUploadDialog } from "@/components/supplier/InvoiceUploadDialog";
+import DeliveryAgentSelector from "@/components/supplier/DeliveryAgentSelector";
 
 interface OrderItem {
   id: string;
@@ -88,6 +89,9 @@ interface GroupedOrder {
   branch?: Branch;
   deliveryFee: number;
   isPickup: boolean;
+  deliveryType?: string;
+  deliveryAgentId?: string | null;
+  deliveryAgentName?: string | null;
 }
 
 interface CollapsibleSupplierOrderCardProps {
@@ -461,6 +465,20 @@ const CollapsibleSupplierOrderCard = memo(({
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Delivery Agent Selector - only for non-pickup orders */}
+              {!order.isPickup && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">طريقة التوصيل:</span>
+                  <DeliveryAgentSelector
+                    orderId={order.orderId}
+                    supplierId={order.items[0]?.id ? (order.items[0] as any).supplier_id || "" : ""}
+                    currentDeliveryType={order.deliveryType || "self"}
+                    currentAgentId={order.deliveryAgentId}
+                    currentAgentName={order.deliveryAgentName}
+                  />
+                </div>
+              )}
 
               {/* Restaurant Info */}
               <div className="bg-muted/30 rounded-xl p-3">

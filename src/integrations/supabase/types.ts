@@ -104,6 +104,42 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_agents: {
+        Row: {
+          bank_account_name: string | null
+          bank_iban: string | null
+          bank_name: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          bank_account_name?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bank_account_name?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       favorite_products: {
         Row: {
           created_at: string
@@ -249,7 +285,9 @@ export type Database = {
       order_items: {
         Row: {
           created_at: string
+          delivery_agent_id: string | null
           delivery_fee: number | null
+          delivery_type: string | null
           id: string
           invoice_url: string | null
           order_id: string
@@ -261,7 +299,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delivery_agent_id?: string | null
           delivery_fee?: number | null
+          delivery_type?: string | null
           id?: string
           invoice_url?: string | null
           order_id: string
@@ -273,7 +313,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delivery_agent_id?: string | null
           delivery_fee?: number | null
+          delivery_type?: string | null
           id?: string
           invoice_url?: string | null
           order_id?: string
@@ -284,6 +326,13 @@ export type Database = {
           unit_price?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "order_items_delivery_agent_id_fkey"
+            columns: ["delivery_agent_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_agents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "order_items_order_id_fkey"
             columns: ["order_id"]

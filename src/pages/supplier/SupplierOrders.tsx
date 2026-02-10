@@ -23,6 +23,9 @@ interface GroupedOrder {
   branch?: any;
   deliveryFee: number;
   isPickup: boolean;
+  deliveryType?: string;
+  deliveryAgentId?: string | null;
+  deliveryAgentName?: string | null;
 }
 
 export default function SupplierOrders() {
@@ -60,6 +63,9 @@ export default function SupplierOrders() {
           branch: item.order?.branch || undefined,
           deliveryFee: 0,
           isPickup: (item.order as any)?.is_pickup || false,
+          deliveryType: (item as any).delivery_type || "self",
+          deliveryAgentId: (item as any).delivery_agent_id || null,
+          deliveryAgentName: (item as any).delivery_agent?.name || null,
         };
       }
       grouped[orderId].items.push(item);
