@@ -36,6 +36,7 @@ export interface RestaurantWithFeatures {
   is_approved: boolean;
   created_at: string;
   features: RestaurantFeatures | null;
+  plan_name: string | null;
 }
 
 // جلب ميزات المطعم الحالي
@@ -93,17 +94,34 @@ export const useAllRestaurantsWithFeatures = () => {
 
       if (featuresError) throw featuresError;
 
+      // جلب خطط الاشتراك
+      const planIds = features?.map(f => f.plan_id).filter(Boolean) as string[] || [];
+      let plansMap: Record<string, string> = {};
+      if (planIds.length > 0) {
+        const { data: plans } = await supabase
+          .from("subscription_plans")
+          .select("id, name")
+          .in("id", planIds);
+        if (plans) {
+          plansMap = Object.fromEntries(plans.map(p => [p.id, p.name]));
+        }
+      }
+
       // دمج البيانات
-      const result: RestaurantWithFeatures[] = profiles?.map(profile => ({
-        user_id: profile.user_id,
-        business_name: profile.business_name,
-        full_name: profile.full_name,
-        phone: profile.phone,
-        customer_code: profile.customer_code,
-        is_approved: profile.is_approved,
-        created_at: profile.created_at,
-        features: features?.find(f => f.restaurant_id === profile.user_id) as RestaurantFeatures || null,
-      })) || [];
+      const result: RestaurantWithFeatures[] = profiles?.map(profile => {
+        const feat = features?.find(f => f.restaurant_id === profile.user_id) as RestaurantFeatures || null;
+        return {
+          user_id: profile.user_id,
+          business_name: profile.business_name,
+          full_name: profile.full_name,
+          phone: profile.phone,
+          customer_code: profile.customer_code,
+          is_approved: profile.is_approved,
+          created_at: profile.created_at,
+          features: feat,
+          plan_name: feat?.plan_id ? plansMap[feat.plan_id] || null : null,
+        };
+      }) || [];
 
       return result;
     },

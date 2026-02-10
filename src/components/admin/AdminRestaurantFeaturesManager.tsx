@@ -184,7 +184,8 @@ const AdminRestaurantFeaturesManager = () => {
                   <TableHead className="text-right">المطعم</TableHead>
                   <TableHead className="text-right">رقم العميل</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
-                  <TableHead className="text-right">الاشتراك</TableHead>
+                  <TableHead className="text-right">الخطة</TableHead>
+                  <TableHead className="text-right">تاريخ الانتهاء</TableHead>
                   <TableHead className="text-right">الميزات</TableHead>
                   <TableHead className="text-right">الإجراءات</TableHead>
                 </TableRow>
@@ -192,13 +193,19 @@ const AdminRestaurantFeaturesManager = () => {
               <TableBody>
                 {filteredRestaurants?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       لا توجد مطاعم
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredRestaurants?.map((restaurant) => {
                     const isActive = restaurant.features?.is_active ?? true;
+                    const endDate = restaurant.features?.subscription_end_date;
+                    const isExpired = endDate ? new Date(endDate) <= new Date() : false;
+                    const daysRemaining = endDate
+                      ? Math.ceil((new Date(endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                      : null;
+
                     return (
                       <TableRow key={restaurant.user_id} className={!isActive ? "opacity-50" : ""}>
                         <TableCell>
@@ -224,7 +231,30 @@ const AdminRestaurantFeaturesManager = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {getSubscriptionBadge(restaurant.features?.subscription_type || "basic")}
+                          {restaurant.plan_name ? (
+                            <Badge className="bg-primary/10 text-primary border border-primary/20">
+                              <Crown className="h-3 w-3 ml-1" />
+                              {restaurant.plan_name}
+                            </Badge>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">بدون خطة</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {endDate ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium">{new Date(endDate).toLocaleDateString("ar-SA")}</span>
+                              {isExpired ? (
+                                <Badge variant="destructive" className="text-xs w-fit">منتهي</Badge>
+                              ) : daysRemaining !== null && daysRemaining <= 7 ? (
+                                <Badge className="bg-amber-500 text-white text-xs w-fit">متبقي {daysRemaining} يوم</Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">متبقي {daysRemaining} يوم</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">غير محدد</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{getFeatureCount(restaurant)} ميزات</Badge>
