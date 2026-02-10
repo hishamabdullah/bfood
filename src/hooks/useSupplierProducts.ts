@@ -14,6 +14,9 @@ export type PriceTier = {
 export type SupplierProduct = Tables<"products"> & {
   category?: Tables<"categories"> | null;
   price_tiers?: PriceTier[];
+  product_categories?: { category_id: string; categories: Tables<"categories"> | null }[];
+  product_subcategories?: { subcategory_id: string }[];
+  product_sections?: { section_id: string }[];
 };
 
 export const useSupplierProducts = () => {
@@ -29,7 +32,10 @@ export const useSupplierProducts = () => {
         .select(`
           *,
           category:categories(id, name, name_en, icon),
-          price_tiers:product_price_tiers(id, min_quantity, price_per_unit)
+          price_tiers:product_price_tiers(id, min_quantity, price_per_unit),
+          product_categories(category_id, categories:categories(id, name, name_en, icon)),
+          product_subcategories(subcategory_id),
+          product_sections(section_id)
         `)
         .eq("supplier_id", user.id)
         .order("created_at", { ascending: false });
@@ -47,10 +53,10 @@ export const useCreateProduct = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (product: Omit<TablesInsert<"products">, "supplier_id"> & { price_tiers?: PriceTier[] }) => {
+    mutationFn: async (product: Omit<TablesInsert<"products">, "supplier_id"> & { price_tiers?: PriceTier[]; category_ids?: string[]; subcategory_ids?: string[]; section_ids?: string[] }) => {
       if (!user) throw new Error("يجب تسجيل الدخول");
 
-      const { price_tiers, ...productData } = product;
+      const { price_tiers, category_ids, subcategory_ids, section_ids, ...productData } = product;
 
       const { data, error } = await supabase
         .from("products")
@@ -80,6 +86,23 @@ export const useCreateProduct = () => {
         }
       }
 
+      // Insert multi-category assignments
+      if (category_ids && category_ids.length > 0) {
+        await supabase.from("product_categories").insert(
+          category_ids.map((cid) => ({ product_id: data.id, category_id: cid }))
+        );
+      }
+      if (subcategory_ids && subcategory_ids.length > 0) {
+        await supabase.from("product_subcategories").insert(
+          subcategory_ids.map((sid) => ({ product_id: data.id, subcategory_id: sid }))
+        );
+      }
+      if (section_ids && section_ids.length > 0) {
+        await supabase.from("product_sections").insert(
+          section_ids.map((sid) => ({ product_id: data.id, section_id: sid }))
+        );
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -98,7 +121,7 @@ export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, price_tiers, ...product }: TablesUpdate<"products"> & { id: string; price_tiers?: PriceTier[] }) => {
+    mutationFn: async ({ id, price_tiers, category_ids, subcategory_ids, section_ids, ...product }: TablesUpdate<"products"> & { id: string; price_tiers?: PriceTier[]; category_ids?: string[]; subcategory_ids?: string[]; section_ids?: string[] }) => {
       const { data, error } = await supabase
         .from("products")
         .update(product)
@@ -110,27 +133,41 @@ export const useUpdateProduct = () => {
 
       // Handle price tiers update
       if (price_tiers !== undefined) {
-        // Delete existing tiers
-        await supabase
-          .from("product_price_tiers")
-          .delete()
-          .eq("product_id", id);
-
-        // Insert new tiers
+        await supabase.from("product_price_tiers").delete().eq("product_id", id);
         if (price_tiers.length > 0) {
           const tiersToInsert = price_tiers.map((tier) => ({
             product_id: id,
             min_quantity: tier.min_quantity,
             price_per_unit: tier.price_per_unit,
           }));
+          const { error: tiersError } = await supabase.from("product_price_tiers").insert(tiersToInsert);
+          if (tiersError) console.error("Error updating price tiers:", tiersError);
+        }
+      }
 
-          const { error: tiersError } = await supabase
-            .from("product_price_tiers")
-            .insert(tiersToInsert);
-
-          if (tiersError) {
-            console.error("Error updating price tiers:", tiersError);
-          }
+      // Handle multi-category updates
+      if (category_ids !== undefined) {
+        await supabase.from("product_categories").delete().eq("product_id", id);
+        if (category_ids.length > 0) {
+          await supabase.from("product_categories").insert(
+            category_ids.map((cid) => ({ product_id: id, category_id: cid }))
+          );
+        }
+      }
+      if (subcategory_ids !== undefined) {
+        await supabase.from("product_subcategories").delete().eq("product_id", id);
+        if (subcategory_ids.length > 0) {
+          await supabase.from("product_subcategories").insert(
+            subcategory_ids.map((sid) => ({ product_id: id, subcategory_id: sid }))
+          );
+        }
+      }
+      if (section_ids !== undefined) {
+        await supabase.from("product_sections").delete().eq("product_id", id);
+        if (section_ids.length > 0) {
+          await supabase.from("product_sections").insert(
+            section_ids.map((sid) => ({ product_id: id, section_id: sid }))
+          );
         }
       }
 
