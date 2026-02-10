@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Loader2, MapPin, Truck, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, XCircle, Building2, Phone, Package, User } from "lucide-react";
+import { Loader2, MapPin, Truck, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, XCircle, Building2, Phone, Package, User, Banknote, CreditCard, Image } from "lucide-react";
 import { useAdminDeliveryOrders, DeliveryOrder } from "@/hooks/useAdminDeliveryOrders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -286,9 +286,45 @@ const DeliveryOrderCard = ({ order }: { order: DeliveryOrder }) => {
                         className="text-green-600 hover:underline inline-flex items-center gap-1 text-sm"
                       >
                         <CheckCircle2 className="h-4 w-4" />
-                        عرض إيصال التحويل
+                        عرض إيصال تحويل المورد
                         <ExternalLink className="h-3 w-3" />
                       </a>
+                    </div>
+                  )}
+
+                  {/* Agent Payment Info */}
+                  {supplier.delivery_agent && supplier.delivery_type === "agent" && (
+                    <div className="mt-3 border border-amber-200 dark:border-amber-800 rounded-lg p-3 bg-amber-50/50 dark:bg-amber-950/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <User className="h-4 w-4 text-amber-600" />
+                        <span className="font-semibold text-sm text-amber-800 dark:text-amber-200">
+                          دفع المندوب — {supplier.delivery_agent.name}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-sm">
+                        <div className="flex items-center gap-1.5">
+                          {supplier.agent_payment_method === "transfer" ? (
+                            <CreditCard className="h-4 w-4 text-blue-600" />
+                          ) : (
+                            <Banknote className="h-4 w-4 text-green-600" />
+                          )}
+                          <span className="font-medium">
+                            {supplier.agent_payment_method === "transfer" ? "تحويل بنكي" : "دفع عند الاستلام"}
+                          </span>
+                        </div>
+                        {supplier.agent_receipt_url && (
+                          <a
+                            href={supplier.agent_receipt_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                          >
+                            <Image className="h-4 w-4" />
+                            عرض إيصال المندوب
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

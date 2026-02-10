@@ -351,6 +351,8 @@ export type Database = {
       }
       order_payments: {
         Row: {
+          agent_payment_method: string | null
+          agent_receipt_url: string | null
           created_at: string
           id: string
           is_paid: boolean
@@ -361,6 +363,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agent_payment_method?: string | null
+          agent_receipt_url?: string | null
           created_at?: string
           id?: string
           is_paid?: boolean
@@ -371,6 +375,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agent_payment_method?: string | null
+          agent_receipt_url?: string | null
           created_at?: string
           id?: string
           is_paid?: boolean

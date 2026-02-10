@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Copy, Check, Loader2, Banknote, Building, User, Upload, Image, AlertTriangle, UserRound, Phone, Truck, Store } from "lucide-react";
+import { CreditCard, Copy, Check, Loader2, Banknote, Building, User, Upload, AlertTriangle, UserRound, Phone, Store } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -63,13 +63,19 @@ export const PaymentDetailsDialog = ({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Agent payment state
+  const [agentPaymentMethod, setAgentPaymentMethod] = useState<"cash" | "transfer">("cash");
+  const [agentReceiptFile, setAgentReceiptFile] = useState<File | null>(null);
+  const [agentReceiptPreview, setAgentReceiptPreview] = useState<string | null>(null);
+  const agentFileInputRef = useRef<HTMLInputElement>(null);
+  const [isAgentIbanCopied, setIsAgentIbanCopied] = useState(false);
+
   const bankName = (supplierProfile as any)?.bank_name;
   const bankAccountName = (supplierProfile as any)?.bank_account_name;
   const bankIban = (supplierProfile as any)?.bank_iban;
 
   const hasBankDetails = bankName || bankAccountName || bankIban;
   const hasAgent = deliveryAgent && deliveryFee > 0;
-  const [isAgentIbanCopied, setIsAgentIbanCopied] = useState(false);
 
   const copyAgentIban = async () => {
     if (!deliveryAgent?.bank_iban) return;
@@ -95,7 +101,7 @@ export const PaymentDetailsDialog = ({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isAgent = false) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
@@ -106,55 +112,58 @@ export const PaymentDetailsDialog = ({
         toast.error(t("cart.fileTooLarge"));
         return;
       }
-      setReceiptFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setReceiptPreview(reader.result as string);
+        if (isAgent) {
+          setAgentReceiptFile(file);
+          setAgentReceiptPreview(reader.result as string);
+        } else {
+          setReceiptFile(file);
+          setReceiptPreview(reader.result as string);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
+  const uploadFile = async (file: File): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user!.id}/${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from("payment-receipts")
+      .upload(fileName, file);
+    if (uploadError) throw uploadError;
+    const { data: urlData } = supabase.storage
+      .from("payment-receipts")
+      .getPublicUrl(fileName);
+    return urlData.publicUrl;
+  };
+
   const notifySupplier = async () => {
     if (!user) return;
-
-    // الحماية: إشعار الدفع يجب أن يرسله المطعم فقط
     if (userRole !== "restaurant") {
       toast.error("هذه الميزة متاحة للمطعم فقط");
       return;
     }
-
-    // لازم يكون فيه طلب فعلي حتى نربط الدفع بالطلب
     if (!orderId) {
       toast.error("يجب إنشاء الطلب أولاً قبل إرسال إشعار الدفع");
       return;
     }
-    
+
     setIsNotifying(true);
     try {
       let receiptUrl: string | null = null;
+      let agentReceiptUrl: string | null = null;
 
-      // رفع الإيصال إذا كان موجوداً
+      setIsUploading(true);
       if (receiptFile) {
-        setIsUploading(true);
-        const fileExt = receiptFile.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("payment-receipts")
-          .upload(fileName, receiptFile);
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from("payment-receipts")
-          .getPublicUrl(fileName);
-
-        receiptUrl = urlData.publicUrl;
-        setIsUploading(false);
+        receiptUrl = await uploadFile(receiptFile);
       }
+      if (agentReceiptFile && agentPaymentMethod === "transfer") {
+        agentReceiptUrl = await uploadFile(agentReceiptFile);
+      }
+      setIsUploading(false);
 
-      // التحقق من وجود سجل دفع للطلب
       const { data: existingPayment } = await supabase
         .from("order_payments")
         .select("id")
@@ -162,35 +171,34 @@ export const PaymentDetailsDialog = ({
         .eq("supplier_id", supplierId)
         .maybeSingle();
 
+      const paymentData: any = {
+        is_paid: true,
+        receipt_url: receiptUrl,
+      };
+      if (hasAgent) {
+        paymentData.agent_payment_method = agentPaymentMethod;
+        paymentData.agent_receipt_url = agentPaymentMethod === "transfer" ? agentReceiptUrl : null;
+      }
+
       if (existingPayment) {
-        // تحديث السجل الموجود
         const { error: updateError } = await supabase
           .from("order_payments")
-          .update({
-            is_paid: true,
-            receipt_url: receiptUrl,
-          })
+          .update(paymentData)
           .eq("id", existingPayment.id);
-
         if (updateError) throw updateError;
       } else {
-        // إنشاء سجل جديد
         const { error: insertError } = await supabase
           .from("order_payments")
           .insert({
             order_id: orderId,
             supplier_id: supplierId,
             restaurant_id: user.id,
-            is_paid: true,
-            receipt_url: receiptUrl,
+            ...paymentData,
           });
-
         if (insertError) throw insertError;
       }
 
       const restaurantName = profile?.business_name || "مطعم";
-      
-      // إرسال إشعار للمورد
       const { error } = await supabase
         .from("notifications")
         .insert({
@@ -203,17 +211,18 @@ export const PaymentDetailsDialog = ({
           type: "payment",
           order_id: orderId,
         });
-
       if (error) throw error;
 
-      // تحديث واجهة المستخدم فوراً (علامة الصح + قائمة الدفعات)
       queryClient.invalidateQueries({ queryKey: ["order-payments", orderId] });
       queryClient.invalidateQueries({ queryKey: ["order-payment", orderId, supplierId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-delivery-orders"] });
 
       toast.success(t("cart.paymentNotified"));
       setOpen(false);
       setReceiptFile(null);
       setReceiptPreview(null);
+      setAgentReceiptFile(null);
+      setAgentReceiptPreview(null);
     } catch (error) {
       console.error("Error notifying supplier:", error);
       toast.error(t("cart.paymentNotifyError"));
@@ -235,132 +244,183 @@ export const PaymentDetailsDialog = ({
           {t("cart.paymentDetails")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-sm max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <CreditCard className="h-4 w-4 text-primary" />
             {t("cart.bankDetails")} - {supplierName}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-3 py-2">
           {hasBankDetails ? (
             <>
-              {/* Warning message - only show if order not confirmed */}
+              {/* Warning */}
               {!isConfirmed && (
-                <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800 dark:text-amber-300">
+                <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-800 dark:text-amber-300">
                     <p className="font-medium">{t("cart.paymentWarningTitle")}</p>
-                    <p className="text-amber-700 dark:text-amber-400 mt-1">{t("cart.paymentWarningMessage")}</p>
+                    <p className="text-amber-700 dark:text-amber-400 mt-0.5">{t("cart.paymentWarningMessage")}</p>
                   </div>
                 </div>
               )}
 
-              {/* Amount Summary */}
               {hasAgent ? (
-                <div className="space-y-3">
-                  {/* الإجمالي الكلي */}
-                  <div className="bg-muted/50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted-foreground mb-0.5">{t("orders.supplierTotal", "الإجمالي")}</p>
-                    <p className="text-xl font-bold text-foreground">
-                      {amountToPay.toFixed(2)} <span className="text-sm">{t("common.sar")}</span>
+                <div className="space-y-2">
+                  {/* Total */}
+                  <div className="bg-muted/50 rounded-lg p-2 text-center">
+                    <p className="text-xs text-muted-foreground">{t("orders.supplierTotal", "الإجمالي")}</p>
+                    <p className="text-lg font-bold text-foreground">
+                      {amountToPay.toFixed(2)} <span className="text-xs">{t("common.sar")}</span>
                     </p>
                   </div>
 
-                  {/* المستحق للمورد */}
-                  <div className="border rounded-xl overflow-hidden">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-primary/5">
-                      <Store className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-sm">المستحق للمورد — {supplierName}</span>
+                  {/* Supplier section */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="flex items-center gap-2 px-2 py-1.5 bg-primary/5">
+                      <Store className="h-3.5 w-3.5 text-primary" />
+                      <span className="font-semibold text-xs">{supplierName}</span>
+                      <span className="text-xs font-bold text-primary ms-auto">
+                        {(subtotal ?? (amountToPay - deliveryFee)).toFixed(2)} {t("common.sar")}
+                      </span>
                     </div>
-                    <div className="p-3 text-center">
-                      <p className="text-2xl font-bold text-primary">
-                        {(subtotal ?? (amountToPay - deliveryFee)).toFixed(2)} <span className="text-sm">{t("common.sar")}</span>
-                      </p>
-                    </div>
-                    {/* بيانات بنك المورد */}
-                    <div className="px-3 pb-3 space-y-2">
+                    <div className="px-2 py-2 space-y-1.5">
                       {bankName && (
-                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
-                          <Building className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">{t("cart.bankName")}</p>
-                            <p className="font-medium">{bankName}</p>
-                          </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <Building className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-muted-foreground">{t("cart.bankName")}:</span>
+                          <span className="font-medium">{bankName}</span>
                         </div>
                       )}
                       {bankAccountName && (
-                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
-                          <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">{t("cart.bankAccountName")}</p>
-                            <p className="font-medium">{bankAccountName}</p>
-                          </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-muted-foreground">{t("cart.bankAccountName")}:</span>
+                          <span className="font-medium">{bankAccountName}</span>
                         </div>
                       )}
                       {bankIban && (
-                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
-                          <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-muted-foreground">{t("cart.bankIban")}</p>
-                            <p className="font-mono text-xs break-all">{bankIban}</p>
-                          </div>
-                          <Button variant="ghost" size="sm" onClick={copyIban} className="shrink-0 h-7 w-7 p-0">
-                            {isCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <CreditCard className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="font-mono text-xs break-all flex-1">{bankIban}</span>
+                          <Button variant="ghost" size="sm" onClick={copyIban} className="shrink-0 h-6 w-6 p-0">
+                            {isCopied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
                           </Button>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* المستحق للمندوب */}
-                  <div className="border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30">
-                      <UserRound className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      <span className="font-semibold text-sm text-amber-800 dark:text-amber-200">المستحق للمندوب — {deliveryAgent!.name}</span>
+                  {/* Agent section */}
+                  <div className="border border-amber-200 dark:border-amber-800 rounded-lg overflow-hidden">
+                    <div className="flex items-center gap-2 px-2 py-1.5 bg-amber-50 dark:bg-amber-950/30">
+                      <UserRound className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      <span className="font-semibold text-xs text-amber-800 dark:text-amber-200">{deliveryAgent!.name}</span>
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-300 ms-auto">
+                        {deliveryFee.toFixed(2)} {t("common.sar")}
+                      </span>
                     </div>
-                    <div className="p-3 text-center">
-                      <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
-                        {deliveryFee.toFixed(2)} <span className="text-sm">{t("common.sar")}</span>
-                      </p>
-                    </div>
-                    {/* بيانات بنك المندوب */}
-                    <div className="px-3 pb-3 space-y-2">
+
+                    <div className="px-2 py-2 space-y-2">
                       {deliveryAgent!.phone && (
-                        <a href={`tel:${deliveryAgent!.phone}`} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm text-primary hover:underline">
-                          <Phone className="h-4 w-4 shrink-0" />
+                        <a href={`tel:${deliveryAgent!.phone}`} className="flex items-center gap-2 text-xs text-primary hover:underline">
+                          <Phone className="h-3.5 w-3.5 shrink-0" />
                           <span dir="ltr">{deliveryAgent!.phone}</span>
                         </a>
                       )}
-                      {deliveryAgent!.bank_name && (
-                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
-                          <Building className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">{t("cart.bankName")}</p>
-                            <p className="font-medium">{deliveryAgent!.bank_name}</p>
-                          </div>
-                        </div>
-                      )}
-                      {deliveryAgent!.bank_account_name && (
-                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
-                          <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">{t("cart.bankAccountName")}</p>
-                            <p className="font-medium">{deliveryAgent!.bank_account_name}</p>
-                          </div>
-                        </div>
-                      )}
-                      {deliveryAgent!.bank_iban && (
-                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
-                          <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-muted-foreground">{t("cart.bankIban")}</p>
-                            <p className="font-mono text-xs break-all">{deliveryAgent!.bank_iban}</p>
-                          </div>
-                          <Button variant="ghost" size="sm" onClick={copyAgentIban} className="shrink-0 h-7 w-7 p-0">
-                            {isAgentIbanCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+
+                      {/* Agent payment method choice */}
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-amber-800 dark:text-amber-200">طريقة دفع المندوب:</p>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={agentPaymentMethod === "cash" ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1 h-7 text-xs gap-1"
+                            onClick={() => setAgentPaymentMethod("cash")}
+                          >
+                            <Banknote className="h-3 w-3" />
+                            دفع عند الاستلام
                           </Button>
+                          <Button
+                            type="button"
+                            variant={agentPaymentMethod === "transfer" ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1 h-7 text-xs gap-1"
+                            onClick={() => setAgentPaymentMethod("transfer")}
+                          >
+                            <CreditCard className="h-3 w-3" />
+                            تحويل بنكي
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Show bank details & receipt upload only for transfer */}
+                      {agentPaymentMethod === "transfer" && (
+                        <div className="space-y-1.5 pt-1 border-t border-amber-100 dark:border-amber-900">
+                          {deliveryAgent!.bank_name && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <Building className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="text-muted-foreground">{t("cart.bankName")}:</span>
+                              <span className="font-medium">{deliveryAgent!.bank_name}</span>
+                            </div>
+                          )}
+                          {deliveryAgent!.bank_account_name && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="text-muted-foreground">{t("cart.bankAccountName")}:</span>
+                              <span className="font-medium">{deliveryAgent!.bank_account_name}</span>
+                            </div>
+                          )}
+                          {deliveryAgent!.bank_iban && (
+                            <div className="flex items-center gap-1.5 text-xs">
+                              <CreditCard className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="font-mono text-xs break-all flex-1">{deliveryAgent!.bank_iban}</span>
+                              <Button variant="ghost" size="sm" onClick={copyAgentIban} className="shrink-0 h-6 w-6 p-0">
+                                {isAgentIbanCopied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Agent receipt upload */}
+                          <input
+                            ref={agentFileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileChange(e, true)}
+                            className="hidden"
+                          />
+                          {agentReceiptPreview ? (
+                            <div className="relative">
+                              <img
+                                src={agentReceiptPreview}
+                                alt="Agent receipt"
+                                className="w-full h-24 object-contain rounded border bg-muted"
+                              />
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="absolute top-1 end-1 h-6 text-xs"
+                                onClick={() => {
+                                  setAgentReceiptFile(null);
+                                  setAgentReceiptPreview(null);
+                                }}
+                              >
+                                {t("common.delete")}
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              className="w-full h-14 border-dashed gap-1.5 text-xs"
+                              onClick={() => agentFileInputRef.current?.click()}
+                            >
+                              <Upload className="h-4 w-4" />
+                              إرفاق إيصال تحويل المندوب
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -368,43 +428,42 @@ export const PaymentDetailsDialog = ({
                 </div>
               ) : (
                 <>
-                  {/* العرض العادي بدون مندوب */}
-                  <div className="bg-primary/10 rounded-xl p-4 text-center">
-                    <p className="text-sm text-muted-foreground mb-1">{t("cart.amountToPay")}</p>
-                    <p className="text-3xl font-bold text-primary">
-                      {amountToPay.toFixed(2)} <span className="text-lg">{t("common.sar")}</span>
+                  {/* Normal view without agent */}
+                  <div className="bg-primary/10 rounded-lg p-3 text-center">
+                    <p className="text-xs text-muted-foreground mb-0.5">{t("cart.amountToPay")}</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {amountToPay.toFixed(2)} <span className="text-sm">{t("common.sar")}</span>
                     </p>
                   </div>
 
-                  {/* Bank Details */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {bankName && (
-                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                        <Building className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
+                        <Building className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-muted-foreground">{t("cart.bankName")}</p>
-                          <p className="font-medium">{bankName}</p>
+                          <p className="font-medium text-sm">{bankName}</p>
                         </div>
                       </div>
                     )}
                     {bankAccountName && (
-                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                        <User className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
+                        <User className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-muted-foreground">{t("cart.bankAccountName")}</p>
-                          <p className="font-medium">{bankAccountName}</p>
+                          <p className="font-medium text-sm">{bankAccountName}</p>
                         </div>
                       </div>
                     )}
                     {bankIban && (
-                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                        <CreditCard className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm">
+                        <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-muted-foreground">{t("cart.bankIban")}</p>
-                          <p className="font-mono text-sm break-all">{bankIban}</p>
+                          <p className="font-mono text-xs break-all">{bankIban}</p>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={copyIban} className="shrink-0">
-                          {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                        <Button variant="ghost" size="sm" onClick={copyIban} className="shrink-0 h-7 w-7 p-0">
+                          {isCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
                         </Button>
                       </div>
                     )}
@@ -412,28 +471,28 @@ export const PaymentDetailsDialog = ({
                 </>
               )}
 
-              {/* Upload Receipt */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium">{t("cart.uploadReceipt")}</p>
+              {/* Upload Supplier Receipt */}
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium">{t("cart.uploadReceipt")}</p>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  onChange={handleFileChange}
+                  onChange={(e) => handleFileChange(e, false)}
                   className="hidden"
                 />
-                
+
                 {receiptPreview ? (
                   <div className="relative">
                     <img
                       src={receiptPreview}
                       alt="Receipt preview"
-                      className="w-full h-40 object-contain rounded-lg border bg-muted"
+                      className="w-full h-28 object-contain rounded border bg-muted"
                     />
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="absolute top-2 end-2"
+                      className="absolute top-1 end-1 h-6 text-xs"
                       onClick={() => {
                         setReceiptFile(null);
                         setReceiptPreview(null);
@@ -445,10 +504,10 @@ export const PaymentDetailsDialog = ({
                 ) : (
                   <Button
                     variant="outline"
-                    className="w-full h-24 border-dashed gap-2"
+                    className="w-full h-16 border-dashed gap-1.5 text-xs"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="h-5 w-5" />
+                    <Upload className="h-4 w-4" />
                     {t("cart.selectReceiptImage")}
                   </Button>
                 )}
@@ -458,9 +517,10 @@ export const PaymentDetailsDialog = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-2 pt-2">
                 <Button
                   variant="outline"
+                  size="sm"
                   className="flex-1"
                   onClick={() => setOpen(false)}
                 >
@@ -468,18 +528,19 @@ export const PaymentDetailsDialog = ({
                 </Button>
                 <Button
                   variant="hero"
-                  className="flex-1 gap-2"
+                  size="sm"
+                  className="flex-1 gap-1.5"
                   onClick={notifySupplier}
                   disabled={isNotifying || isUploading}
                 >
                   {isNotifying || isUploading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       {isUploading ? t("cart.uploadingReceipt") : t("cart.notifyingPayment")}
                     </>
                   ) : (
                     <>
-                      <Banknote className="h-4 w-4" />
+                      <Banknote className="h-3.5 w-3.5" />
                       {t("cart.notifyPayment")}
                     </>
                   )}
@@ -487,9 +548,9 @@ export const PaymentDetailsDialog = ({
               </div>
             </>
           ) : (
-            <div className="text-center py-8">
-              <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">{t("cart.noBankDetails")}</p>
+            <div className="text-center py-6">
+              <CreditCard className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">{t("cart.noBankDetails")}</p>
             </div>
           )}
         </div>
