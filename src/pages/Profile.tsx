@@ -235,33 +235,48 @@ const Profile = () => {
     setIsSaving(true);
     
     try {
+      const updateData: Record<string, any> = {
+        full_name: profileData.full_name || undefined,
+        business_name: profileData.business_name || undefined,
+        phone: profileData.phone || null,
+        bio: profileData.bio || null,
+        google_maps_url: profileData.google_maps_url || null,
+        region: profileData.region || null,
+      };
+
+      // Supplier-specific fields
+      if (targetRole === "supplier") {
+        updateData.supply_categories = profileData.supply_categories.length > 0 ? profileData.supply_categories : null;
+        updateData.minimum_order_amount = profileData.minimum_order_amount || 0;
+        updateData.default_delivery_fee = profileData.default_delivery_fee || 0;
+        updateData.bank_name = profileData.bank_name || null;
+        updateData.bank_account_name = profileData.bank_account_name || null;
+        updateData.bank_iban = profileData.bank_iban || null;
+        updateData.service_regions = serviceRegions.length > 0 ? serviceRegions : null;
+        updateData.service_cities = serviceCities.length > 0 ? serviceCities : null;
+        updateData.delivery_option = profileData.delivery_option || "with_fee";
+      }
+
+      // Remove undefined values to avoid sending empty required fields
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) delete updateData[key];
+      });
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          full_name: profileData.full_name,
-          business_name: profileData.business_name,
-          phone: profileData.phone,
-          bio: profileData.bio,
-          google_maps_url: profileData.google_maps_url,
-          region: profileData.region || null,
-          supply_categories: profileData.supply_categories.length > 0 ? profileData.supply_categories : null,
-          minimum_order_amount: profileData.minimum_order_amount || 0,
-          default_delivery_fee: profileData.default_delivery_fee || 0,
-          bank_name: profileData.bank_name || null,
-          bank_account_name: profileData.bank_account_name || null,
-          bank_iban: profileData.bank_iban || null,
-          service_regions: serviceRegions.length > 0 ? serviceRegions : null,
-          service_cities: serviceCities.length > 0 ? serviceCities : null,
-          delivery_option: profileData.delivery_option,
-        } as any)
+        .update(updateData as any)
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Profile update error details:", error);
+        throw error;
+      }
       
       toast.success(t("profile.saveSuccess"));
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error(t("profile.saveError"));
+      const errMsg = (error as any)?.message || t("profile.saveError");
+      toast.error(`${t("profile.saveError")}: ${errMsg}`);
     } finally {
       setIsSaving(false);
     }
