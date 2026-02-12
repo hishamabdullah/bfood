@@ -343,15 +343,38 @@ const Header = () => {
                 )}
               </>
             )}
-            {/* المورد يرى فقط لوحة التحكم */}
+            {/* المورد يرى روابط الصفحات */}
             {isSupplier && (
-              <Link 
-                to="/dashboard" 
-                className="py-2 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {t("nav.dashboard")}
-              </Link>
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t("nav.dashboard")}
+                </Link>
+                <Link 
+                  to="/supplier/products" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t("supplier.myProducts", "منتجاتي")}
+                </Link>
+                <Link 
+                  to="/supplier/orders" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t("supplier.orders", "الطلبات")}
+                </Link>
+                <Link 
+                  to="/supplier/custom-prices" 
+                  className="py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t("supplier.customPrices", "أسعار خاصة")}
+                </Link>
+              </>
             )}
             
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
@@ -360,6 +383,28 @@ const Header = () => {
                   <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="outline" className="w-full">{t("nav.dashboard")}</Button>
                   </Link>
+                  {isSupplier && (
+                    <>
+                      <Link to="/supplier/products" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <Package className="h-4 w-4" />
+                          {t("supplier.myProducts", "منتجاتي")}
+                        </Button>
+                      </Link>
+                      <Link to="/supplier/orders" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <Package className="h-4 w-4" />
+                          {t("supplier.orders", "الطلبات")}
+                        </Button>
+                      </Link>
+                      <Link to="/supplier/custom-prices" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <CreditCard className="h-4 w-4" />
+                          {t("supplier.customPrices", "أسعار خاصة")}
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                   {isRestaurant && (
                     <>
                       <Link to="/orders" onClick={() => setIsMenuOpen(false)}>
