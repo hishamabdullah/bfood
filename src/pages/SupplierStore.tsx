@@ -182,6 +182,12 @@ export default function SupplierStore() {
                       <span>{supplier.region}{supplier.city && ` - ${supplier.city}`}</span>
                     </div>
                   )}
+                  {supplier.phone && (
+                    <a href={`tel:${supplier.phone}`} className="flex items-center gap-1 hover:text-primary transition-colors" dir="ltr">
+                      <Phone className="h-4 w-4" />
+                      <span>{supplier.phone}</span>
+                    </a>
+                  )}
                   <div className="flex items-center gap-1">
                     <Package className="h-4 w-4" />
                     <span>{products.length} {i18n.language === "ar" ? "منتج" : "products"}</span>
