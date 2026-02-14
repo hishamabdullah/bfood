@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://iuudjrxszxhnvzahanmy.supabase.co";
 import { corsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
